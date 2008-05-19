@@ -1,0 +1,42 @@
+## Architecture
+ARCH=ia32
+
+.PHONY: deps depend all clean
+
+## Target toolchain prefix
+CROSS_COMPILE=
+
+## command locations
+SH=/bin/sh
+RM=rm
+MAKE=make
+LN=ln
+
+AS=$(CROSS_COMPILE)as
+AS86=$(CROSS_COMPILE)as
+GCC=$(CROSS_COMPILE)gcc
+CC=$(CROSS_COMPILE)gcc
+LD=$(CROSS_COMPILE)ld
+STRIP=$(CROSS_COMPILE)strip
+
+# Default target
+TARGET: all
+
+# Compiler flags
+CFLAGS=-O2 -pipe -Wall -ffreestanding -fno-stack-protector \
+	-fomit-frame-pointer -I$(TOPDIR)/include
+
+# templates
+%.o: %.c
+	$(GCC) $(CFLAGS) -c -o $@ $<
+%.o: %.S
+	$(GCC) $(CFLAGS) -c -o $@ $<
+
+# Generate dependencies
+depend:
+	-gcc $(CFLAGS) -M *.c *.S > .depend
+
+# Include the dependency file if one exists
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif

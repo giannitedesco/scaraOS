@@ -1,0 +1,5 @@
+default 0
+timeout 0
+
+title ScaraOS
+kernel /kernel root=floppy0

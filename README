@@ -1,0 +1,38 @@
+=======================================================================
+ScaraOS: A modern multiboot kernel for learning OS fundamentals
+Copyright (c) 2001-2002 Gianni Tedesco <gianni@scaramanga.co.uk>
+Released under the terms of the GNU GPL version 2
+=======================================================================
+
+ScaraOS started out as a good way for me to learn a lot of
+interesting stuff all at once, things such as:
+ o x86 assembly
+ o deeper understanding of ia32
+ o learning about the components of the IBM PC/AT
+ o OS design fundamentals
+ o How crap a typical PC BIOS is
+ o How crap DOS is
+ o How a computer system works as a whole, from hardware
+   to BIOS, to bootloader, to kernel, to OS subsystems, to
+   applications, to user interfaces.
+
+ScaraOS might be of use to someone who also wants to write their own
+kernel for fun. If so they are free to use my code, which is under GPL.
+GPL ensures the spirit of co-operation and code sharing are passed on 
+with my work.
+
+Current features
+ o Mostly written in C
+ o Multiboot compliant
+ o fully 32bit protected mode
+ o 8259A PIC support
+ o 8254 PIT support
+ o VGA text mode output
+ o Monitor detection
+ o Fully pre-emptive multi-tasking
+ o Paged memory management
+ o Floppy disk controller driver
+ o Slab allocator
+ o Block I/O subsystem
+ o Virtual filesystem switch
+ o EXT2 support

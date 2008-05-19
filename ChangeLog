@@ -1,0 +1,34 @@
+Version 0.0.3
+ + Memory initialisation cleanups
+ + Protect critical regions from interrupts
+ + Detect PCI devices
+ + Low-overhead slab-style allocator
+ + Block I/O subsystem
+ + Start the VFS code
+ + Start writing an EXT2 driver
+ + Re-work exception handling
+
+Version 0.0.2
+ + Rewrote build system with dependancies
+ + Restructured code
+ + Gzip the kernel
+ + Trimmed out all the old cruft
+ + Add pageframe allocator (going to be a buddy allocator)
+ + Add preemptive multi-tasking
+ + Fix GDT code.
+ + Kernel now loads at 0xc0000000 (3GB)
+ + Add CPU Identification
+ + Threaded floppy driver
+
+Version 0.0.1
+ + 8259A PIC support
+ + 8254 PIT support
+ + SMP detection
+ + VGA text mode output
+ + Monitor detection
+ + Buffered PC/AT keyboard driver
+ + DMA support (8 and 16 bit)
+ + PC/AT Floppy disk driver, read only (w/dma)
+ + Beginnings of an EXT2 fs driver
+ + Started paging
+ + Direct probed PCI support

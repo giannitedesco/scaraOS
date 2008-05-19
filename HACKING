@@ -1,0 +1,41 @@
+Infrastructure
+ o clean up build system dependency generation
+ o PANIC function
+ o sprinkle -EFOO error codes around
+ o Un-hackify kernel message output
+ o Include linux list header
+
+Scheduling / Synchronisation
+ o Pre-emption disablement lock
+ o Get rid of cli/sti as locking primitives
+ o Better semaphores / wait queues
+ o Interrupt bottom halves
+
+Drivers
+ o Make arch-independent drivers
+ o Improve floppy driver
+
+Memory Management
+ o Finish off the buddy system
+ o Implement kfree()
+ o Support order > 0 in slab allocator
+
+Intel Architecture
+ o Use e820 maps
+
+Virtual Filesystem Switch
+ o cache inodes
+ o cache dentries
+ o mount/umount API
+
+Block I/O subsystem
+ o Buffer cache
+
+Page I/O subsystem
+ o Need one!
+ o Page cache
+
+Program Execution
+ o Flesh out struct task
+ o System calls
+ o User mode tasks

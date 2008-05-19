@@ -1,0 +1,60 @@
+OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
+OUTPUT_ARCH(i386)
+ENTRY(entry)
+
+vaddr = 0xc0000000;
+laddr = 0x00100000;
+entry = _start - vaddr;
+
+SECTIONS {
+	. = vaddr + laddr;
+	_begin = .;
+
+	/* Code section */
+	_text = .;
+	.text : AT (ADDR(.text) - vaddr) {
+		*(.text)
+	}
+	_etext = .;
+
+	/* Read only data (strings etc..) */
+	.rodata : AT (ADDR(.rodata) - vaddr){
+		*(.rodata)
+		*(.rodata.*) 
+	}
+
+	/* Read/write data (global variables) */
+	.data : AT (ADDR(.data) - vaddr) {
+		*(.data)
+		CONSTRUCTORS
+	}
+	_edata = .;
+
+	_bss_start = .;
+	.bss : AT (ADDR(.bss) - vaddr) {
+		*(.bss)
+	}
+
+	/* Init pages */
+	. = ALIGN(4096);
+	__init_start = .;
+
+	__initcall_start = .;
+	.initcall.init : AT (ADDR(.initcall.init) - vaddr) {
+		*(.initcall.init)
+	}
+	__initcall_end = .;
+	
+	.text.init : AT (ADDR(.text.init) - vaddr) { *(.text.init) }
+	.data.init : AT (ADDR(.data.init) - vaddr) { *(.data.init) }	
+	
+	/* Thats the lot */
+	. = ALIGN(4096);
+	_end = . ;
+
+	/* Keep the size down.. */
+	/DISCARD/ : {
+		*(.comment)
+		*(.note)
+	}
+}
