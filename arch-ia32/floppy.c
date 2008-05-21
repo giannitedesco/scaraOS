@@ -214,6 +214,7 @@ void floppy_isr(int irq)
 		status[slen]=floppy_recv(dprts);
 	}
 	unlock_irq(flags);
+
 	wake_up(&floppyq);
 }
 

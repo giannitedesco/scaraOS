@@ -1,6 +1,7 @@
 #ifndef __VFS_HEADER_INCLUDED__
 #define __VFS_HEADER_INCLUDED__
 
+#include <stat.h>
 #include <ext2_sb.h>
 
 /* Inode objects */

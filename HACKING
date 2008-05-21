@@ -1,19 +1,27 @@
 Infrastructure
+ o clean up interfaces between various components
+    - use static functions ffs
+    - use list.h for doubly linked lists
+    - code cleanups
+ o vprintf has no %p, and might be quite bogus
  o clean up build system dependency generation
- o PANIC function
+ o panic function
  o sprinkle -EFOO error codes around
  o Un-hackify kernel message output
- o Include linux list header
 
 Scheduling / Synchronisation
- o Pre-emption disablement lock
+ o task switcher is just wrong
+    - save eflags
+    - irq handling is bogus, do not schedule from ISR context
+    - add bottom half/tasklet context
  o Get rid of cli/sti as locking primitives
  o Better semaphores / wait queues
- o Interrupt bottom halves
+ o No pre-emption in kernel mode for now
 
 Drivers
  o Make arch-independent drivers
  o Improve floppy driver
+ o ATA Hard disk driver
 
 Memory Management
  o Finish off the buddy system
@@ -28,14 +36,8 @@ Virtual Filesystem Switch
  o cache dentries
  o mount/umount API
 
-Block I/O subsystem
- o Buffer cache
-
-Page I/O subsystem
- o Need one!
- o Page cache
-
 Program Execution
  o Flesh out struct task
  o System calls
+ o Page cache
  o User mode tasks

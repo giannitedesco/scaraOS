@@ -29,7 +29,7 @@ clean:
 multiboot:
 	e2fsck -y ./qemu/boot.img || true
 	mount -t ext2 ./qemu/boot.img ./qemu/tmp -o loop
-	cp ./arch-ia32/kernel.elf ./qemu/tmp/kernel
+	cp ./arch-ia32/kernel.elf.gz ./qemu/tmp/kernel
 	cp menu.lst ./qemu/tmp/boot/grub/menu.lst
 	umount ./qemu/tmp
 #	grub --device-map=/boot/grub/device.map --batch --no-floppy < grub_script

@@ -21,7 +21,8 @@ irqfn irq_fns[16]={
 
 void set_irq_handler(int irq, irqfn h)
 {
-	if ( irq>=0 && irq<16 ) irq_fns[irq]=h;
+	if ( irq >= 0 && irq < 16 )
+		irq_fns[irq] = h;
 }
 
 void irq_handler(int irq)
@@ -29,10 +30,11 @@ void irq_handler(int irq)
 	irq_eoi(irq);
 	sti();
 
-	if ( irq>=0 && irq<16 ) irq_fns[irq](irq);	
+	if ( irq >= 0 && irq < 16 )
+		irq_fns[irq](irq);
 
 	/* We may want to pre-empt this task,
 	 * provided that is OK, of course */
-	if ( __this_task->preempt==0 )
+	if ( __this_task->preempt == 0 )
 		sched();
 }

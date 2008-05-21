@@ -16,8 +16,8 @@ multiboot_header:
 	.long	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 multiboot_entry:
-	# Assumes _end is page aligned
-	movl	_end, %esp
+	# Assumes __end is page aligned
+	movl	__end, %esp
 	addl	$(1<<PAGE_SHIFT), %esp
 
 	# Reset EFLAGS
@@ -64,9 +64,6 @@ multiboot_entry:
 
 	# Main part of kernel
 	call	setup
-
-	# Never returns
-	jmp	idle_task
 
 hang:
 	hlt

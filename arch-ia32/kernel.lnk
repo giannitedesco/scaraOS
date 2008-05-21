@@ -2,38 +2,46 @@ OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 OUTPUT_ARCH(i386)
 ENTRY(entry)
 
+/* Kernel virtual address space */
 vaddr = 0xc0000000;
+
+/* Load at 1MB */
 laddr = 0x00100000;
+
 entry = _start - vaddr;
 
 SECTIONS {
 	. = vaddr + laddr;
-	_begin = .;
+	__begin = .;
 
 	/* Code section */
-	_text = .;
+	__text = .;
 	.text : AT (ADDR(.text) - vaddr) {
 		*(.text)
 	}
-	_etext = .;
+	__text_end = .;
 
+	__rodata = .;
 	/* Read only data (strings etc..) */
 	.rodata : AT (ADDR(.rodata) - vaddr){
 		*(.rodata)
 		*(.rodata.*) 
 	}
+	__rodata_end = .;
 
 	/* Read/write data (global variables) */
+	.data = .;
 	.data : AT (ADDR(.data) - vaddr) {
 		*(.data)
 		CONSTRUCTORS
 	}
-	_edata = .;
+	__data_end = .;
 
-	_bss_start = .;
+	__bss_start = .;
 	.bss : AT (ADDR(.bss) - vaddr) {
 		*(.bss)
 	}
+	__bss_end = .;
 
 	/* Init pages */
 	. = ALIGN(4096);
@@ -44,13 +52,14 @@ SECTIONS {
 		*(.initcall.init)
 	}
 	__initcall_end = .;
-	
+
 	.text.init : AT (ADDR(.text.init) - vaddr) { *(.text.init) }
 	.data.init : AT (ADDR(.data.init) - vaddr) { *(.data.init) }	
 	
 	/* Thats the lot */
 	. = ALIGN(4096);
-	_end = . ;
+	__init_start = .;
+	__end = . ;
 
 	/* Keep the size down.. */
 	/DISCARD/ : {

@@ -7,7 +7,8 @@
  * struct page
  */
 
-#define PAGE_SIZE	(1UL<<PAGE_SHIFT)
+#define PAGE_SIZE	(1UL << PAGE_SHIFT)
+#define PAGE_MASK	(PAGE_SIZE - 1UL)
 
 /* There is one of these structures for every page
  * frame in the system. */
@@ -23,8 +24,8 @@ struct buddy {
 };
 
 /* Page flags */
-#define PG_reserved	0x01
-#define PG_slab		0x02
+#define PG_reserved	0x01U
+#define PG_slab		0x02U
 
 /* Page reference counts */
 #define get_page(p) ((p)->count++)
@@ -43,18 +44,22 @@ struct buddy {
  * Buddy system 
  */
 
-#define MAX_ORDER 10
+#define MAX_ORDER 10U
 
 extern struct page *pfa;
+extern uint32_t mem_lo, mem_hi;
 extern unsigned long nr_physpages;
 extern unsigned long nr_freepages;
+extern char *cmdline;
+//extern unsigned long nr_physpages;
+//extern unsigned long nr_freepages;
 
 #define alloc_page() alloc_pages(0)
 #define free_page(x) free_pages(x,0)
 
 void buddy_init(void);
-void *alloc_pages(int);
-void free_pages(void *, int);
+void *alloc_pages(unsigned int order);
+void free_pages(void *ptr, unsigned int order);
 
 
 /*
@@ -71,7 +76,7 @@ struct m_cache {
 	char *name; /* cache name */
 	size_t size; /* size of object */
 	size_t num_obj; /* number of objects per slab */
-	int order; /* order for get_free_pages() */
+	unsigned int order; /* order for get_free_pages() */
 	struct m_slab *slab; /* slabs */
 };
 
