@@ -15,4 +15,4 @@ kernel.elf.gz: kernel.elf
 all: kernel.elf.gz
 
 clean:
-	$(RM) -f *.o .depend kernel.elf
+	$(RM) -f *.o Make.dep kernel.elf kernel.elf.gz

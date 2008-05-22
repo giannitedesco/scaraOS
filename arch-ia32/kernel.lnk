@@ -43,6 +43,8 @@ SECTIONS {
 	}
 	__bss_end = .;
 
+	__kernel_end = .;
+
 	/* Init pages */
 	. = ALIGN(4096);
 	__init_start = .;
@@ -58,7 +60,8 @@ SECTIONS {
 	
 	/* Thats the lot */
 	. = ALIGN(4096);
-	__init_start = .;
+	__init_end = .;
+
 	__end = . ;
 
 	/* Keep the size down.. */

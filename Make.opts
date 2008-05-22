@@ -1,7 +1,7 @@
 ## Architecture
 ARCH=ia32
 
-.PHONY: deps depend all clean
+.PHONY: depend all clean
 
 ## Target toolchain prefix
 CROSS_COMPILE=
@@ -23,7 +23,11 @@ STRIP=$(CROSS_COMPILE)strip
 TARGET: all
 
 # Compiler flags
-CFLAGS=-O2 -pipe -Wall -ffreestanding -fno-stack-protector \
+CFLAGS=-pipe -Os -Wall -ffreestanding -fno-stack-protector \
+	-Wsign-compare -Wcast-align -Waggregate-return \
+	-Wstrict-prototypes -Wmissing-prototypes \
+	-Wmissing-declarations -Wmissing-noreturn \
+	-finline-functions -Wmissing-format-attribute \
 	-fomit-frame-pointer -I$(TOPDIR)/include
 
 # templates
@@ -33,10 +37,12 @@ CFLAGS=-O2 -pipe -Wall -ffreestanding -fno-stack-protector \
 	$(GCC) $(CFLAGS) -c -o $@ $<
 
 # Generate dependencies
-depend:
-	-gcc $(CFLAGS) -M *.c *.S > .depend
+Make.dep:
+	gcc $(CFLAGS) -M $(wildcard *.c) $(wildcard *.S) > $@
+
+depend: Make.dep
 
 # Include the dependency file if one exists
-ifeq (.depend,$(wildcard .depend))
-include .depend
+ifeq (Make.dep, $(wildcard Make.dep))
+include Make.dep
 endif

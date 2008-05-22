@@ -19,10 +19,9 @@
 #include <ctype.h>
 
 /* GCC extensions */
-#define __init		__attribute__ ((__section__ (".text.init")))
-#define __initdata	__attribute__ ((__section__ (".data.init")))
-#define __init_call	__attribute__ ((__section__ (".initcall.init")))
-#define __noreturn	__attribute__ ((noreturn))
+#define __init		_section(".text.init")
+#define __initdata	_section(".data.init")
+#define __init_call	_section(".initcall.init")
 
 /* Kernel types */
 typedef uint32_t pid_t;

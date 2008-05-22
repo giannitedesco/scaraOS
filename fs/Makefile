@@ -9,4 +9,4 @@ fs.o: $(OBJS)
 all: fs.o
 
 clean:
-	$(RM) -f *.o .depend
+	$(RM) -f *.o Make.dep

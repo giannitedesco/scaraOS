@@ -17,6 +17,8 @@ extern uint32_t __data_end;
 extern uint32_t __bss;
 extern uint32_t __bss_end;
 
+extern uint32_t __kernel_end;
+
 extern uint32_t __init_start;
 
 extern initcall_t __initcall_start;
@@ -25,8 +27,6 @@ extern initcall_t __initcall_end;
 extern uint32_t __init_end;
 
 extern uint32_t __end;
-
-extern uint32_t __init_start;
 
 #endif /* __ASM__ */
 

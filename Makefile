@@ -1,5 +1,5 @@
 
-.PHONY: multiboot
+.PHONY: multiboot deps
 
 TOPDIR :=  $(shell /bin/pwd)
 export TOPDIR
@@ -7,8 +7,7 @@ export TOPDIR
 include Make.opts
 
 ./include/arch:
-	$(RM) -f ./include/arch
-	$(LN) -s arch-$(ARCH) ./include/arch
+	$(LN) -sf arch-$(ARCH) ./include/arch
 
 deps: 
 	$(MAKE) -C kernel depend

@@ -80,66 +80,35 @@ void cpuid_init(void)
 	printk("\n");
 }
 
-/* Identity map 4MB of memory, and also map it to PAGE_OFFSET */
-/* TODO: Don't bother with pagetable if we have PSE */
-void setup_initmem(void)
-{
-	pgd_t dir = (pgd_t)__pa(((void *)&__end)+PAGE_SIZE);
-	pgt_t tbl = ((void *)dir)+PAGE_SIZE;
-	int i;
-
-	for (i=0; i < NR_PDE; i++)
-		dir[i] = 0;
-	for (i=0; i < NR_PTE; i++)
-		tbl[i] = (i<<PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
-
-	/* Setup paging */
-	dir[0] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
-	dir[dir(PAGE_OFFSET)] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
-	load_pdbr(dir);
-}
-
 /* Checks the multiboot structures and take whatever info we need */
-void multiboot_check(uint32_t magic, uint32_t addr)
+int _asmlinkage multiboot_check(uint32_t magic, multiboot_info_t *mbi)
 {
-	multiboot_info_t *mbi = (multiboot_info_t *)addr;
-
 	/* Am I booted by a Multiboot-compliant boot loader?  */
 	if ( magic != MULTIBOOT_BOOTLOADER_MAGIC ) {
 		printk("PANIC: Invalid magic number: 0x%x\n", (unsigned) magic);
-		idle_task();
+		return 0;
 	}
 
 	if ( (mbi->flags & MBF_AOUT) && (mbi->flags & MBF_ELF) ) {
 		printk("PANIC: Kernel can't be ELF AND AOUT!\n");
-		idle_task();
+		return 0;
 	}
 
 	if ( (mbi->flags & MBF_MEM) == 0 ) {
 		printk("PANIC: ScaraOS relies on bootloader counting memory\n");
-		idle_task();
+		return 0;
 	}
 
 	if ( mbi->flags & MBF_CMDLINE ) {
 		cmdline = __va(mbi->cmdline);
 	}
 
-	/* BIOS memory map */
-	if ( mbi->flags & MBF_MMAP ) {
-		p_memory_map addr = (p_memory_map)mbi->mmap;
-		while((void *)addr < (void *)(mbi->mmap + mbi->mmap_length)) {
-			printk("MEMMAP: 0x%x -> 0x%x (0x%x)\n",
-				addr->base_addr_low,
-				addr->base_addr_low + addr->length_low,
-				addr->type);
-			addr = (p_memory_map)
-				((char *)addr + addr->size +
-					sizeof (addr->size));
-		}
-	}
+	/* print a pretty message */
+	printk("ScaraOS v0.0.3 for IA-32\n");
+	if ( cmdline )
+		printk("cmd: %s\n", cmdline);
 
-	mem_lo = mbi->mem_lower;
-	mem_hi = mbi->mem_upper;
+	return 1;
 }
 
 /* Init task - the job of this task is to initialise all
@@ -180,26 +149,25 @@ static void task2(void)
 }
 
 /* Entry point in to the kernel proper */
-void setup(void)
+void _asmlinkage setup(multiboot_info_t *mbi)
 {
 	struct task *i;
 
 	/* Need this quite quickly */
 	idt_init();
 
+	/* Fire up the kernel memory allocators */
+	if ( mbi->flags & MBF_MMAP ) {
+		ia32_mm_init(mbi->mmap, mbi->mmap_length);
+	}else{
+		ia32_mm_init(NULL, 0);
+	}
+
 	/* Prints out CPU MHz */
 	calibrate_delay_loop();
 
-	/* print a pretty message */
-	printk("ScaraOS v0.0.3 for IA-32\n");
-	if ( cmdline )
-		printk("cmd: %s\n", cmdline);
-
 	/* Identify CPU features */
 	cpuid_init();
-
-	/* Fire up the kernel memory allocators */
-	mm_init();
 
 	/* enable hardware interrupts */
 	pic_init();
@@ -210,26 +178,27 @@ void setup(void)
 	/* setup the idle task */
 	sched_init();
 
+	/* Finally, enable interupts */
+	printk("starting idle task...\n");
+	idle_task();
+
 	/* Setup the init task */
-	i=alloc_page();
-	i->pid=1;
-	i->t.eip=(uint32_t)init_task;
-	i->t.esp=(uint32_t)i;
-	i->t.esp+=PAGE_SIZE;
-	i->preempt=1;
+	i = alloc_page();
+	i->pid = 1;
+	i->t.eip = (uint32_t)init_task;
+	i->t.esp = (uint32_t)i;
+	i->t.esp += PAGE_SIZE;
+	i->preempt = 1;
 	task_to_runq(i);
 	sti();
 	sched();
-
-	/* Finally, enable interupts */
-	printk("starting idle task...\n");
 }
 
 void idle_task(void)
 {
 	asm volatile(
-		"idle:\n"
-		"hlt;\n"
+		"1:\n"
 		"rep; nop\n"
-		"jmp idle\n");
+		"hlt;\n"
+		"jmp 1b\n");
 }

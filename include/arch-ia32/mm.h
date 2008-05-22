@@ -97,7 +97,7 @@ extern uint32_t _init_pgd, _init_pgt;
 /* #PF handler */
 void pagefault(uint32_t, uint32_t);
 
-void mm_init(void);
+void ia32_mm_init(void *ptr, size_t len);
 
 #endif /* __ASM__ */
 #endif /* __ARCH_IA32_MM__ */

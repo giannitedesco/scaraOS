@@ -1,6 +1,7 @@
 #define __ASM__	1
 #include <arch/multiboot.h>
 #include <arch/mm.h>
+.section .text.init
 .text
 
 .globl	_start
@@ -16,9 +17,9 @@ multiboot_header:
 	.long	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 multiboot_entry:
-	# Assumes __end is page aligned
+	# Assumes __end is page aligned and safe to use!
 	movl	__end, %esp
-	addl	$(1<<PAGE_SHIFT), %esp
+	addl	$(1 << PAGE_SHIFT), %esp
 
 	# Reset EFLAGS
 	pushl	$0
@@ -60,9 +61,14 @@ multiboot_entry:
 
 	# Check multiboot structures
 	call	multiboot_check
-	addl	$0x8, %esp
+	test	$0x0, %eax
+	jne	hang
 
 	# Main part of kernel
+	popl	%eax
+	popl	%ebx
+	addl	$PAGE_OFFSET,%ebx
+	pushl	%ebx
 	call	setup
 
 hang:

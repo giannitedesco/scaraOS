@@ -80,7 +80,7 @@ struct m_cache {
 	struct m_slab *slab; /* slabs */
 };
 
-#define NR_AREA PAGE_SHIFT-3
+#define NR_AREA (PAGE_SHIFT-1)
 
 int kmem_add_cache(struct m_cache *);
 void *kmem_alloc(struct m_cache *);

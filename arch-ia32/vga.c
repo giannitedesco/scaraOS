@@ -7,11 +7,11 @@
 #include <arch/io.h>
 
 static volatile unsigned char *vidmem;
-unsigned short attrib=0x0017;
+unsigned short attrib = 0x0017;
 signed short xpos, ypos;
-int monitor=MONITOR_NONE;
+int monitor = MONITOR_NONE;
 
-void vga_preinit(void)
+void _asmlinkage vga_preinit(void)
 {
 	int i;
 	vidmem = (unsigned char *)VIDMEM;

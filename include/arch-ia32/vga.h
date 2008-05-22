@@ -7,6 +7,8 @@
 #define ROWS		25
 #define VIDMEM		(0xB8000+PAGE_OFFSET)
 
+void vga_preinit(void);
+
 void vga_init(void);
 void vga_put(uint8_t);
 void vga_curs (uint16_t, uint16_t);

@@ -11,4 +11,4 @@ kernel.o: $(OBJS)
 all: kernel.o
 
 clean:
-	$(RM) -f *.o .depend
+	$(RM) -f *.o Make.dep
