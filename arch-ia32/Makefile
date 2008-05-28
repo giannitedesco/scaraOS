@@ -7,10 +7,12 @@ OBJS=entry.o setup.o io.o vga.o idt.o 8259a.o \
 kernel.elf: $(OBJS)
 	$(GCC) -o $@ -T kernel.lnk -nostdlib -Wl,-N -Wl \
 		$^ ../kernel/kernel.o ../fs/fs.o
-	$(STRIP) kernel.elf
 
 kernel.elf.gz: kernel.elf
-	gzip -c < $< > $@
+	cp $< $<.stripped
+	$(STRIP) $<.stripped
+	gzip -c < $<.stripped > $@
+	$(RM) -f $<.stripped
 
 all: kernel.elf.gz
 
