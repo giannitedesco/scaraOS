@@ -1,0 +1,5 @@
+device (fd0) ./qemu/boot.img
+root=(fd0)
+kernel /kernel
+install /boot/grub/stage1 (fd0) /boot/grub/stage2 /boot/grub/menu.lst
+quit
