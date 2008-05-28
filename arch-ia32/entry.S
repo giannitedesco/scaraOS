@@ -6,7 +6,6 @@
 
 .globl	_start
 _start:
-	cli
 	jmp	multiboot_entry
 
 
@@ -17,40 +16,44 @@ multiboot_header:
 	.long	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 multiboot_entry:
-	# Assumes __end is page aligned and safe to use!
-	movl	__end, %esp
-	addl	$(1 << PAGE_SHIFT), %esp
+	/* Assumes __end is page aligned and safe to use! */
+	movl $__the_idle_task, %esp
+	addl (1 << PAGE_SHIFT), %esp
+	subl $PAGE_OFFSET, %esp
 
-	# Reset EFLAGS
+	/* Reset EFLAGS */
 	pushl	$0
 	popf
 
-	# Parameters for multiboot_check
-	pushl	%ebx	# mbi structure
-	pushl	%eax	# magic
+	/* Parameters for multiboot_check */
+	pushl	%ebx	/* mbi structure */
+	pushl	%eax	/* magic */
 
-	# Fix up our pagetables so we can use linked addresses
-	# within the first 4MB (assumes the whole kernel loads
-	# within 4MB - should be OK for some time...)
-	call	setup_initmem
+	/* Check multiboot structures */
+	call	multiboot_check
+	test	$0x0, %eax
+	jne	2f
 
-	# Enable paging
+	/* Our pagetables are no fixed up so we can use linked addresses
+	 * within the first 4MB (assumes the whole kernel loads
+	 * within 4MB - should be OK for some time...)
+	 */
+
+	/* Enable paging */
 	movl	%cr0,%edx
 	orl	$0x80000000,%edx
 	movl	%edx,%cr0
 
-	# Initialise output to screen
-	call	vga_preinit
-
-	# Fixup stack pointer
+	/* Fixup stack pointer */
 	addl	$PAGE_OFFSET,%esp
 
-	# Load in the GDT
+	/* Load in the GDT */
 	lgdt	loadgdt
 
-	# Reload EIP
+	/* Reload EIP */
 	ljmp	$__KERNEL_CS, $1f
-	# Reload segment selectors
+
+	/* Reload segment selectors */
 1:
 	movl	$__KERNEL_DS, %eax
 	movl	%eax, %ds
@@ -59,18 +62,16 @@ multiboot_entry:
 	movl	%eax, %gs
 	movl	%eax, %ss
 
-	# Check multiboot structures
-	call	multiboot_check
-	test	$0x0, %eax
-	jne	hang
+	/* Initialise output to screen */
+	call	vga_preinit
 
-	# Main part of kernel
+	/* Main part of kernel */
 	popl	%eax
 	popl	%ebx
 	addl	$PAGE_OFFSET,%ebx
 	pushl	%ebx
 	call	setup
 
-hang:
+2:
 	hlt
-	jmp	hang
+	jmp	2b
