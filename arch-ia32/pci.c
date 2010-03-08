@@ -3,9 +3,9 @@
 
 #define PCICMD(bus, dev, fn)	(0x80000000 | (bus << 16) | (dev << 11) | (fn << 3))
 
-int pci_conf=0;
+static unsigned int pci_conf;
 
-int __init pci_probe()
+static int __init pci_probe(void)
 {
 	uint32_t tmp;
 
@@ -33,7 +33,7 @@ int __init pci_probe()
 }
 
 /* TODO: Grab whole configuration space */
-void __init pci_detect_dev(int b, int d, int f)
+static void __init pci_detect_dev(int b, int d, int f)
 {
 	long flags;
 
@@ -55,13 +55,12 @@ void __init pci_detect_dev(int b, int d, int f)
 	}
 }
 
-void __init pci_scan_bus(int bus)
+static void __init pci_scan_bus(int bus)
 {
 	int d;
 
-	for(d=0; d<31; d++) {
+	for(d = 0; d < 31; d++)
 		pci_detect_dev(bus, d, 0);
-	}
 }
 
 void __init pci_init(void)
@@ -69,11 +68,11 @@ void __init pci_init(void)
 	long flags;
 
 	lock_irq(flags);
-	pci_conf=pci_probe();
+	pci_conf = pci_probe();
 	unlock_irq(flags);
 
 	/* We can only deal with conf1 for now */
-	if ( pci_conf!= 1 ) {
+	if ( pci_conf != 1 ) {
 		printk("pci: PCI access method not supported, or not found\n");
 		return;
 	}

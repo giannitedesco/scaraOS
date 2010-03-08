@@ -3,20 +3,21 @@ Infrastructure
     - use static functions ffs
     - use list.h for doubly linked lists
     - code cleanups
- o vprintf has no %p, and might be quite bogus
+ o build sytem sucks hairy balls
+ o get a proper vprintf implementation
  o panic function
- o sprinkle -EFOO error codes around
+ o error handling
 
 Memory Management
- o Use e820 maps to initialise buddy system
- o Finish off the buddy system
- o Implement kfree()
- o Support order > 0 in slab allocator (implement coalescing in free_page)
+ o Use e820 maps to initialise allocator
+ o FUCK buddy system to hell
+ o import memchunk code for kernel object allocator
 
 Scheduling / Synchronisation
  o task switcher is just wrong
     - save all regs + eflags
     - irq handling is bogus, do not schedule from ISR context
+      - why not? maybe it's an RTOS? haha
     - add bottom half/tasklet context
  o Get rid of cli/sti as locking primitives
  o Better semaphores / wait queues
@@ -27,7 +28,7 @@ Drivers
  o Improve floppy driver
  o Finish PCI code
  o ATA Hard disk driver
- o USB stack :)
+ o USB stack w00t :)
 
 Virtual Filesystem Switch
  o cache inodes

@@ -16,7 +16,7 @@ struct buddy free_list[MAX_ORDER];
 
 void __init buddy_init(void)
 {
-	int i;
+	unsigned int i;
 
 	for(i=0; i<MAX_ORDER; i++) {
 		free_list[i].next = (struct page *)&free_list[i];
@@ -55,7 +55,7 @@ void *alloc_pages(unsigned int order)
 
 	if ( order )
 		goto fail;
-	if ( (1 << order) > nr_freepages )
+	if ( (1U << order) > nr_freepages )
 		goto fail;
 
 	page = free_list[order].next;

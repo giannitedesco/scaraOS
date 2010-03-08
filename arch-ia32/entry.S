@@ -8,7 +8,6 @@
 _start:
 	jmp	multiboot_entry
 
-
 .align	4
 multiboot_header:
 	.long	MULTIBOOT_HEADER_MAGIC
@@ -17,7 +16,7 @@ multiboot_header:
 
 multiboot_entry:
 	/* Assumes __end is page aligned and safe to use! */
-	movl $__the_idle_task, %esp
+	movl $idle_task_struct, %esp
 	addl (1 << PAGE_SHIFT), %esp
 	subl $PAGE_OFFSET, %esp
 

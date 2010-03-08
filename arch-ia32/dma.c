@@ -27,7 +27,8 @@ struct dma{
 };
 
 /* Must be called with IRQs disabled */
-void dma_cmd(uint8_t chan, uint8_t page, uint16_t ofs, uint16_t len, uint8_t mode)
+void dma_cmd(uint8_t chan, uint8_t page, uint16_t ofs,
+		uint16_t len, uint8_t mode)
 {
 	unsigned long flags;
 

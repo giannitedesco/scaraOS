@@ -33,12 +33,10 @@ dt_entry_t __desc_aligned GDT[]={
 };
 struct gdtr loadgdt={ sizeof(GDT)-1, (uint32_t)GDT};
 
-void idle_task(void);
-
 /* Bootup CPU info */
 struct cpu_info cpu_bsp;
 
-char *cmdline;
+char *cmdline = NULL;
 
 char *cpuid_str[]={
 	"fpu",  "vme",   "de",   "pse",
@@ -83,32 +81,21 @@ void cpuid_init(void)
 /* Checks the multiboot structures and take whatever info we need */
 int _asmlinkage multiboot_check(uint32_t magic, multiboot_info_t *mbi)
 {
+	void (*si)(void) = (void *)__pa((uint8_t *)ia32_setup_initmem);
+
 	/* Am I booted by a Multiboot-compliant boot loader?  */
-	if ( magic != MULTIBOOT_BOOTLOADER_MAGIC ) {
-		printk("PANIC: Invalid magic number: 0x%x\n", (unsigned) magic);
-		return 0;
-	}
+	if ( magic != MULTIBOOT_BOOTLOADER_MAGIC )
+		return 1;
 
-	if ( (mbi->flags & MBF_AOUT) && (mbi->flags & MBF_ELF) ) {
-		printk("PANIC: Kernel can't be ELF AND AOUT!\n");
-		return 0;
-	}
+	if ( (mbi->flags & MBF_AOUT) && (mbi->flags & MBF_ELF) )
+		return 2;
 
-	if ( (mbi->flags & MBF_MEM) == 0 ) {
-		printk("PANIC: ScaraOS relies on bootloader counting memory\n");
-		return 0;
-	}
+	if ( (mbi->flags & MBF_MEM) == 0 )
+		return 3;
 
-	if ( mbi->flags & MBF_CMDLINE ) {
-		cmdline = __va(mbi->cmdline);
-	}
+	(*si)();
 
-	/* print a pretty message */
-	printk("ScaraOS v0.0.3 for IA-32\n");
-	if ( cmdline )
-		printk("cmd: %s\n", cmdline);
-
-	return 1;
+	return 0;
 }
 
 /* Init task - the job of this task is to initialise all
@@ -133,7 +120,6 @@ void init_task(void)
 	/* Mount the root filesystem etc.. */
 	vfs_mount_root();
 
-	//idle_task();
 	for(;;) {
 		udelay(100);
 		printk("A");
@@ -153,12 +139,19 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 {
 	struct task *i;
 
+	/* print a pretty message */
+	printk("ScaraOS v0.0.3 for IA-32\n");
+	if ( mbi->flags & MBF_CMDLINE ) {
+		printk("cmd: %s\n", mbi->cmdline);
+		cmdline = __va(mbi->cmdline);
+	}
+
 	/* Need this quite quickly */
 	idt_init();
 
 	/* Fire up the kernel memory allocators */
 	if ( mbi->flags & MBF_MMAP ) {
-		ia32_mm_init(mbi->mmap, mbi->mmap_length);
+		ia32_mm_init(__va(mbi->mmap), mbi->mmap_length);
 	}else{
 		ia32_mm_init(NULL, 0);
 	}
@@ -180,8 +173,9 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 
 	/* Finally, enable interupts */
 	printk("starting idle task...\n");
-	idle_task();
+	idle_task_func();
 
+#if 0
 	/* Setup the init task */
 	i = alloc_page();
 	i->pid = 1;
@@ -192,13 +186,5 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	task_to_runq(i);
 	sti();
 	sched();
-}
-
-void idle_task(void)
-{
-	asm volatile(
-		"1:\n"
-		"rep; nop\n"
-		"hlt;\n"
-		"jmp 1b\n");
+#endif
 }

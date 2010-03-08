@@ -15,22 +15,22 @@ static void *bootmem_ptr;
 uint32_t mem_lo, mem_hi;
 
 /* Initial paging structures */
-static void *idle_stack;
-pgd_t idle_pgdir;
-pgd_t idle_pgtbl;
+static _section(".init.pgalign") uint32_t kernel_pgdir[NR_PDE];
+static _section(".init.pgalign") uint32_t kernel_bootmem[NR_PTE];
 
 /* Identity map 4MB of memory, and also map it to PAGE_OFFSET */
 /* TODO: Don't bother with pagetable if we have PSE */
-void _asmlinkage setup_initmem(void)
+void ia32_setup_initmem(void *ptr, size_t len)
 {
-	pgd_t dir = (pgd_t)__pa(((void *)&__end)+PAGE_SIZE);
-	pgt_t tbl = ((void *)dir)+PAGE_SIZE;
-	int i;
+	pgd_t dir = (pgd_t)__pa(kernel_pgdir);
+	pgt_t tbl = (pgt_t)__pa(kernel_bootmem);
+	unsigned int i;
 
 	for (i=0; i < NR_PDE; i++)
 		dir[i] = 0;
+
 	for (i=0; i < NR_PTE; i++)
-		tbl[i] = (i<<PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
+		tbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
 
 	/* 0-4MB identity mapped */
 	dir[0] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
@@ -49,7 +49,7 @@ static void map_ram(pgd_t pgdir, pgt_t pgtbl, unsigned int nr_pgtbl)
 
 	for(i=0; i < nr_physpages; i++) {
 		pgtbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
-		if ( !(i % NR_PTE) ) {
+		if ( (i & 0x3ff) == 0 ) {
 			pgdir[dir(__va(i << PAGE_SHIFT))] =
 				(uint32_t)__pa(&pgtbl[i]) |
 					PDE_PRESENT | PDE_RW;
@@ -121,17 +121,9 @@ static void *bootmem_alloc(unsigned int pages)
 	if ( (bootmem_ptr + (pages << PAGE_SHIFT)) > bootmem_end )
 		return NULL;
 
+	memset(bootmem_ptr, 0, pages << PAGE_SHIFT);
 	bootmem_ptr += (pages << PAGE_SHIFT);
 	return ret;
-}
-
-static int touching(const void *paddr, const void *begin, const void *end)
-{
-	unsigned int pgnum = (uint32_t)paddr >> PAGE_SHIFT;
-	unsigned int p1 = (uint32_t)begin >> PAGE_SHIFT;
-	unsigned int p2 = (uint32_t)end >> PAGE_SHIFT;
-
-	return (pgnum >= p1 && pgnum <= p2);
 }
 
 /* Initialise some very low-level memory management stuff such
@@ -155,10 +147,6 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	tot_mem = do_e820(e820_map, e820_len);
 	nr_physpages = tot_mem >> PAGE_SHIFT;
 
-	/* Only use PAGE_OFFSET mapping, so zap identity map now */
-	idle_pgdir[0] = 0;
-	__flush_tlb();
-
 	/* Work out how many pages to order */
 	nr_pgtbls = tot_mem >> PDE_SHIFT;
 	if ( nr_pgtbls == 0 )
@@ -170,13 +158,19 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 		pfa_size += PAGE_SIZE - (pfa_size & PAGE_MASK);
 
 	/* Allocate 'em, order matters here */
-	idle_stack = bootmem_alloc(1);
-	idle_pgdir = bootmem_alloc(1);
 	tbls = bootmem_alloc(nr_pgtbls);
 	pfa = bootmem_alloc(pfa_size >> PAGE_SHIFT);
 
+	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
+	printk("Kernel page frame array %u entries/%u pages @ 0x%x\n",
+		pfa_size, pfa_size >> PAGE_SHIFT, pfa);
+
 	/* Map in all physical memory */
-	map_ram(idle_pgdir, tbls, nr_pgtbls);
+	map_ram(kernel_pgdir, tbls, nr_pgtbls);
+
+	/* Only use PAGE_OFFSET mapping, so zap identity map now */
+	kernel_pgdir[0] = 0;
+	__flush_tlb();
 
 	buddy_init();
 
@@ -188,33 +182,12 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 		p->next = NULL;
 		p->prev = NULL;
 		p->count = 1;
-
-		/* FIXME: reserve e820 pages */
-		if ( touching(paddr, &__begin, bootmem_ptr) ) {
-			/* kernel code + stack + pagetables */
-			/* pagetables and pfa */
-			r = 1;
-		}else if ( touching(paddr, cmdline,
-					cmdline + strlen(cmdline)) ) {
-			/* Command line */
-			r = 1;
-		}else if ( touching(paddr, e820_map, e820_map + e820_len) ) {
-			/* e820 map */
-			r = 1;
-		}else{
-			r = 0;
-		}
-
-		if ( r ) {
-			/* Reserved pages don't go to buddy */
-			//printk("Reserve page 0x%x\n", paddr);
-			p->flags = PG_reserved;
-			nr_reserved++;
-		}else{
-			p->flags = 0;
-			free_page(paddr);
-		}
+		p->flags = PG_reserved;
+		nr_reserved++;
 	}
+
+	//p->flags = 0;
+	//free_page(paddr);
 
 	/* Print some stats */
 	printk("mem: ram=%uMB %u/%u pageframes free (%u reserved)\n",

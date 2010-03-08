@@ -7,19 +7,18 @@
 #include <arch/irq.h>
 #include <arch/idt.h>
 
-void idle_task(void);
-
 #define load_idt(idtr) \
 	asm volatile("lidt (%0)": :"r" (idtr));
 
 /* IDT structure */
-dt_entry_t __desc_aligned IDT[256];
-struct gdtr loadidt={ sizeof(IDT)-1, (uint32_t)IDT};
+static dt_entry_t __desc_aligned IDT[256];
+static struct gdtr loadidt = { sizeof(IDT) - 1, (uint32_t)IDT};
 
 /* Add a new trap vector to the IDT  */
 void idt_exception(void *handler, uint8_t intr)
 {
 	long flags;
+
 	lock_irq(flags);
 	IDT[intr].gate.selector		= __KERNEL_CS;
 	IDT[intr].gate.offset_low	= (uint16_t)(((uint32_t)handler)&0xffff);
@@ -40,9 +39,9 @@ void idt_interrupt(void *handler, uint8_t intr)
 	unlock_irq(flags);
 }
 
-struct {
+static const struct {
 	int fault;
-	char *name;
+	char * const name;
 }exc[]={
 	{1, "Divide Error"},
 	{1, "Debug"},
@@ -76,7 +75,8 @@ void exc_handler(int num, int flags)
 		exc[num].name);	
 
 	/* Can't handle faults just yet */
-	if ( exc[num].fault ) idle_task();
+	if ( exc[num].fault )
+		idle_task_func();
 }
 
 void syscall(void)
@@ -88,7 +88,7 @@ void __init idt_init(void)
 {
 	int count;
 
-	for(count=0; count<256; count++)
+	for(count = 0; count < 256; count++)
 		idt_exception(int_null, count);
 
 	/* Standard fault/trap handlers */

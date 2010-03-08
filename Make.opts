@@ -11,6 +11,7 @@ SH=/bin/sh
 RM=rm
 MAKE=make
 LN=ln
+CP=cp
 
 AS=$(CROSS_COMPILE)as
 AS86=$(CROSS_COMPILE)as
@@ -27,8 +28,8 @@ CFLAGS=-pipe -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
-	-finline-functions -Wmissing-format-attribute \
-	-fomit-frame-pointer -I$(TOPDIR)/include
+	-Wmissing-format-attribute \
+	-I$(TOPDIR)/include
 
 # templates
 %.o: %.c

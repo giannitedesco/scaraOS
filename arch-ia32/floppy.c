@@ -130,7 +130,7 @@ void floppy_recal(struct floppy_ports *p)
 int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
 {
 	int head, track, sector;
-	int tries=3;
+	int tries = 3;
 
 	if ( write ) {
 		printk("flopp0: read-only device\n");

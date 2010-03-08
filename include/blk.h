@@ -22,7 +22,7 @@ struct blkdev {
 
 	/* Hardcoded by driver */
 	char *name;
-	int sectsize;
+	unsigned int sectsize;
 	int (*ll_rw_blk)(int, block_t, char *, size_t);
 
 	/* Can be frobbed with */
@@ -32,7 +32,7 @@ struct blkdev {
 /* Block and buffer cache */
 void blk_init(void);
 struct buffer *blk_read(struct blkdev *, int);
-int blk_set_blocksize(struct blkdev *, int);
+int blk_set_blocksize(struct blkdev *, unsigned int);
 void blk_free(struct buffer *);
 
 /* Block device maangement */

@@ -12,9 +12,9 @@
 #include <mm.h>
 #include <blk.h>
 
-struct m_cache bh_cache={
-	.name="buffer",
-	.size=sizeof(struct buffer)
+static struct m_cache bh_cache={
+	.name = "buffer",
+	.size = sizeof(struct buffer)
 };
 
 void blk_init(void)
@@ -42,7 +42,7 @@ struct buffer *blk_read(struct blkdev *dev, int logical)
 	}
 
 	/* Synchronously read from the device */
-	if ( dev->ll_rw_blk(0,logical*dev->count,ret->b_buf,dev->count) ) {
+	if ( dev->ll_rw_blk(0, logical * dev->count, ret->b_buf, dev->count) ) {
 		kfree(ret->b_buf);
 		kfree(ret);
 		return NULL;
@@ -55,7 +55,8 @@ struct buffer *blk_read(struct blkdev *dev, int logical)
 
 void blk_free(struct buffer *b)
 {
-	if ( b==NULL ) return;
+	if ( b == NULL )
+		return;
 	if ( !b->b_count ) {
 		printk("blk_free: Buffer already free!\n");
 		return;
@@ -64,7 +65,7 @@ void blk_free(struct buffer *b)
 }
 
 /* Set blocksize of device (NOTE: Blocksize is not the same as sector size) */
-int blk_set_blocksize(struct blkdev *dev, int size)
+int blk_set_blocksize(struct blkdev *dev, unsigned int size)
 {
 	if ( dev->sectsize > size )
 		return -1;
@@ -73,9 +74,9 @@ int blk_set_blocksize(struct blkdev *dev, int size)
 		return -1;
 
 	/* dont need to change it */
-	if ( dev->sectsize*dev->count == size )
+	if ( dev->sectsize * dev->count == size )
 		return 0;
 
-	dev->count = size/dev->sectsize;
+	dev->count = size / dev->sectsize;
 	return 0;
 }

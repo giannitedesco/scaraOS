@@ -10,7 +10,7 @@
 #include <arch/irq.h>
 #include <arch/io.h>
 
-uint32_t ticks=0;
+static uint32_t ticks;
 
 /* Delay loop  */
 static inline void __delay(uint32_t loops)
@@ -28,28 +28,35 @@ static inline void __delay(uint32_t loops)
 }
 
 /* millisecond delay */
-void mdelay(uint32_t m) {__delay(m*__this_cpu->loops_ms);}
+void mdelay(uint32_t m)
+{
+	__delay(m *__this_cpu->loops_ms);
+}
 
 /* microsecond delay */
-void udelay(uint32_t m) {__delay( (m*__this_cpu->loops_ms)/1024 );}
+void udelay(uint32_t m)
+{
+	__delay( (m * __this_cpu->loops_ms) >> 10 );
+}
 
 void calibrate_delay_loop(void)
 {
 	uint32_t lb, lp=8;
 	
 	/* Coarse calibration */
-	__this_cpu->loops_ms=(1<<12);
+	__this_cpu->loops_ms = (1<<12);
 	while ( __this_cpu->loops_ms <<= 1 ) {
 		set_timer_chan_oneshot(0xFFFF, 0);
 		__delay(__this_cpu->loops_ms);
-		if ( get_timer_chan(0,1)<64000 ) break;
+		if ( get_timer_chan(0,1) < 64000 )
+			break;
 	}
 
-	__this_cpu->loops_ms>>=1;
-	lb=__this_cpu->loops_ms;
+	__this_cpu->loops_ms >>= 1;
+	lb = __this_cpu->loops_ms;
 
 	/* Precision calculation */
-	while (lp-- && (lb>>=1) ) {
+	while (lp-- && (lb >>= 1) ) {
 		__this_cpu->loops_ms |= lb;
 		set_timer_chan_oneshot(0xFFFF, 0);
 		__delay(__this_cpu->loops_ms);
@@ -60,11 +67,11 @@ void calibrate_delay_loop(void)
 	}
 
 	/* Normalise the results */
-	__this_cpu->loops_ms *= PIT_SECOND / (65535-64000);
+	__this_cpu->loops_ms *= PIT_SECOND / (65535 - 64000);
 	__this_cpu->loops_ms /= 1000;
 }
 
-void pit_isr(int irq)
+static void pit_isr(int irq)
 {
 	ticks++;
 }
@@ -79,24 +86,24 @@ void pit_start_timer1(void)
 /* Generic PIT routines */
 void set_timer_chan(uint16_t h, uint8_t chan)
 {
-	outb_p(TMR_PORT, (chan*0x40) | PIT_BOTH | PIT_MODE_3);
-	outb_p((0x40+chan), (uint8_t)(h&0xFF));
-	outb_p((0x40+chan), (uint8_t)(h>>8));
+	outb_p(TMR_PORT, (chan * 0x40) | PIT_BOTH | PIT_MODE_3);
+	outb_p((0x40 + chan), (uint8_t)(h & 0xFF));
+	outb_p((0x40 + chan), (uint8_t)(h >> 8));
 }
 
 void set_timer_chan_oneshot(uint16_t h, uint8_t chan)
 {
 	outb_p(TMR_PORT, (chan*0x40) | PIT_BOTH | PIT_MODE_0);
-	outb_p((0x40+chan), (uint8_t)(h&0xFF));
-	outb_p((0x40+chan), (uint8_t)(h>>8));
+	outb_p((0x40 + chan), (uint8_t)(h & 0xFF));
+	outb_p((0x40 + chan), (uint8_t)(h >> 8));
 }
 
 uint32_t get_timer_chan(uint8_t chan, int reset)
 {
 	uint32_t x;
 	
-	outb_p(TMR_PORT, (chan*0x40) | (reset)? 0x0 : PIT_LATCH);
-	x=inb_p(0x40+chan);
-	x+=(inb_p(0x40+chan)<<8);
+	outb_p(TMR_PORT, (chan * 0x40) | (reset) ? 0x0 : PIT_LATCH);
+	x = inb_p(0x40 + chan);
+	x += (inb_p(0x40 + chan) << 8);
 	return x;
 }

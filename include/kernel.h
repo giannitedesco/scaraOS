@@ -57,6 +57,7 @@ int sscanf(const char *, const char *, ...)
 	__attribute__ ((format (scanf,2,3)));
 
 /* string */
+void itoa(char *buf, int base, int d);
 int strcmp(const char * cs,const char * ct);
 size_t strnlen(const char * s, size_t count);
 size_t strlen(const char *s);

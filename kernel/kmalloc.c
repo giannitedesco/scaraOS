@@ -17,20 +17,20 @@
 #define CACHE_START 8
 
 /* General purpose caches */
-struct m_cache general_cache[NR_CACHE];
-char general_names[12][NR_CACHE]; /* 12 chars gets us "size-123456" */
+static struct m_cache general_cache[NR_CACHE];
+static char general_names[12][NR_CACHE]; /* 12 chars gets us "size-123456" */
 
 /* Special purpose caches needed for the allocator itself */
-struct m_cache cache_cache={
-	.name="m_cache",
-	.size=sizeof(struct m_cache)
+static struct m_cache cache_cache={
+	.name = "m_cache",
+	.size = sizeof(struct m_cache)
 };
-struct m_cache slab_cache={
-	.name="m_slab",
-	.size=sizeof(struct m_slab)
+static struct m_cache slab_cache={
+	.name = "m_slab",
+	.size = sizeof(struct m_slab)
 };
 
-struct m_cache *caches=NULL;
+static struct m_cache *caches=NULL;
 
 /* Add a cache */
 int kmem_add_cache(struct m_cache *c)
@@ -41,48 +41,49 @@ int kmem_add_cache(struct m_cache *c)
 	if ( c->size > PAGE_SIZE )
 		return -1;
 
-	c->num_obj=PAGE_SIZE/c->size;
-	c->order=0;
-	c->slab=NULL;
+	c->num_obj  = PAGE_SIZE / c->size;
+	c->order = 0;
+	c->slab = NULL;
 
 	if ( c == &slab_cache )
 		c->num_obj--;
 
-	c->next=NULL;
-	caches=c;
+	c->next = NULL;
+	caches = c;
 
 	return 0;
 }
 
 /* Initialise a new slab */
-struct m_slab *kmem_slab_init(struct m_cache *c)
+static struct m_slab *kmem_slab_init(struct m_cache *c)
 {
 	void **pptr;
 	struct page *p;
-	int i, internal=0;
+	unsigned int i, internal=0;
 	void *mem;
 	struct m_slab *s=NULL;
 
 	/* Allocate slab descriptor */
-	if ( c==&slab_cache ) {
-		internal=1;
+	if ( c == &slab_cache ) {
+		internal = 1;
 	}else{
-		s=kmem_alloc(&slab_cache);
+		s = kmem_alloc(&slab_cache);
 	}
 
 	/* Allocate the slab */
-	if ( !(mem=alloc_pages(c->order)) ) {
-		if ( !internal ) kmem_free(s);
+	if ( !(mem = alloc_pages(c->order)) ) {
+		if ( !internal )
+			kmem_free(s);
 		return NULL;
 	}
 
 	/* If we have an internal slab descriptor
 	 * then allocate that here */
 	if ( internal ) {
-		pptr=(void **)(mem+sizeof(*s));
-		s=mem;
+		pptr = (void **)(mem + sizeof(*s));
+		s = mem;
 	}else{
-		pptr=(void **)mem;
+		pptr = (void **)mem;
 	}
 
 
@@ -92,14 +93,14 @@ struct m_slab *kmem_slab_init(struct m_cache *c)
 		*pptr=(void *)(((void *)pptr)+c->size);
 		pptr=*pptr;
 	}
-	*pptr=NULL;
+	*pptr = NULL;
 
 	/* Fill in the struct page entries */
 	p=virt_to_page(mem);
-	for(i=0; i<1<<c->order; i++) {
-		p->prev=(struct page *)c;
-		p->next=(struct page *)s;
-		p->flags|=PG_slab;
+	for(i = 0; i < (1U << c->order); i++) {
+		p->prev = (struct page *)c;
+		p->next = (struct page *)s;
+		p->flags |= PG_slab;
 		p++;
 	}
 
@@ -110,7 +111,7 @@ void kmem_free(void *ptr)
 {
 	struct m_cache *c;
 	struct m_slab *s;
-	struct page *p=virt_to_page(ptr);
+	struct page *p = virt_to_page(ptr);
 	void **pptr;
 
 	if ( !(p->flags & PG_slab) ) {
@@ -118,16 +119,16 @@ void kmem_free(void *ptr)
 		return;
 	}
 
-	c=page_cache(p);
-	s=page_slab(p);
+	c = page_cache(p);
+	s = page_slab(p);
 
 #ifdef DEBUG
 	printk("- %s:%x\n", c->name, ptr);
 #endif
 
-	pptr=(void **)ptr;
-	*pptr=s->obj;
-	s->obj=pptr;
+	pptr = (void **)ptr;
+	*pptr = s->obj;
+	s->obj = pptr;
 }
 
 /* Allocate an object from a cache */
@@ -136,23 +137,24 @@ void *kmem_alloc(struct m_cache *c)
 	struct m_slab *n;
 	void *ret;
 
-	for(n=c->slab; n; n=n->next) {
-		if ( n->obj ) break;
+	for(n = c->slab; n; n = n->next) {
+		if ( n->obj )
+			break;
 	}
 
 	/* Allocate a new slab */
 	if ( !n ) {
-		if ( !(n=kmem_slab_init(c)) ) {
+		if ( !(n = kmem_slab_init(c)) ) {
 			return NULL;
 		}
 
 		/* Link it in */
-		n->next=c->slab;
-		c->slab=n;
+		n->next = c->slab;
+		c->slab = n;
 	}
 
-	ret=(void *)n->obj;
-	n->obj=*n->obj;
+	ret = (void *)n->obj;
+	n->obj = *n->obj;
 
 #ifdef DEBUG
 	printk("+ %s:%x\n", c->name, ret);
@@ -163,7 +165,7 @@ void *kmem_alloc(struct m_cache *c)
 
 void __init kmalloc_init(void)
 {
-	size_t s=CACHE_START;
+	size_t s = CACHE_START;
 	int i;
 
 	/* Special-purpose caches needed for
@@ -191,8 +193,8 @@ void *kmalloc(size_t sz)
 	size_t s=CACHE_START;
 	int i;
 
-	for(i=0; i<NR_CACHE; i++,s<<=1) {
-		if ( s>=sz )
+	for(i = 0; i < NR_CACHE; i++, s<<=1) {
+		if ( s >= sz )
 			return kmem_alloc(&general_cache[i]);
 	}
 
