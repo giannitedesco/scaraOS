@@ -2,6 +2,7 @@
 #define __MM_HEADER_INCLUDED__
 
 #include <arch/mm.h>
+#include <list.h>
 
 /*
  * struct page
@@ -13,14 +14,15 @@
 /* There is one of these structures for every page
  * frame in the system. */
 struct page {
-	struct page *prev,*next;
+	union {
+		struct list_head list;
+		struct {
+			struct m_cache *cache;
+			struct m_slab *slab;
+		}slab;
+	}u;
 	uint32_t count;
 	uint32_t flags;
-};
-
-/* Members must be in the same order as struct page */
-struct buddy {
-	struct page *prev, *next;
 };
 
 /* Page flags */
@@ -30,10 +32,6 @@ struct buddy {
 /* Page reference counts */
 #define get_page(p) ((p)->count++)
 #define put_page(p) ((p)->count--)
-
-/* kmalloc accessors */
-#define page_cache(p) ((struct m_cache *)((p)->prev))
-#define page_slab(p) ((struct m_slab *)((p)->next))
 
 /* Getting at struct page's */
 #define page_address(page) __va( ((page)-pfa) << PAGE_SHIFT )

@@ -12,16 +12,14 @@ struct page *pfa;
 unsigned long nr_physpages;
 unsigned long nr_freepages;
 
-struct buddy free_list[MAX_ORDER];
+struct list_head free_list[MAX_ORDER];
 
 void __init buddy_init(void)
 {
 	unsigned int i;
 
-	for(i=0; i<MAX_ORDER; i++) {
-		free_list[i].next = (struct page *)&free_list[i];
-		free_list[i].prev = (struct page *)&free_list[i];
-	}
+	for(i = 0; i < MAX_ORDER; i++)
+		INIT_LIST_HEAD(&free_list[i]);
 }
 
 /* Free 2^order pages */
@@ -37,10 +35,7 @@ void free_pages(void *ptr, unsigned int order)
 	page = virt_to_page(ptr);
 
 	/* Stitch in to free area list */
-	page->next = free_list[order].next;
-	page->prev = (struct page *)&free_list[order];
-	free_list[order].next->prev = page;
-	free_list[order].next = page;
+	list_add_tail(&page->u.list, &free_list[order]);
 
 	/* TODO: Coalesce with buddy */
 
@@ -53,9 +48,7 @@ void *alloc_pages(unsigned int order)
 {
 	struct page *page;
 
-	if ( order )
-		goto fail;
-	if ( (1U << order) > nr_freepages )
+	if ( list_empty(&free_list[order]) )
 		goto fail;
 
 	page = free_list[order].next;
@@ -63,8 +56,7 @@ void *alloc_pages(unsigned int order)
 		goto fail;
 
 	/* Remove from list */
-	free_list[order].next = page->next;
-	free_list[order].prev = page->prev;
+	list_del(&page->u.list);
 
 	nr_freepages--;
 	get_page(page);

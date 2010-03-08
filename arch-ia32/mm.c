@@ -174,20 +174,23 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 
 	buddy_init();
 
-	for(i = 0; i < nr_physpages; i++) {
+	for(i = 0; i < nr_reserved; i++) {
 		struct page *p = &pfa[i];
-		uint8_t *paddr = page_address(p);
 		unsigned int r;
 
-		p->next = NULL;
-		p->prev = NULL;
 		p->count = 1;
 		p->flags = PG_reserved;
 		nr_reserved++;
 	}
 
-	//p->flags = 0;
-	//free_page(paddr);
+	for(i = nr_reserved; i < nr_physpages; i++) {
+		struct page *p = &pfa[i];
+		unsigned int r;
+
+		p->count = 0;
+		p->flags = 0;
+		free_pages(page_address(p), 0);
+	}
 
 	/* Print some stats */
 	printk("mem: ram=%uMB %u/%u pageframes free (%u reserved)\n",

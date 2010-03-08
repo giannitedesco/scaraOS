@@ -1,6 +1,5 @@
 Infrastructure
  o clean up interfaces between various components
-    - use static functions ffs
     - use list.h for doubly linked lists
     - code cleanups
  o build sytem sucks hairy balls

@@ -96,10 +96,10 @@ static struct m_slab *kmem_slab_init(struct m_cache *c)
 	*pptr = NULL;
 
 	/* Fill in the struct page entries */
-	p=virt_to_page(mem);
+	p = virt_to_page(mem);
 	for(i = 0; i < (1U << c->order); i++) {
-		p->prev = (struct page *)c;
-		p->next = (struct page *)s;
+		p->u.slab.cache = c;
+		p->u.slab.slab = s;
 		p->flags |= PG_slab;
 		p++;
 	}
@@ -119,8 +119,8 @@ void kmem_free(void *ptr)
 		return;
 	}
 
-	c = page_cache(p);
-	s = page_slab(p);
+	c = p->u.slab.cache;
+	s = p->u.slab.slab;
 
 #ifdef DEBUG
 	printk("- %s:%x\n", c->name, ptr);
