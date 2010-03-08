@@ -119,11 +119,11 @@ static void init_task(void)
 
 	/* Mount the root filesystem etc.. */
 	vfs_mount_root();
+	printk("init_task: completed\n");
 
-	return;
 	for(;;) {
 		udelay(100);
-		printk("A");
+		//printk("A");
 	}
 }
 
@@ -174,7 +174,7 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 
 	/* Finally, enable interupts */
 	printk("starting idle task...\n");
-#if 1
+#if 0
 	init_task();
 	idle_task_func();
 #else
@@ -186,6 +186,17 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	i->t.esp += PAGE_SIZE;
 	i->preempt = 1;
 	task_to_runq(i);
+
+#if 0
+	i = alloc_page();
+	i->pid = 1;
+	i->t.eip = (uint32_t)task2;
+	i->t.esp = (uint32_t)i;
+	i->t.esp += PAGE_SIZE;
+	i->preempt = 1;
+	task_to_runq(i);
+#endif
+
 	sti();
 	sched();
 #endif

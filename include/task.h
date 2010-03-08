@@ -3,6 +3,7 @@
 
 #include <arch/task.h>
 #include <mm.h>
+#include <list.h>
 
 #define TASK_RUNNING   0
 #define TASK_READY     1
@@ -10,20 +11,20 @@
 
 #define INIT_WAITQ(name) {(struct task *)&(name),(struct task *)&(name)}
 struct waitq {
-	struct task *next,*prev;
+	struct list_head	list;
 };
 
 /* Task descriptor */
 struct task {
-	struct task	*next,*prev;
-	uint32_t	state;
-	struct thread	t;
-	pid_t 		pid;
-	int		preempt;
+	struct list_head 	list;
+	uint32_t		state;
+	struct thread		t;
+	pid_t 			pid;
+	int			preempt;
 
 	/* Filesystem info */
-	struct inode	*root;
-	struct inode	*cwd;
+	struct inode		*root;
+	struct inode		*cwd;
 };
 
 /* Enable/disable pre-emption for the current task */

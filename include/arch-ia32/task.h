@@ -13,12 +13,14 @@ struct thread {
 	"pushl %%esi\n"					\
 	"pushl %%edi\n"					\
 	"pushl %%ebp\n"					\
+	"pushfl\n"					\
 	"movl %%esp,%0\n"	/* save ESP */		\
 	"movl %2,%%esp\n"	/* restore ESP */	\
 	"movl $1f,%1\n"		/* save EIP */		\
 	"pushl %3\n"		/* restore EIP */	\
 	"ret\n"						\
 	"1:\n"						\
+	"popfl\n"					\
 	"popl %%ebp\n"					\
 	"popl %%edi\n"					\
 	"popl %%esi\n"					\

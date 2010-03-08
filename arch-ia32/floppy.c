@@ -95,14 +95,17 @@ static uint8_t floppy_recv(const struct floppy_ports *p)
 /* Seek to a given track */
 static int floppy_seek(const struct floppy_ports *p, uint8_t trk)
 {
-	if ( trk==status[1] ) return 1;
+	long flags;
+	if ( trk == status[1] )
+		return 1;
 
 	/* Send the seek command */
-	cli();
+	lock_irq(flags);
 	floppy_send(p, CMD_SEEK);
 	floppy_send(p, 0);
 	floppy_send(p, trk);
 	sleep_on(&floppyq);
+	unlock_irq(flags);
 
 	if ( !(status[0] & ST0_SE) ) {
 		printk("floppy: seek failed\n");
@@ -120,10 +123,12 @@ static int floppy_seek(const struct floppy_ports *p, uint8_t trk)
 /* Recalibrate the selected drive */
 static void floppy_recal(const struct floppy_ports *p)
 {
-	cli();
+	long flags;
+	lock_irq(flags);
 	floppy_send(p, CMD_RECAL);
 	floppy_send(p, 0);
 	sleep_on(&floppyq);
+	unlock_irq(flags);
 }
 
 /* Low-level block device routine */
@@ -131,6 +136,7 @@ static int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
 {
 	int head, track, sector;
 	int tries = 3;
+	long flags;
 
 	if ( write ) {
 		printk("floppy0: read-only device\n");
@@ -150,7 +156,7 @@ try_again:
 	outb(dprts->ccr, 0);
 
 	/* Do the read */
-	cli();
+	lock_irq(flags);
 	dma_read(2, buf, 512);
 	floppy_send(dprts, CMD_READ);
 	floppy_send(dprts, head<<2);
@@ -162,6 +168,7 @@ try_again:
 	floppy_send(dprts, geom->g3_rw);
 	floppy_send(dprts, 0xff);
 	sleep_on(&floppyq);
+	unlock_irq(flags);
 
 	/* Success */
 	if ( (status[0]&0xc0)==0 ) {
@@ -183,6 +190,8 @@ try_again:
 /* Reset a floppy controller */
 static void floppy_reset(const struct floppy_ports *p)
 {
+	long flags;
+
 	/* Stop all motors, dma, interrupts, and select disc A */
 	outb(p->dor, 0);
 
@@ -190,14 +199,15 @@ static void floppy_reset(const struct floppy_ports *p)
 	outb(p->ccr, 0);
 
 	/* Select drive A */
+	lock_irq(flags);
 	outb(p->dor, DOR_DMA|DOR_RSET|DOR_MOTA|0);
 
 	/* Specify mechanical data */
-	cli();
 	floppy_send(p, CMD_FIX);
 	floppy_send(p, 0xcf);
 	floppy_send(p, 16<<1);
 	sleep_on(&floppyq);
+	unlock_irq(flags);
 
 	floppy_recal(p);
 }

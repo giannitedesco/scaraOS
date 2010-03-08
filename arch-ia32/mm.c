@@ -176,7 +176,6 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 
 	for(i = 0; i < nr_reserved; i++) {
 		struct page *p = &pfa[i];
-		unsigned int r;
 
 		p->count = 1;
 		p->flags = PG_reserved;
@@ -185,7 +184,6 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 
 	for(i = nr_reserved; i < nr_physpages; i++) {
 		struct page *p = &pfa[i];
-		unsigned int r;
 
 		p->count = 0;
 		p->flags = 0;

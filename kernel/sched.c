@@ -6,48 +6,47 @@
 #include <task.h>
 #include <arch/processor.h>
 
-struct task *runq=NULL;
+#if 0
+#define dprintk printk
+#else
+#define dprintk(x...) do {}while(0);
+#endif
+
+static LIST_HEAD(runq);
 
 /* Sleep the current task on a wait queue */
 void sleep_on(struct waitq *q)
 {
-	struct task *t=__this_task;
+	struct task *t = __this_task;
+	long flags;
 
-	cli();
-	t->state=TASK_SLEEPING;
+	lock_irq(flags);
 
 	/* Remove from run queue */
-	t->next->prev=t->prev;
-	t->prev->next=t->next;
+	t->state = TASK_SLEEPING;
+	list_del(&t->list);
 
 	/* Add to wait queue */
-	t->prev=(struct task *)q;
-	t->next=q->next;
-	q->next->prev=t;
-	q->next=t;
+	list_add_tail(&t->list, &q->list);
 
-	sti();
+	dprintk("Task %x going to sleep\n", t);
 	sched();
+	unlock_irq(flags);
 }
 
 /* Wake up all sleepers on a wait queue */
 void wake_up(struct waitq *q)
 {
-	struct task *w;
+	struct task *t, *tmp;
 	long flags;
 
 	lock_irq(flags);
 
 	/* Add all waiting tasks to runq */
-	for(w=q->next; w!=(struct task *)q;) {
-		struct task *n=w->next;
-		task_to_runq(w);
-		w=n;
+	list_for_each_entry_safe(t, tmp, &q->list, list) {
+		list_del(&t->list);
+		task_to_runq(t);
 	}
-
-	/* Reset waitqueue */
-	q->next=(struct task *)q;
-	q->prev=(struct task *)q;
 
 	unlock_irq(flags);
 
@@ -59,14 +58,11 @@ void wake_up(struct waitq *q)
  * disabled by the caller */
 void sched_init(void)
 {
-	runq=__this_task;
-
-	runq->state=TASK_RUNNING;
-	runq->preempt=0;
-	runq->pid=0;
-
-	runq->next=runq;
-	runq->prev=runq;
+	struct task *t = __this_task;
+	t->state = TASK_RUNNING;
+	t->preempt = 0;
+	t->pid = 0;
+	list_add(&t->list, &runq);
 }
 
 /* Put a task on the runq */
@@ -75,34 +71,53 @@ void task_to_runq(struct task *t)
 	long flags;
 	lock_irq(flags);
 
-	t->state=TASK_READY;
-
-	t->next=runq->next;
-	t->prev=runq;
-	runq->next->prev=t;
-	runq->next=t;
+	t->state = TASK_READY;
+	list_add_tail(&t->list, &runq);
+	dprintk("sleeper %x back to runq\n", t);
 
 	unlock_irq(flags);
 }
 
 /* Crappy round-robin type scheduler, just picks the
  * next task on the run queue - arg */
+
+ /* FIXME: keep idle task as last choice, if idle task is only item i
+  * runq then enable schedule on timer ISR */
 void sched(void)
 {
-	struct task *t=__this_task;
+	struct task *current;
+	struct task *head;
+	long flags;
 
-	if ( t->state==TASK_SLEEPING ) {
+	lock_irq(flags);
+
+	current = __this_task;
+	head = list_entry(runq.next, struct task, list);
+
+	if ( current->state == TASK_SLEEPING ) {
 		/* Task is sleeping, go to head of runq */
-		switch_task(t, runq->next);
-	}else if ( t->next != t ) {
-		struct task *n=t->next;
-
-		/* Try and avoid the idle task */
-		if ( n == runq )
-			n=n->next;
-		
-		t->state=TASK_READY;
-		n->state=TASK_RUNNING;
-		switch_task(t,n);
+		dprintk("Current task sleeps: switch from %x to %x\n",
+			current, head);
+		head->state = TASK_RUNNING;
+		switch_task(current, head);
+		return;
 	}
+
+	/* sched called while runnable task is still running, expire the
+	 * little fucker
+	 */
+	if ( current == head ) {
+		list_move_tail(&current->list, &runq);
+		head = list_entry(runq.next, struct task, list);
+	}
+
+	if ( current == head ) {
+		unlock_irq(flags);
+		return;
+	}
+
+	dprintk("Sched: switch from %x to %x\n", current, head);
+	current->state = TASK_READY;
+	head->state = TASK_RUNNING;
+	switch_task(current, head);
 }
