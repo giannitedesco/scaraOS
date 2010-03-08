@@ -133,7 +133,7 @@ static int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
 	int tries = 3;
 
 	if ( write ) {
-		printk("flopp0: read-only device\n");
+		printk("floppy0: read-only device\n");
 		return -1;
 	}
 
@@ -244,6 +244,9 @@ static void __init floppy_init(void)
 	}else{
 		printk("floppy: enhanced controller detected (0x%x)\n", v);
 	}
+
+	/* Reset disk-change flag */
+	inb(dprts->dir);
 }
 
 driver_init(floppy_init);
