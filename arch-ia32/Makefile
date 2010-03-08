@@ -18,4 +18,4 @@ kernel.elf.gz: kernel.elf.stripped
 all: kernel.elf.gz
 
 clean:
-	$(RM) -f *.o Make.dep kernel.elf kernel.elf.gz
+	$(RM) -f *.o Make.dep kernel.elf kernel.elf.gz kernel.elf.stripped
