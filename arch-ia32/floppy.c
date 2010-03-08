@@ -28,9 +28,9 @@
 static struct waitq floppyq = INIT_WAITQ(floppyq);
 
 /* Result status registers */
-uint8_t status[7], slen=0;
+static uint8_t status[7], slen;
 
-struct floppy_media{
+static const struct floppy_media{
 	uint8_t	heads,
 			tracks,
 			spt, /* sectors per track */
@@ -41,7 +41,7 @@ struct floppy_media{
 };
 
 /* I/O ports where the registers are, for each controller */
-struct floppy_ports {
+static const struct floppy_ports {
 	uint32_t	dor,msr,data;	/* common registers */
 	uint32_t	dir,ccr;	/* AT registers */
 	uint32_t	dsra,dsrb,drs;	/* PS/2 registers */
@@ -53,7 +53,7 @@ struct floppy_ports {
 };
 
 /* Convert a block number to a hardware address */
-void floppy_block(block_t block, int *head, int *track, int *sector)
+static void floppy_block(block_t block, int *head, int *track, int *sector)
 {
 	*head = (block % (geom->spt * geom->heads)) / (geom->spt);
 	*track = block / (geom->spt * geom->heads);
@@ -61,7 +61,7 @@ void floppy_block(block_t block, int *head, int *track, int *sector)
 }
 
 /* Wait for readiness then send a byte */
-void floppy_send(struct floppy_ports *p, uint8_t b)
+static void floppy_send(const struct floppy_ports *p, uint8_t b)
 {
 	uint8_t msr;
 	int tmo;
@@ -77,7 +77,7 @@ void floppy_send(struct floppy_ports *p, uint8_t b)
 }
 
 /* Wait for readiness then recieve a byte */
-uint8_t floppy_recv(struct floppy_ports *p)
+static uint8_t floppy_recv(const struct floppy_ports *p)
 {
 	uint8_t msr;
 	int tmo;
@@ -93,7 +93,7 @@ uint8_t floppy_recv(struct floppy_ports *p)
 }
 
 /* Seek to a given track */
-int floppy_seek(struct floppy_ports *p, uint8_t trk)
+static int floppy_seek(const struct floppy_ports *p, uint8_t trk)
 {
 	if ( trk==status[1] ) return 1;
 
@@ -118,7 +118,7 @@ int floppy_seek(struct floppy_ports *p, uint8_t trk)
 }
 
 /* Recalibrate the selected drive */
-void floppy_recal(struct floppy_ports *p)
+static void floppy_recal(const struct floppy_ports *p)
 {
 	cli();
 	floppy_send(p, CMD_RECAL);
@@ -127,7 +127,7 @@ void floppy_recal(struct floppy_ports *p)
 }
 
 /* Low-level block device routine */
-int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
+static int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
 {
 	int head, track, sector;
 	int tries = 3;
@@ -181,7 +181,7 @@ try_again:
 }
 
 /* Reset a floppy controller */
-void floppy_reset(struct floppy_ports *p)
+static void floppy_reset(const struct floppy_ports *p)
 {
 	/* Stop all motors, dma, interrupts, and select disc A */
 	outb(p->dor, 0);
@@ -204,7 +204,7 @@ void floppy_reset(struct floppy_ports *p)
 
 /* Interrupt service routine, remember ISRs are
  * re-entrant on scaraOS - for now anyway */
-void floppy_isr(int irq)
+static void floppy_isr(int irq)
 {
 	unsigned long flags;
 
@@ -218,13 +218,13 @@ void floppy_isr(int irq)
 	wake_up(&floppyq);
 }
 
-struct blkdev blk_floppy={
+static struct blkdev blk_floppy={
 	.name = "floppy0",
 	.sectsize = 512,
 	.ll_rw_blk = floppy_rw_blk
 };
 
-void __init floppy_init(void)
+static void __init floppy_init(void)
 {
 	uint8_t v;
 

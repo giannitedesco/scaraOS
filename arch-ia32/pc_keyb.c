@@ -15,7 +15,7 @@
 static volatile uint8_t kb_buffer[KB_BUFLEN];
 static volatile uint8_t kb_len=0;
 
-void kb_isr(int irq)
+static void kb_isr(int irq)
 {
 	uint8_t x=inb(KBR_DATA);
 	long flags;
@@ -30,9 +30,9 @@ void kb_isr(int irq)
 	unlock_irq(flags);
 }
 
-void kb_wait(void) {while(inb(KBR_STATUS) & KB_STAT_IBF);}
+static void kb_wait(void) {while(inb(KBR_STATUS) & KB_STAT_IBF);}
 
-void kb_setleds(uint8_t l)
+static void kb_setleds(uint8_t l)
 {
 	outb(KBR_DATA, KB_CMD_SET_LEDS);
 	kb_wait();
@@ -40,7 +40,7 @@ void kb_setleds(uint8_t l)
 	kb_wait();
 }
 
-void __init pc_keyb_init(void)
+static void __init pc_keyb_init(void)
 {
 	/* Turn the keyboard controller on */
 	outb(KBR_DATA, KB_CMD_RESET);

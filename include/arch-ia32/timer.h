@@ -1,6 +1,8 @@
 #ifndef __ARCH_IA32_TIMER__
 #define __ARCH_IA32_TIMER__
 
+void udelay(uint32_t m);
+
 void calibrate_delay_loop(void);
 void pit_start_timer1(void);
 

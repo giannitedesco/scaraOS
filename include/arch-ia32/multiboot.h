@@ -99,6 +99,8 @@ typedef struct multiboot_info
 	p_memory_map mmap;
 } multiboot_info_t;
 
+int _asmlinkage multiboot_check(uint32_t magic, multiboot_info_t *mbi);
+void _asmlinkage setup(multiboot_info_t *mbi);
 
 #endif /* ! __ASM__ */
 

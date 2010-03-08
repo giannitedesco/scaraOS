@@ -9,18 +9,18 @@ int ext2_read_inode(struct inode *);
 struct inode *ext2_lookup(struct inode *, char *);
 
 /* Filesystem type descriptor */
-struct vfs_fstype ext2_fstype={
-	.name="ext2",
-	.read_super=ext2_get_super,
+static struct vfs_fstype ext2_fstype={
+	.name = "ext2",
+	.read_super = ext2_get_super,
 };
 
-struct inode_ops ext2_dir_iop={
-	.lookup=ext2_lookup,
+static const struct inode_ops ext2_dir_iop={
+	.lookup = ext2_lookup,
 };
 
 /* Superblock operations */
-struct super_ops ext2_superops={
-	.read_inode=ext2_read_inode,
+static const struct super_ops ext2_superops={
+	.read_inode = ext2_read_inode,
 };
 
 /* Lookup a name in an inode */
@@ -106,9 +106,9 @@ int ext2_read_inode(struct inode *i)
 	/* 6. Copy the inode */
 	i->i_fop=NULL;
 	if ( S_ISDIR(raw_inode->i_mode) ) {
-		i->i_iop=&ext2_dir_iop;
+		i->i_iop = &ext2_dir_iop;
 	}else{
-		i->i_iop=NULL;
+		i->i_iop = NULL;
 	}
 
 	i->i_mode=raw_inode->i_mode;
@@ -208,7 +208,7 @@ err:
 	return -1;
 }
 
-void ext2_init(void)
+static void ext2_init(void)
 {
 	vfs_add_fstype(&ext2_fstype);
 }

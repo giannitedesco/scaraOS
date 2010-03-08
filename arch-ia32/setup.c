@@ -20,7 +20,7 @@
 #include <arch/multiboot.h>
 
 /* Global descriptor table */
-dt_entry_t __desc_aligned GDT[]={
+static const dt_entry_t __desc_aligned GDT[] = {
 	{dummy:0},
 
 	/* Kernel space */
@@ -31,14 +31,14 @@ dt_entry_t __desc_aligned GDT[]={
 	stnd_desc(0, 0xFFFFF, (D_CODE | D_READ  | D_BIG | D_BIG_LIM | D_DPL3)),
 	stnd_desc(0, 0xFFFFF, (D_DATA | D_WRITE | D_BIG | D_BIG_LIM | D_DPL3)),
 };
-struct gdtr loadgdt={ sizeof(GDT)-1, (uint32_t)GDT};
+const struct gdtr loadgdt = { sizeof(GDT)-1, (uint32_t)GDT};
 
 /* Bootup CPU info */
 struct cpu_info cpu_bsp;
 
 char *cmdline = NULL;
 
-char *cpuid_str[]={
+static const char * const cpuid_str[]={
 	"fpu",  "vme",   "de",   "pse",
 	"tse",  "msr2",  "pae",  "mce",
 	"cx8",  "apic",  "_r1",  "sep",
@@ -49,7 +49,7 @@ char *cpuid_str[]={
 	"htt",  "tm",    "ia64",  "pbe",
 };
 
-void cpuid_init(void)
+static void cpuid_init(void)
 {
 	char desc[13];
 	int eax,ebx,ecx,edx;
@@ -101,7 +101,7 @@ int _asmlinkage multiboot_check(uint32_t magic, multiboot_info_t *mbi)
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
-void init_task(void)
+static void init_task(void)
 {
 	initcall_t *fptr;
 
@@ -120,6 +120,7 @@ void init_task(void)
 	/* Mount the root filesystem etc.. */
 	vfs_mount_root();
 
+	return;
 	for(;;) {
 		udelay(100);
 		printk("A");
@@ -173,9 +174,10 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 
 	/* Finally, enable interupts */
 	printk("starting idle task...\n");
+#if 1
+	init_task();
 	idle_task_func();
-
-#if 0
+#else
 	/* Setup the init task */
 	i = alloc_page();
 	i->pid = 1;

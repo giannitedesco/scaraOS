@@ -4,6 +4,7 @@
 #include <kernel.h>
 #include <arch/mm.h>
 #include <arch/descriptor.h>
+#include <arch/task.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
 

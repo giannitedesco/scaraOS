@@ -9,8 +9,8 @@
 #include <vfs.h>
 #include <task.h>
 
-struct vfs_fstype *fs_types=NULL;
-struct super *superblocks=NULL;
+static struct vfs_fstype *fs_types;
+static struct super *superblocks;
 
 /* Various slab caches */
 extern struct m_cache inode_cache;
@@ -33,7 +33,7 @@ void vfs_add_fstype(struct vfs_fstype *t)
 }
 
 /* Retrieve a filesystem type object */
-struct vfs_fstype *vfs_get_fstype(char *name)
+static struct vfs_fstype *vfs_get_fstype(char *name)
 {
 	struct vfs_fstype *r;
 

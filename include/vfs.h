@@ -12,8 +12,8 @@ struct inode {
 	uint32_t		i_count;
 
 	/* Filled in by super->read_inode */
-	struct inode_ops	*i_iop;
-	struct file_ops		*i_fop;
+	const struct inode_ops	*i_iop;
+	const struct file_ops	*i_fop;
 	umode_t			i_mode;
 	uid_t			i_uid;
 	gid_t			i_gid;
@@ -47,7 +47,7 @@ struct super {
 
 	/* Here is what get_super must fill in */
 	int s_blocksize;
-	struct super_ops *s_ops;
+	const struct super_ops *s_ops;
 	struct inode *s_root;
 
 	union {

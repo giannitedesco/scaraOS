@@ -6,6 +6,9 @@ void idt_init(void);
 void int_null(void);
 void _syscall(void);
 
+void exc_handler(int num, int flags);
+void syscall(void);
+
 /* Used to modify the interrupt table */
 void idt_exception(void *, uint8_t);
 void idt_interrupt(void *, uint8_t);

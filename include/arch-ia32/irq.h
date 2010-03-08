@@ -5,6 +5,8 @@
 typedef void (*irqfn)(int irq);
 void set_irq_handler(int, irqfn);
 
+void irq_handler(int irq);
+
 void _irq0(void);
 void _irq1(void);
 void _irq2(void);

@@ -1,8 +1,6 @@
 #ifndef __ARCH_IA32_FLOPPY__
 #define __ARCH_IA32_FLOPPY__
 
-int floppy_rw_blk(int, block_t, char *, size_t);
-
 /* Digital Output Register bits (write-only) */
 /* bits 1 and 2 are disc select */
 #define DOR_RSET	(1<<2)

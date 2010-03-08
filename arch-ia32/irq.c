@@ -7,12 +7,12 @@
 #include <arch/8259a.h>
 #include <arch/irq.h>
 
-void irq_null(int irq)
+static void irq_null(int irq)
 {
 	printk("unhandled IRQ %i\n", irq);
 }
 
-irqfn irq_fns[16]={
+static irqfn irq_fns[16]={
 	irq_null, irq_null, irq_null, irq_null,
 	irq_null, irq_null, irq_null, irq_null,
 	irq_null, irq_null, irq_null, irq_null,
