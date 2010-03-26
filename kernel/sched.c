@@ -6,12 +6,6 @@
 #include <task.h>
 #include <arch/processor.h>
 
-#if 0
-#define dprintk printk
-#else
-#define dprintk(x...) do {}while(0);
-#endif
-
 static LIST_HEAD(runq);
 
 /* Sleep the current task on a wait queue */
@@ -100,6 +94,7 @@ void sched(void)
 			current, head);
 		head->state = TASK_RUNNING;
 		switch_task(current, head);
+		unlock_irq(flags);
 		return;
 	}
 

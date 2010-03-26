@@ -16,7 +16,7 @@ multiboot_header:
 
 multiboot_entry:
 	/* Assumes __end is page aligned and safe to use! */
-	movl $idle_task_struct, %esp
+	movl $__end, %esp
 	addl (1 << PAGE_SHIFT), %esp
 	subl $PAGE_OFFSET, %esp
 
@@ -33,7 +33,7 @@ multiboot_entry:
 	test	$0x0, %eax
 	jne	2f
 
-	/* Our pagetables are no fixed up so we can use linked addresses
+	/* Our pagetables are now fixed up so we can use linked addresses
 	 * within the first 4MB (assumes the whole kernel loads
 	 * within 4MB - should be OK for some time...)
 	 */

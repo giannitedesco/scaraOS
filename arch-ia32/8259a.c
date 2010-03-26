@@ -9,7 +9,7 @@
 
 #define NUM_PINS 8
 
-pic_t pics[]={
+static pic_t pics[]={
 	{0x20, 0x21, 0xFF, IVECTOR_M, NULL, {1<<2}}, /* Master PIC in PC/AT */
 	{0xA0, 0xA1, 0xFF, IVECTOR_S, NULL, {2}}, /* Slave PIC in PC/AT */
 };

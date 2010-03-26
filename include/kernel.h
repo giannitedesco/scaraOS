@@ -34,6 +34,12 @@ typedef uint32_t loff_t;
 typedef uint32_t umode_t;
 
 /* Common kernel API stuff */
+#if DEBUG_MODULE
+#define dprintk printk
+#else
+#define dprintk(x...) do {}while(0);
+#endif
+
 void printk(const char *, ...);
 
 /* Driver initialisation */

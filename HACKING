@@ -9,17 +9,14 @@ Infrastructure
 
 Memory Management
  o Use e820 maps to initialise allocator
- o FUCK buddy system to hell
+ o FUCK buddy system to hell (or actually implement coalescing)
  o import memchunk code for kernel object allocator
 
 Scheduling / Synchronisation
- o task switcher is just wrong
-    - save all regs + eflags
-    - irq handling is bogus, do not schedule from ISR context
-      - why not? maybe it's an RTOS? haha
-    - add bottom half/tasklet context
- o Get rid of cli/sti as locking primitives
- o Better semaphores / wait queues
+ o allow for task pre-emption
+   - keep a need_resched flag
+   - check need_resched and iret in to scheduler
+ o Semaphore implementation
  o Disable pre-emption in kernel mode for now
 
 Drivers

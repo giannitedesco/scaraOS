@@ -175,7 +175,7 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	/* Finally, enable interupts */
 	printk("starting idle task...\n");
 #if 0
-	init_task();
+	//init_task();
 	idle_task_func();
 #else
 	/* Setup the init task */

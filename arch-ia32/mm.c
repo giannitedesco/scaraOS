@@ -2,6 +2,7 @@
  * x86 specific setup code. This file bootstraps the kernel,
  * spawns the init task and then becomes the idle task
 */
+#define DEBUG_MODULE 1
 #include <kernel.h>
 #include <mm.h>
 #include <arch/multiboot.h>
@@ -10,21 +11,40 @@
 static void *bootmem_begin;
 static void *bootmem_end;
 static void *bootmem_ptr;
+static pgd_t kernel_pgdir;
 
 /* lower and upper memory */
 uint32_t mem_lo, mem_hi;
 
-/* Initial paging structures */
-static _section(".init.pgalign") uint32_t kernel_pgdir[NR_PDE];
-static _section(".init.pgalign") uint32_t kernel_bootmem[NR_PTE];
+/* Simple allocator for initial page tables and the PFA */
+static void *bootmem_alloc(unsigned int pages)
+{
+	void *ret = bootmem_ptr;
+
+	if ( (bootmem_ptr + (pages << PAGE_SHIFT)) > bootmem_end )
+		return NULL;
+
+	memset(bootmem_ptr, 0, pages << PAGE_SHIFT);
+	bootmem_ptr += (pages << PAGE_SHIFT);
+	return ret;
+}
 
 /* Identity map 4MB of memory, and also map it to PAGE_OFFSET */
 /* TODO: Don't bother with pagetable if we have PSE */
-void ia32_setup_initmem(void *ptr, size_t len)
+void ia32_setup_initmem(void)
 {
-	pgd_t dir = (pgd_t)__pa(kernel_pgdir);
-	pgt_t tbl = (pgt_t)__pa(kernel_bootmem);
 	unsigned int i;
+	uint8_t *pgd_ptr;
+	uint8_t *pgt_ptr;
+	pgd_t dir;
+	pgt_t tbl;
+
+	pgd_ptr = &__end + (1 << PAGE_SHIFT);
+	pgt_ptr = &__end + (2 << PAGE_SHIFT);
+
+	/* Assume space for initial page table and page directory */
+	dir = (pgd_t)__pa(pgd_ptr);
+	tbl = (pgt_t)__pa(pgt_ptr);
 
 	for (i=0; i < NR_PDE; i++)
 		dir[i] = 0;
@@ -37,6 +57,8 @@ void ia32_setup_initmem(void *ptr, size_t len)
 
 	/* PAGE_OFFSET + 4MB mapped */
 	dir[dir(PAGE_OFFSET)] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
+
+	*(pgd_t *)__pa(&kernel_pgdir) = dir;
 
 	/* Load CR3 */
 	load_pdbr(dir);
@@ -59,53 +81,64 @@ static void map_ram(pgd_t pgdir, pgt_t pgtbl, unsigned int nr_pgtbl)
 	__flush_tlb();
 }
 
-static uint32_t do_e820(void *addr, size_t len)
+static void print_e820(void *addr, size_t len)
 {
 	void *end = addr + len;
-	uint32_t tot = 0;
 
 	printk("e820 map from BIOS (%u bytes at 0x%x)\n", len, addr);
 	printk(" o kernel @ 0x%x - 0x%x (cmdline = 0x%x)\n",
 		__pa(&__begin), __pa(&__end), __pa(cmdline));
 
 	for(;;) {
-		p_memory_map map;
-
-		map = (p_memory_map)addr;
-
+		p_memory_map map = (p_memory_map)addr;
 		if ( addr + sizeof(map->size) > end )
 			break;
 		if ( addr + map->size + sizeof(map->size) > end )
 			break;
 
-		printk(" o (%u) 0x%x -> 0x%x (0x%x) :",
+		dprintk(" o (%u) 0x%x -> 0x%x (0x%x) :",
 			map->size + sizeof(map->size),
 			map->base_addr_low,
 			map->base_addr_low + map->length_low,
 			map->type);
 
-		if ( map->base_addr_low <= __pa(bootmem_begin) &&
-			(map->base_addr_low + map->length_low) > 
-				__pa(bootmem_begin) && map->type == MBF_MEM )
-			bootmem_end = __va(map->base_addr_low + map->length_low);
-		if ( map->type == 3 )
-			tot = map->base_addr_low + map->length_low;
-
+		if ( map->base_addr_low > (~0 - PAGE_OFFSET) )
+			dprintk(" UNMAPPABLE");
 		if ( map->type & MBF_MEM )
-			printk(" MEM");
+			dprintk(" MEM");
 		if ( map->type & MBF_BOOTDEV )
-			printk(" BOOTDEV");
+			dprintk(" BOOTDEV");
 		if ( map->type & MBF_CMDLINE )
-			printk(" CMDLINE");
+			dprintk(" CMDLINE");
 		if ( map->type & MBF_MODULES )
-			printk(" MODULES");
+			dprintk(" MODULES");
 		if ( map->type & MBF_AOUT )
-			printk(" AOUT");
+			dprintk(" AOUT");
 		if ( map->type & MBF_ELF )
-			printk(" ELF");
+			dprintk(" ELF");
 		if ( map->type & MBF_MMAP )
-			printk(" MMAP");
-		printk("\n");
+			dprintk(" MMAP");
+		dprintk("\n");
+
+		addr += map->size + sizeof(map->size);
+	}
+}
+
+static uint32_t size_up_ram(void *addr, size_t len)
+{
+	void *end = addr + len;
+	uint32_t tot;
+
+	for(;;) {
+		p_memory_map map = (p_memory_map)addr;
+		if ( addr + sizeof(map->size) > end )
+			break;
+		if ( addr + map->size + sizeof(map->size) > end )
+			break;
+		if ( map->base_addr_low > (~0 - PAGE_OFFSET) )
+			break;
+		if ( map->type | (MBF_MEM|MBF_BOOTDEV) )
+			tot = map->base_addr_low + map->length_low;
 
 		addr += map->size + sizeof(map->size);
 	}
@@ -113,17 +146,87 @@ static uint32_t do_e820(void *addr, size_t len)
 	return tot;
 }
 
-/* Simple allocator for initial page tables and the PFA */
-static void *bootmem_alloc(unsigned int pages)
+static void setup_max_bootmem(void *addr, size_t len)
 {
-	void *ret = bootmem_ptr;
+	void *end = addr + len;
+	uint32_t cur_end = __pa(bootmem_end);
 
-	if ( (bootmem_ptr + (pages << PAGE_SHIFT)) > bootmem_end )
-		return NULL;
+	for(;;) {
+		p_memory_map map = (p_memory_map)addr;
+		if ( addr + sizeof(map->size) > end )
+			break;
+		if ( addr + map->size + sizeof(map->size) > end )
+			break;
+		if ( map->base_addr_low > (~0 - PAGE_OFFSET) )
+			break;
 
-	memset(bootmem_ptr, 0, pages << PAGE_SHIFT);
-	bootmem_ptr += (pages << PAGE_SHIFT);
-	return ret;
+		if ( cur_end < map->base_addr_low + map->length_low
+				&& map->type == MBF_MEM ) {
+			cur_end = map->base_addr_low + map->length_low;
+		}
+
+		addr += map->size + sizeof(map->size);
+	}
+
+	bootmem_end = (void *)__va(cur_end);
+}
+
+static uint32_t nr_reserved;
+static void reserve_page_range(uint32_t first_page, uint32_t last_page)
+{
+	uint32_t i;
+
+	for(i = first_page; i <= last_page; i++) {
+		pfa[i].count = 1;
+		pfa[i].flags = PG_reserved;
+		nr_reserved++;
+	}
+}
+
+static void reserve_pages(void *vptr, size_t len)
+{
+	uint32_t pa_begin, pa_end;
+
+	pa_begin = __pa(vptr);
+	pa_end = __pa((uint8_t *)vptr + len);
+
+	pa_begin &= ~PAGE_MASK;
+	pa_end = (pa_end + PAGE_MASK) & ~PAGE_MASK;
+	//printk("reserve_pages: %x - %x\n", pa_begin, pa_end);
+
+	reserve_page_range(pa_begin >> PAGE_SHIFT, pa_end >> PAGE_SHIFT);
+}
+
+static void reserve_from_e820(void *addr, size_t len)
+{
+	void *end = addr + len;
+	uint32_t contig_end = 0;
+
+	for(;;) {
+		p_memory_map map = (p_memory_map)addr;
+		if ( addr + sizeof(map->size) > end )
+			break;
+		if ( addr + map->size + sizeof(map->size) > end )
+			break;
+		if ( map->base_addr_low > (~0 - PAGE_OFFSET) )
+			break;
+
+		if ( map->base_addr_low != contig_end ) {
+			printk("e820 hole: %x - %x\n",
+				contig_end, map->base_addr_low);
+			reserve_pages(__va(contig_end),
+					map->base_addr_low - contig_end);
+			contig_end = map->base_addr_low;
+		}
+
+		if ( map->type != MBF_MEM )
+			reserve_pages(__va(map->base_addr_low),
+					map->length_low);
+
+		contig_end += map->length_low;
+		
+		addr += map->size + sizeof(map->size);
+	}
 }
 
 /* Initialise some very low-level memory management stuff such
@@ -135,38 +238,30 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	uint32_t tot_mem;
 	uint32_t nr_pgtbls = 1;
 	uint32_t pfa_size = 0;
-	uint32_t nr_reserved = 0;
 	unsigned int i;
 	pgt_t tbls;
 
-	bootmem_begin = (uint8_t *)&__end;
-	bootmem_ptr = bootmem_begin;
-	bootmem_end = bootmem_begin;
+	bootmem_begin = (uint8_t *)&__end + (3 << PAGE_SHIFT);
+	bootmem_end = bootmem_ptr = bootmem_begin;
 
 	/* Calculate size of physical memory */
-	tot_mem = do_e820(e820_map, e820_len);
+	print_e820(e820_map, e820_len);
+	tot_mem = size_up_ram(e820_map, e820_len);
 	nr_physpages = tot_mem >> PAGE_SHIFT;
 
 	/* Work out how many pages to order */
 	nr_pgtbls = tot_mem >> PDE_SHIFT;
 	if ( nr_pgtbls == 0 )
 		nr_pgtbls = 1;
-	pfa_size = nr_physpages * sizeof(struct page);
-
-	/* Round up to nearest page */
-	if ( pfa_size & PAGE_MASK )
-		pfa_size += PAGE_SIZE - (pfa_size & PAGE_MASK);
 
 	/* Allocate 'em, order matters here */
-	tbls = bootmem_alloc(nr_pgtbls);
-	pfa = bootmem_alloc(pfa_size >> PAGE_SHIFT);
-
-	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
-	printk("Kernel page frame array %u entries/%u pages @ 0x%x\n",
-		pfa_size, pfa_size >> PAGE_SHIFT, pfa);
+	setup_max_bootmem(e820_map, e820_len);
 
 	/* Map in all physical memory */
+	/* FIXME: initial page table is leaked */
+	tbls = bootmem_alloc(nr_pgtbls);
 	map_ram(kernel_pgdir, tbls, nr_pgtbls);
+	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
 
 	/* Only use PAGE_OFFSET mapping, so zap identity map now */
 	kernel_pgdir[0] = 0;
@@ -174,16 +269,23 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 
 	buddy_init();
 
-	for(i = 0; i < nr_reserved; i++) {
+	pfa_size = nr_physpages * sizeof(struct page);
+	if ( pfa_size & PAGE_MASK )
+		pfa_size += PAGE_SIZE - (pfa_size & PAGE_MASK);
+
+	pfa = bootmem_alloc(pfa_size >> PAGE_SHIFT);
+	printk("Kernel page frame array %u entries/%u pages @ 0x%x\n",
+		pfa_size, pfa_size >> PAGE_SHIFT, pfa);
+
+	reserve_from_e820(e820_map, e820_len);
+
+	bootmem_end = bootmem_ptr;
+	reserve_pages(&__begin, (uint8_t *)bootmem_ptr - &__begin);
+	for(i = 0; i < nr_physpages; i++) {
 		struct page *p = &pfa[i];
 
-		p->count = 1;
-		p->flags = PG_reserved;
-		nr_reserved++;
-	}
-
-	for(i = nr_reserved; i < nr_physpages; i++) {
-		struct page *p = &pfa[i];
+		if ( p->count )
+			continue;
 
 		p->count = 0;
 		p->flags = 0;

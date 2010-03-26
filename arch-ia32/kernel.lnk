@@ -27,6 +27,7 @@ SECTIONS {
 		*(.rodata)
 		*(.rodata.*) 
 	}
+	. = ALIGN(4096);
 	__rodata_end = .;
 
 	/* Read/write data (global variables) */
@@ -48,10 +49,6 @@ SECTIONS {
 	/* Init pages */
 	. = ALIGN(4096);
 	__init_start = .;
-
-	.init.pgalign : AT (ADDR(.init.pgalign) - vaddr) {
-		*(.init.pgalign)
-	}
 
 	__initcall_start = .;
 	.initcall.init : AT (ADDR(.initcall.init) - vaddr) {
