@@ -58,14 +58,12 @@ void ia32_setup_initmem(void)
 	/* PAGE_OFFSET + 4MB mapped */
 	dir[dir(PAGE_OFFSET)] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
 
-	*(pgd_t *)__pa(&kernel_pgdir) = dir;
-
 	/* Load CR3 */
 	load_pdbr(dir);
 }
 
 /* Map in all present RAM */
-static void map_ram(pgd_t pgdir, pgt_t pgtbl, unsigned int nr_pgtbl)
+static void map_ram(pgd_t pgdir, pgt_t pgtbl)
 {
 	unsigned long i;
 
@@ -127,7 +125,7 @@ static void print_e820(void *addr, size_t len)
 static uint32_t size_up_ram(void *addr, size_t len)
 {
 	void *end = addr + len;
-	uint32_t tot;
+	uint32_t tot = 0;
 
 	for(;;) {
 		p_memory_map map = (p_memory_map)addr;
@@ -260,7 +258,9 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	/* Map in all physical memory */
 	/* FIXME: initial page table is leaked */
 	tbls = bootmem_alloc(nr_pgtbls);
-	map_ram(kernel_pgdir, tbls, nr_pgtbls);
+	get_pdbr(kernel_pgdir);
+	kernel_pgdir = __va(kernel_pgdir);
+	map_ram(kernel_pgdir, tbls);
 	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
 
 	/* Only use PAGE_OFFSET mapping, so zap identity map now */

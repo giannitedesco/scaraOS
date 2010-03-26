@@ -29,6 +29,10 @@ typedef uint32_t *pgt_t;
 
 #define load_pdbr(pgdir) \
 	asm volatile("movl %0,%%cr3": :"r" (pgdir));
+#define get_pdbr(pgdir) \
+	asm volatile("movl %%cr3,%0": "=r" (pgdir));
+#define get_cr2(pgdir) \
+	asm volatile("movl %%cr2,%0": "=r" (pgdir));
 
 #define __flush_tlb()							\
 	do {								\
