@@ -69,14 +69,17 @@ static const struct {
 	{1, "SIMD Exception"},
 };
 
-void exc_handler(int num, int flags)
+void exc_handler(struct ia32_exc_ctx ctx)
 {
-	printk("%s: %s\n",
-		exc[num].fault ? "fault" : "trap",
-		exc[num].name);	
+	uint32_t cr2;
+	printk("%s: %s @ 0x%x with err_code=0x%x\n",
+		exc[ctx.exc_num].fault ? "fault" : "trap",
+		exc[ctx.exc_num].name, ctx.eip, ctx.err_code);
+	get_cr2(cr2);
+	printk("CR2 is 0x%x\n", cr2);
 
 	/* Can't handle faults just yet */
-	if ( exc[num].fault )
+	if ( exc[ctx.exc_num].fault )
 		idle_task_func();
 }
 

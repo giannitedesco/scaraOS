@@ -13,22 +13,22 @@ _syscall:
 #define DO_exc(nr) \
 .globl _exc##nr; \
 _exc##nr:\
-	pusha ;\
 	pushl $0 ;\
 	pushl $##nr ;\
+	pusha ;\
 	call exc_handler ;\
-	addl $8,%esp ;\
 	popa ;\
+	addl $8,%esp ;\
 	iret
 
 #define DO_excf(nr) \
 .globl _exc##nr; \
 _exc##nr:\
-	pusha ;\
 	pushl $##nr ;\
+	pusha ;\
 	call exc_handler ;\
-	addl $8,%esp ;\
 	popa ;\
+	addl $4,%esp ;\
 	iret
 
 #define DO_irq(nr) \

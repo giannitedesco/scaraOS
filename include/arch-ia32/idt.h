@@ -1,12 +1,28 @@
 #ifndef __ARCH_IA32_IDT__
 #define __ARCH_IA32_IDT__
 
+struct ia32_exc_ctx {
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t esp;
+	uint32_t edx;
+	uint32_t ecx;
+	uint32_t ebx;
+	uint32_t eax;
+	uint32_t exc_num;
+	uint32_t err_code;
+	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
+};
+
 void idt_init(void);
 
 void int_null(void);
 void _syscall(void);
 
-void exc_handler(int num, int flags);
+void exc_handler(struct ia32_exc_ctx ctx);
 void syscall(void);
 
 /* Used to modify the interrupt table */
