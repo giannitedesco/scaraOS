@@ -9,7 +9,7 @@
 #define TASK_READY     1
 #define TASK_SLEEPING  2 
 
-#define INIT_WAITQ(name) {(struct task *)&(name),(struct task *)&(name)}
+#define INIT_WAITQ(name) { .list = LIST_HEAD_INIT(name.list) }
 struct waitq {
 	struct list_head	list;
 };
