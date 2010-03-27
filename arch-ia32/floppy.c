@@ -171,7 +171,7 @@ try_again:
 	unlock_irq(flags);
 
 	/* Success */
-	if ( (status[0]&0xc0)==0 ) {
+	if ( (status[0] & 0xc0) == 0 ) {
 		if ( --len ) {
 			blk++;
 			buf+=512;
@@ -181,6 +181,7 @@ try_again:
 	}
 
 	if ( --tries ) {
+		printk("floppy_rw_block: I/O err, try again\n");
 		floppy_recal(dprts);
 		goto try_again;
 	}
