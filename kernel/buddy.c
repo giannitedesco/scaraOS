@@ -51,7 +51,7 @@ void *alloc_pages(unsigned int order)
 	if ( list_empty(&free_list[order]) )
 		goto fail;
 
-	page = free_list[order].next;
+	page = list_entry(free_list[order].next, struct page, u.list);
 	if ( page == NULL )
 		goto fail;
 
