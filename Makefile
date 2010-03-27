@@ -49,8 +49,8 @@ include arch-$(ARCH)/Makefile
 include kernel/Makefile
 include fs/Makefile
 
-ARCH_OBJ = $(patsubst %.c, %.o, $(ARCH_C_SOURCES)) \
-		$(patsubst %.S, %.o, $(ARCH_ASM_SOURCES))
+ARCH_OBJ = $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
+		$(patsubst %.c, %.o, $(ARCH_C_SOURCES))
 KERNEL_OBJ = $(patsubst %.c, %.o, $(KERNEL_C_SOURCES))
 FS_OBJ = $(patsubst %.c, %.o, $(FS_C_SOURCES))
 
@@ -73,7 +73,9 @@ $(ARCH_DIR)/arch.o: $(ARCH_OBJ)
 $(FS_DIR)/fs.o: $(FS_OBJ)
 	$(LD) -r -o $@ $^
 
-IMAGE_OBJ = $(KERNEL_DIR)/kernel.o $(ARCH_DIR)/arch.o $(FS_DIR)/fs.o
+IMAGE_OBJ = $(ARCH_DIR)/arch.o \
+		$(KERNEL_DIR)/kernel.o \
+		$(FS_DIR)/fs.o
 kernel.elf: dep $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	$(LD) -o $@ -T $(ARCH_DIR)/kernel.lnk -nostdlib -N $(IMAGE_OBJ)
 
@@ -86,9 +88,11 @@ kernel.elf.gz: kernel.elf.stripped
 
 all: kernel.elf.gz
 
-boot_floppy: boot.img
+boot.img: kernel.elf.gz menu.lst
+
+boot_floppy:
 	e2fsck -y ./boot.img || true
-	e2cp arch-ia32/kernel.elf.gz ./boot.img:kernel
+	e2cp kernel.elf.gz ./boot.img:kernel
 	e2cp menu.lst ./boot.img:boot/grub/
 
 clean:
