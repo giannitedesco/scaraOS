@@ -45,7 +45,7 @@ void printk(const char *, ...);
 /* Driver initialisation */
 #define driver_init(fn) __initcall(fn)
 typedef void (*initcall_t)(void);
-#define __initcall(fn) initcall_t __initcall_##fn __init_call = fn
+#define __initcall(fn) __init_call initcall_t __initcall_##fn = fn
 
 /* vsprintf */
 unsigned long simple_strtoul(const char *,char **,unsigned int);

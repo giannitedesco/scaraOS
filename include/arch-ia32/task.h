@@ -9,10 +9,7 @@ struct thread {
 /* Actual task switching macro - can't be a function heh */
 #define switch_task(prev,next) do {			\
 	asm volatile( 					\
-	/* save the callee save registers */		\
-	"pushl %%esi\n"					\
-	"pushl %%edi\n"					\
-	"pushl %%ebp\n"					\
+	"pusha\n" 					\
 	"pushfl\n"					\
 	"movl %%esp,%0\n"	/* save ESP */		\
 	"movl %2,%%esp\n"	/* restore ESP */	\
@@ -21,9 +18,7 @@ struct thread {
 	"ret\n"						\
 	"1:\n"						\
 	"popfl\n"					\
-	"popl %%ebp\n"					\
-	"popl %%edi\n"					\
-	"popl %%esi\n"					\
+	"popa\n"					\
 	:"=m" (prev->t.esp),"=m" (prev->t.eip)		\
 	:"m" (next->t.esp),"m" (next->t.eip)		\
 );} while (0)

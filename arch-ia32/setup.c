@@ -98,24 +98,30 @@ int _asmlinkage multiboot_check(uint32_t magic, multiboot_info_t *mbi)
 	return 0;
 }
 
+static void do_initcalls(void)
+{
+	initcall_t *fptr;
+
+	/* Initialise device drivers */
+	for(fptr = &__initcall_start; fptr < &__initcall_end; fptr++) {
+		initcall_t fn = *fptr;
+		//printk("initcall fn *0x%x 0x%x\n", fptr, fn);
+		fn();
+	}
+
+}
+
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
 static void init_task(void)
 {
-	initcall_t *fptr;
-
 	/* Initialise kernel subsystems */
 	blk_init();
 	vfs_init();
 	pci_init();
 
-	/* Initialise device drivers */
-	for(fptr=(initcall_t *)&__initcall_start;
-		fptr<(initcall_t *)&__initcall_end; fptr++) {
-		initcall_t fn=(initcall_t)*fptr;
-		fn();
-	}
+	do_initcalls();
 
 	/* Mount the root filesystem etc.. */
 	vfs_mount_root();
@@ -141,7 +147,7 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	struct task *i;
 
 	/* print a pretty message */
-	printk("ScaraOS v0.0.3 for IA-32\n");
+	printk("ScaraOS v0.0.4 for IA-32\n");
 	if ( mbi->flags & MBF_CMDLINE ) {
 		printk("cmd: %s\n", mbi->cmdline);
 		cmdline = __va(mbi->cmdline);
@@ -173,20 +179,21 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	sched_init();
 
 	/* Finally, enable interupts */
-	printk("starting idle task...\n");
 #if 0
-	//init_task();
-	idle_task_func();
+	init_task();
 #else
 	/* Setup the init task */
 	i = alloc_page();
 	i->pid = 1;
+	i->name = "[init]";
 	i->t.eip = (uint32_t)init_task;
-	i->t.esp = (uint32_t)i;
-	i->t.esp += PAGE_SIZE;
+	i->t.esp = (uint32_t)i + PAGE_SIZE;
 	i->preempt = 1;
 	task_to_runq(i);
 
+	sti();
+	sched();
+	idle_task_func();
 #if 0
 	i = alloc_page();
 	i->pid = 1;
@@ -196,8 +203,5 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	i->preempt = 1;
 	task_to_runq(i);
 #endif
-
-	sti();
-	sched();
 #endif
 }

@@ -19,6 +19,7 @@ struct task {
 	struct list_head 	list;
 	uint32_t		state;
 	struct thread		t;
+	const char		*name;
 	pid_t 			pid;
 	int			preempt;
 

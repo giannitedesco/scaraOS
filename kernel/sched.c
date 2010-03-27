@@ -2,6 +2,8 @@
  * Contains scheduling primitives such as the scheduler itself,
  * wait queues and eventually semaphores...
 */
+
+//#define DEBUG_MODULE 1
 #include <kernel.h>
 #include <task.h>
 #include <arch/processor.h>
@@ -23,7 +25,7 @@ void sleep_on(struct waitq *q)
 	/* Add to wait queue */
 	list_add_tail(&t->list, &q->list);
 
-	dprintk("Task %x going to sleep\n", t);
+	dprintk("Task %s going to sleep\n", t->name);
 	sched();
 	unlock_irq(flags);
 }
@@ -55,6 +57,7 @@ void sched_init(void)
 	struct task *t = __this_task;
 	t->state = TASK_RUNNING;
 	t->preempt = 0;
+	t->name = "[idle]";
 	t->pid = 0;
 	list_add(&t->list, &runq);
 }
@@ -67,7 +70,7 @@ void task_to_runq(struct task *t)
 
 	t->state = TASK_READY;
 	list_add_tail(&t->list, &runq);
-	dprintk("sleeper %x back to runq\n", t);
+	dprintk("sleeper %s back to runq\n", t->name);
 
 	unlock_irq(flags);
 }
@@ -90,8 +93,8 @@ void sched(void)
 
 	if ( current->state == TASK_SLEEPING ) {
 		/* Task is sleeping, go to head of runq */
-		dprintk("Current task sleeps: switch from %x to %x\n",
-			current, head);
+		dprintk("Current task sleeps: switch from %s to %s\n",
+			current->name, head->name);
 		head->state = TASK_RUNNING;
 		switch_task(current, head);
 		unlock_irq(flags);
@@ -111,8 +114,9 @@ void sched(void)
 		return;
 	}
 
-	dprintk("Sched: switch from %x to %x\n", current, head);
+	dprintk("Sched: switch from %s to %s\n", current->name, head->name);
 	current->state = TASK_READY;
 	head->state = TASK_RUNNING;
 	switch_task(current, head);
+	unlock_irq(flags);
 }
