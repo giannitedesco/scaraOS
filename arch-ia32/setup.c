@@ -128,15 +128,17 @@ static void init_task(void)
 	printk("init_task: completed\n");
 
 	for(;;) {
-		udelay(100);
-		//printk("A");
+		sti();
+		udelay(1000);
+		printk("A");
 	}
 }
 
 static void task2(void)
 {
 	for(;;) {
-		udelay(100);
+		sti();
+		udelay(1000);
 		printk("B");
 	}
 }
@@ -190,18 +192,18 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	i->t.esp = (uint32_t)i + PAGE_SIZE;
 	i->preempt = 1;
 	task_to_runq(i);
-
-	sti();
-	sched();
-	idle_task_func();
-#if 0
+#if 1
 	i = alloc_page();
 	i->pid = 1;
+	i->name = "[cpuhog]";
 	i->t.eip = (uint32_t)task2;
 	i->t.esp = (uint32_t)i;
 	i->t.esp += PAGE_SIZE;
 	i->preempt = 1;
 	task_to_runq(i);
 #endif
+	sti();
+	sched();
 #endif
+	idle_task_func();
 }
