@@ -6,7 +6,7 @@ KERNEL_DIR = $(TOPDIR)/kernel
 ARCH_DIR = $(TOPDIR)/arch-$(ARCH)
 FS_DIR = $(TOPDIR)/fs
 
-.PHONY: dep all clean squeaky
+.PHONY: dep all clean squeaky boot_floppy
 
 ## Target toolchain prefix
 CROSS_COMPILE=
@@ -74,7 +74,7 @@ $(FS_DIR)/fs.o: $(FS_OBJ)
 	$(LD) -r -o $@ $^
 
 IMAGE_OBJ = $(KERNEL_DIR)/kernel.o $(ARCH_DIR)/arch.o $(FS_DIR)/fs.o
-kernel.elf: $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
+kernel.elf: dep $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	$(LD) -o $@ -T $(ARCH_DIR)/kernel.lnk -nostdlib -N $(IMAGE_OBJ)
 
 kernel.elf.stripped: kernel.elf
@@ -84,7 +84,12 @@ kernel.elf.stripped: kernel.elf
 kernel.elf.gz: kernel.elf.stripped
 	gzip -c < $< > $@
 
-all: dep include/arch kernel.elf.gz
+all: kernel.elf.gz
+
+boot_floppy: boot.img
+	e2fsck -y ./boot.img || true
+	e2cp arch-ia32/kernel.elf.gz ./boot.img:kernel
+	e2cp menu.lst ./boot.img:boot/grub/
 
 clean:
 	$(RM) -f Make.dep \
