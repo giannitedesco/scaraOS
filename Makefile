@@ -89,11 +89,11 @@ kernel.elf.gz: kernel.elf.stripped
 all: kernel.elf.gz
 
 boot.img: kernel.elf.gz menu.lst
-
-boot_floppy:
 	e2fsck -y ./boot.img || true
 	e2cp kernel.elf.gz ./boot.img:kernel
 	e2cp menu.lst ./boot.img:boot/grub/
+
+boot_floppy: boot.img
 
 clean:
 	$(RM) -f Make.dep \
