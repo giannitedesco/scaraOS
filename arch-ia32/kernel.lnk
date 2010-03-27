@@ -64,6 +64,8 @@ SECTIONS {
 	__init_end = .;
 
 	__end = . ;
+	__init_stack_top = . + 4096;
+	__init_stack_top_pa = (. + 4096) - vaddr;
 
 	/* Keep the size down.. */
 	/DISCARD/ : {

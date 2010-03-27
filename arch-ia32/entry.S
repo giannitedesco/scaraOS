@@ -16,9 +16,7 @@ multiboot_header:
 
 multiboot_entry:
 	/* Assumes __end is page aligned and safe to use! */
-	movl $__end, %esp
-	addl (1 << PAGE_SHIFT), %esp
-	subl $PAGE_OFFSET, %esp
+	movl $__init_stack_top_pa, %esp
 
 	/* Reset EFLAGS */
 	pushl	$0
