@@ -79,6 +79,25 @@ static void map_ram(pgd_t pgdir, pgt_t pgtbl)
 	__flush_tlb();
 }
 
+static void write_protect(pgt_t pgtbl, void *vptr, size_t len)
+{
+	uint32_t pa_begin, pa_end, i;
+
+	pa_begin = __pa(vptr) & ~PAGE_MASK;
+	pa_end = pa_begin + (len - 1);
+	pa_end = (pa_end + PAGE_MASK) & ~PAGE_MASK;
+
+	pa_begin >>= PAGE_SHIFT;
+	pa_end >>= PAGE_SHIFT;
+
+	printk("Write protecting %u pages @ 0x%x\n",
+		(pa_end + 1) - pa_begin, vptr);
+	for(i = pa_begin; i <= pa_end; i++)
+		pgtbl[i] = (i << PAGE_SHIFT) | PDE_PRESENT;
+
+	__flush_tlb();
+}
+
 static void print_e820(void *addr, size_t len)
 {
 	void *end = addr + len;
@@ -185,6 +204,11 @@ static void reserve_pages(void *vptr, size_t len)
 {
 	uint32_t pa_begin, pa_end;
 
+	/* reserve page range is inclusive range so don't
+	 * need vptr + len to point to byte after last byte
+	 * to reserve */
+	len--;
+
 	pa_begin = __pa(vptr);
 	pa_end = __pa((uint8_t *)vptr + len);
 
@@ -243,7 +267,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	bootmem_end = bootmem_ptr = bootmem_begin;
 
 	/* Calculate size of physical memory */
-	print_e820(e820_map, e820_len);
+	//print_e820(e820_map, e820_len);
 	tot_mem = size_up_ram(e820_map, e820_len);
 	nr_physpages = tot_mem >> PAGE_SHIFT;
 
@@ -261,6 +285,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	get_pdbr(kernel_pgdir);
 	kernel_pgdir = __va(kernel_pgdir);
 	map_ram(kernel_pgdir, tbls);
+	write_protect(tbls, &__begin, &__rodata_end - &__begin);
 	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
 
 	/* Only use PAGE_OFFSET mapping, so zap identity map now */
