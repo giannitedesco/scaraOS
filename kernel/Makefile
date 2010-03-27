@@ -1,14 +1,10 @@
-include $(TOPDIR)/Make.opts
-
-OBJS=printk.o ctype.o vsprintf.o string.o \
-	kmalloc.o buddy.o \
-	blk.o blkdev.o \
-	sched.o
-
-kernel.o: $(OBJS)
-	$(LD) -r -o $@ $(OBJS)
-
-all: kernel.o
-
-clean:
-	$(RM) -f *.o Make.dep
+KERNEL_C_SOURCES = \
+	$(KERNEL_DIR)/blk.c \
+	$(KERNEL_DIR)/blkdev.c \
+	$(KERNEL_DIR)/buddy.c \
+	$(KERNEL_DIR)/ctype.c \
+	$(KERNEL_DIR)/kmalloc.c \
+	$(KERNEL_DIR)/printk.c \
+	$(KERNEL_DIR)/sched.c \
+	$(KERNEL_DIR)/string.c \
+	$(KERNEL_DIR)/vsprintf.c

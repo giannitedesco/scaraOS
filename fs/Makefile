@@ -1,12 +1,4 @@
-include $(TOPDIR)/Make.opts
-
-OBJS=vfs.o inode.o dentry.o \
-	ext2.o
-
-fs.o: $(OBJS)
-	$(LD) -r -o $@ $(OBJS)
-
-all: fs.o
-
-clean:
-	$(RM) -f *.o Make.dep
+FS_C_SOURCES = $(FS_DIR)/dentry.c \
+		$(FS_DIR)/ext2.c \
+		$(FS_DIR)/inode.c \
+		$(FS_DIR)/vfs.c \
