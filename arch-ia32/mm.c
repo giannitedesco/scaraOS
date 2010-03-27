@@ -39,8 +39,8 @@ void ia32_setup_initmem(void)
 	pgd_t dir;
 	pgt_t tbl;
 
-	pgd_ptr = &__end + (1 << PAGE_SHIFT);
-	pgt_ptr = &__end + (2 << PAGE_SHIFT);
+	pgd_ptr = &__init_pgd;
+	pgt_ptr = &__init_pgt;
 
 	/* Assume space for initial page table and page directory */
 	dir = (pgd_t)__pa(pgd_ptr);
@@ -263,7 +263,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	unsigned int i;
 	pgt_t tbls;
 
-	bootmem_begin = (uint8_t *)&__end + (3 << PAGE_SHIFT);
+	bootmem_begin = &__bootmem_begin;
 	bootmem_end = bootmem_ptr = bootmem_begin;
 
 	/* Calculate size of physical memory */

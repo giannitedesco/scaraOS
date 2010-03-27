@@ -64,8 +64,21 @@ SECTIONS {
 	__init_end = .;
 
 	__end = . ;
-	__init_stack_top = . + 4096;
-	__init_stack_top_pa = (. + 4096) - vaddr;
+
+	. += 4096;
+	__init_stack_top = .;
+	__init_stack_top_pa = . - vaddr;
+
+	. += 4096;
+	__init_pgd = .;
+	__init_pgd_pa = . - vaddr;
+
+	. += 4096;
+	__init_pgt = .;
+	__init_pgt_pa = . - vaddr;
+
+	. += 4096;
+	__bootmem_begin = .;
 
 	/* Keep the size down.. */
 	/DISCARD/ : {

@@ -28,6 +28,11 @@ extern uint8_t __init_end;
 
 extern uint8_t __end;
 
+extern uint8_t __init_stack_top;
+extern uint8_t __init_pgd;
+extern uint8_t __init_pgt;
+extern uint8_t __bootmem_begin;
+
 #endif /* __ASM__ */
 
 #endif /* __ARCH_IA32_KIMAGE__ */
