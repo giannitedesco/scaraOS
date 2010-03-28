@@ -28,8 +28,8 @@ void vfs_add_fstype(struct vfs_fstype *t)
 {
 	if ( !t )
 		return;
-	t->next=fs_types;
-	fs_types=t;
+	t->next = fs_types;
+	fs_types = t;
 }
 
 /* Retrieve a filesystem type object */
@@ -37,8 +37,7 @@ static struct vfs_fstype *vfs_get_fstype(char *name)
 {
 	struct vfs_fstype *r;
 
-	for(r=fs_types; r; r=r->next) {
-		printk("%s / %s\n", name, r->name);
+	for(r = fs_types; r; r = r->next) {
 		if ( !strcmp(name, r->name) )
 			return r;
 	}
@@ -53,26 +52,26 @@ void vfs_mount_root(void)
 	char *type="ext2";
 	char *dev="floppy0";
 	
-	if ( !(sb.s_type=vfs_get_fstype(type)) ) {
+	if ( !(sb.s_type = vfs_get_fstype(type)) ) {
 		printk("vfs: unknown fstype %s\n", type);
 		return;
 	}
 
-	if ( !(sb.s_dev=blkdev_get(dev)) ) {
+	if ( !(sb.s_dev = blkdev_get(dev)) ) {
 		printk("vfs: unknown block device %s\n", dev);
 		return;
 	}
 
-	sb.s_blocksize=0;
+	sb.s_blocksize = 0;
 
 	if ( sb.s_type->read_super(&sb) ) {
 		printk("vfs: error mounting root filesystem\n");
 		return;
 	}
 
-	superblocks=&sb;
+	superblocks = &sb;
 
 	/* Setup the tasks structures */
-	__this_task->root=superblocks->s_root;
-	__this_task->cwd=superblocks->s_root;
+	__this_task->root = superblocks->s_root;
+	__this_task->cwd = superblocks->s_root;
 }

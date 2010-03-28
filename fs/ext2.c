@@ -4,27 +4,8 @@
 #include <vfs.h>
 #include <ext2.h>
 
-int ext2_get_super(struct super *);
-int ext2_read_inode(struct inode *);
-struct inode *ext2_lookup(struct inode *, char *);
-
-/* Filesystem type descriptor */
-static struct vfs_fstype ext2_fstype={
-	.name = "ext2",
-	.read_super = ext2_get_super,
-};
-
-static const struct inode_ops ext2_dir_iop={
-	.lookup = ext2_lookup,
-};
-
-/* Superblock operations */
-static const struct super_ops ext2_superops={
-	.read_inode = ext2_read_inode,
-};
-
 /* Lookup a name in an inode */
-struct inode *ext2_lookup(struct inode *i, char *n)
+static struct inode *ext2_lookup(struct inode *i, char *n)
 {
 	struct buffer *bh;
 	ino_t inum;
@@ -33,7 +14,7 @@ struct inode *ext2_lookup(struct inode *i, char *n)
 	struct ext2_dir_entry_2 *dir;
 	char *j;
 
-	y=EXT2_NDIR_BLOCKS < i->i_blocks ? EXT2_NDIR_BLOCKS : i->i_blocks;
+	y = EXT2_NDIR_BLOCKS < i->i_blocks ? EXT2_NDIR_BLOCKS : i->i_blocks;
 
 	for(x=0; x<y; x++) {
 		/* pre-allocation ?? */
@@ -43,15 +24,17 @@ struct inode *ext2_lookup(struct inode *i, char *n)
 		bh=blk_read(i->i_sb->s_dev, i->u.ext2.block[x]);
 
 		/* Search for the item */
-		for(j=bh->b_buf; j<(bh->b_buf+bh->b_len); ) {
-			dir=(struct ext2_dir_entry_2 *)j;
+		for(j = bh->b_buf; j < (bh->b_buf + bh->b_len); ) {
+			dir = (struct ext2_dir_entry_2 *)j;
+			printk("EXT2: dentry: %.*s\n",
+				dir->name_len, dir->name);
 			if ( (dir->name_len == nlen) &&
 				!memcmp(dir->name, n, nlen) ) {
-				inum=dir->inode;
+				inum = dir->inode;
 				blk_free(bh);
 				return iget(i->i_sb, inum);
 			}
-			j+=dir->rec_len;
+			j += dir->rec_len;
 		}
 
 		blk_free(bh);
@@ -60,8 +43,13 @@ struct inode *ext2_lookup(struct inode *i, char *n)
 	return NULL;
 }
 
+/* Directory ops */
+static const struct inode_ops ext2_dir_iop = {
+	.lookup = ext2_lookup,
+};
+
 /* Fill in an inode structure for iget */
-int ext2_read_inode(struct inode *i)
+static int ext2_read_inode(struct inode *i)
 {
 	unsigned long block_group;
 	unsigned long group_desc, desc;
@@ -90,7 +78,7 @@ int ext2_read_inode(struct inode *i)
 	gdp = (struct ext2_group_desc *)b->b_buf;
 	
 	/* 4. Obtain correct block from inode table */
-	offset = i->i_ino % i->i_sb->u.ext2.s_inodes_per_group;
+	offset = (i->i_ino - 1) % i->i_sb->u.ext2.s_inodes_per_group;
 	block = gdp[desc].bg_inode_table + (offset / i->i_sb->s_blocksize);
 	if ( !(b=blk_read(i->i_sb->s_dev, block)) ) {
 		printk("EXT2: Unable to read inode block - inode=%lu, block=%lu\n",
@@ -99,26 +87,26 @@ int ext2_read_inode(struct inode *i)
 	}
 
 	/* 5. Obtain the inode pointer */
-	offset &= i->i_sb->s_blocksize-1;
+	offset = (i->i_ino - 1) & (i->i_sb->s_blocksize - 1);
 	offset *= i->i_sb->u.ext2.s_es->s_inode_size;
 	raw_inode = (struct ext2_inode *)(b->b_buf + offset);
 	
 	/* 6. Copy the inode */
-	i->i_fop=NULL;
+	i->i_fop = NULL;
 	if ( S_ISDIR(raw_inode->i_mode) ) {
 		i->i_iop = &ext2_dir_iop;
 	}else{
 		i->i_iop = NULL;
 	}
 
-	i->i_mode=raw_inode->i_mode;
-	i->i_uid=raw_inode->i_uid;
-	i->i_gid=raw_inode->i_gid;
-	i->i_size=raw_inode->i_size;
-	i->i_nlink=raw_inode->i_links_count;
-	i->i_blocks=raw_inode->i_blocks;
+	i->i_mode = raw_inode->i_mode;
+	i->i_uid = raw_inode->i_uid;
+	i->i_gid = raw_inode->i_gid;
+	i->i_size = raw_inode->i_size;
+	i->i_nlink = raw_inode->i_links_count;
+	i->i_blocks = raw_inode->i_blocks;
 
-	for(block=0; block<EXT2_N_BLOCKS; block++) {
+	for(block = 0; block < EXT2_N_BLOCKS; block++) {
 		i->u.ext2.block[block] = raw_inode->i_block[block];
 	}
 
@@ -127,7 +115,12 @@ int ext2_read_inode(struct inode *i)
 	return 0;
 }
 
-int ext2_get_super(struct super *sb)
+/* Superblock operations */
+static const struct super_ops ext2_superops = {
+	.read_inode = ext2_read_inode,
+};
+
+static int ext2_get_super(struct super *sb)
 {
 	struct ext2_super_block *s;
 	struct buffer *bh;
@@ -195,18 +188,23 @@ int ext2_get_super(struct super *sb)
 	}
 
 	/* Lookup root inode */
-	sb->s_root=iget(sb, EXT2_ROOT_INO);
-
+	sb->s_root = iget(sb, EXT2_ROOT_INO);
 	if ( !sb->s_root ) {
 		printk("EXT2: get root inode failed\n");
 		goto err;
 	}
 
+	ext2_lookup(sb->s_root, "cunt");
 	return 0;
 err:
 	blk_free(bh);
 	return -1;
 }
+
+static struct vfs_fstype ext2_fstype={
+	.name = "ext2",
+	.read_super = ext2_get_super,
+};
 
 static void ext2_init(void)
 {
