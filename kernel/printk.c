@@ -12,50 +12,22 @@ signed short xpos, ypos;
 void vga_curs ( uint16_t x, uint16_t y );
 void vga_put(uint8_t);
 
-void printk (const char *format, ...)
+void printk(const char *format, ...)
 {
-	int c;
-	char buf[20];
+	static char buf[512];
 	va_list args;
+	int len, i;
 	long flags;
 
 	va_start(args,format);
+	len = vsnprintf(buf, sizeof(buf), format, args);
 
 	/* Don't want interrupts coming in and
 	 * mangling our output */
 	lock_irq(flags);
 
-	while ((c = *format++) != 0)
-	{
-		if (c != '%')
-			vga_put(c);
-		else {
-			char *p;
-	  
-			c = *format++;
-			switch (c) {
-				case 'i':
-				case 'd':
-				case 'u':
-				case 'x':
-					itoa(buf, c, va_arg(args,int));
-					p = buf;
-					goto string;
-					break;
-
-				case 's':
-					p = va_arg(args,char *);
-					if (!p) p = "(null)";
-string:
-					while (*p) vga_put(*p++);
-					break;
-
-				default:
-					vga_put(va_arg(args,int));
-					break;
-			}
-		}
-	}
+	for(i = 0; i < len; i++)
+		vga_put(buf[i]);
 
 	unlock_irq(flags);
 	va_end(args);
