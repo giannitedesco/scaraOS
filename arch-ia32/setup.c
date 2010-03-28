@@ -147,7 +147,7 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	/* print a pretty message */
 	printk("ScaraOS v0.0.4 for IA-32\n");
 	if ( mbi->flags & MBF_CMDLINE ) {
-		printk("cmd: %s\n", mbi->cmdline);
+		printk("cmd: %s\n", __va(mbi->cmdline));
 		cmdline = __va(mbi->cmdline);
 	}
 
@@ -158,6 +158,7 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	if ( mbi->flags & MBF_MMAP ) {
 		ia32_mm_init(__va(mbi->mmap), mbi->mmap_length);
 	}else{
+		/* this won't work */
 		ia32_mm_init(NULL, 0);
 	}
 
@@ -170,15 +171,15 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	/* enable hardware interrupts */
 	pic_init();
 
-	/* start jiffie counter */
-	pit_start_timer1();
-
 	/* setup the idle task */
 	sched_init();
 
 	/* Setup the init task */
 	kernel_thread("[init]", init_task, NULL);
 	kernel_thread("[cpuhog]", task2, NULL);
+
+	/* start jiffie counter */
+	pit_start_timer1();
 
 	/* Finally, enable interupts and let it rip */
 	sti();
