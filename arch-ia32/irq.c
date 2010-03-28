@@ -9,7 +9,7 @@
 
 static void irq_null(int irq)
 {
-	printk("unhandled IRQ %i\n", irq);
+	printk("Spurious IRQ %i\n", irq);
 }
 
 static irqfn irq_fns[16]={
