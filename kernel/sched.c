@@ -3,7 +3,7 @@
  * wait queues and eventually semaphores...
 */
 
-//#define DEBUG_MODULE 1
+#define DEBUG_MODULE 0
 #include <kernel.h>
 #include <task.h>
 #include <arch/processor.h>
@@ -25,7 +25,7 @@ void sleep_on(struct waitq *q)
 	/* Add to wait queue */
 	list_add_tail(&t->list, &q->list);
 
-	dprintk("Task %s going to sleep\n", t->name);
+	dprintk("sched: Task %s going to sleep\n", t->name);
 	sched();
 	unlock_irq(flags);
 }
@@ -49,14 +49,12 @@ void wake_up(struct waitq *q)
 	sched();
 }
 
-/* The task that becomes the idle task needs to
- * call this function - interrupts should be 
- * disabled by the caller */
+/* The task that becomes the idle task needs to call this function - interrupts
+ * should be disabled by the caller */
 void sched_init(void)
 {
 	struct task *t = __this_task;
 	t->state = TASK_RUNNING;
-	t->preempt = 0;
 	t->name = "[idle]";
 	t->pid = 0;
 	list_add(&t->list, &runq);
@@ -70,16 +68,68 @@ void task_to_runq(struct task *t)
 
 	t->state = TASK_READY;
 	list_add_tail(&t->list, &runq);
-	dprintk("sleeper %s back to runq\n", t->name);
+	dprintk("sched: sleeper %s back to runq\n", t->name);
 
 	unlock_irq(flags);
 }
 
-/* Crappy round-robin type scheduler, just picks the
- * next task on the run queue - arg */
+static void task_push_word(struct task *tsk, uint32_t word)
+{
+	tsk->t.esp -= sizeof(word);
+	*(uint32_t *)tsk->t.esp = word;
+}
 
- /* FIXME: keep idle task as last choice, if idle task is only item i
-  * runq then enable schedule on timer ISR */
+static void kthread_init(void (*thread_func)(void *), void *priv)
+{
+	sti();
+	printk("kthread_init: thread_func=%x priv=%x\n", thread_func, priv);
+	(*thread_func)(priv);
+	printk("FIXME: call __exit() when implemented\n");
+	idle_task_func();
+}
+
+int kernel_thread(const char *proc_name,
+			void (*thread_func)(void *),
+			void *priv)
+{
+	struct task *tsk;
+	static pid_t pid = 1;
+	static pid_t ret;
+	//unsigned int i;
+	long eflags;
+
+	tsk = alloc_page();
+	if ( NULL == tsk )
+		return -1;
+
+	ret = pid++;
+	tsk->pid = ret;
+	tsk->name = proc_name;
+	tsk->t.eip = (uint32_t)kthread_init;
+	tsk->t.esp = (uint32_t)tsk + PAGE_SIZE;
+
+	/* push arguments to kthread init */
+	task_push_word(tsk, (uint32_t)priv);
+	task_push_word(tsk, (uint32_t)thread_func);
+
+	/* pusha - why the fuck this isn't needed i have no idea... */
+	//for(i = 0; i < 8; i++)
+	//	task_push_word(tsk, 0);
+
+	/* pushfl */
+	get_eflags(eflags);
+	task_push_word(tsk, eflags);
+
+	task_to_runq(tsk);
+	return tsk->pid;
+}
+
+/* Crappy round-robin type scheduler, just picks the
+ * next task on the run queue
+ *
+ * FIXME: idle task needs special treatment, don't run it when other tasks
+ * are in the runnable state
+*/
 void sched(void)
 {
 	struct task *current;
@@ -91,9 +141,9 @@ void sched(void)
 	current = __this_task;
 	head = list_entry(runq.next, struct task, list);
 
+	/* Task is sleeping, go to head of runq */
 	if ( current->state == TASK_SLEEPING ) {
-		/* Task is sleeping, go to head of runq */
-		dprintk("Current task sleeps: switch from %s to %s\n",
+		dprintk("sched: Current task sleeps: switch from %s to %s\n",
 			current->name, head->name);
 		head->state = TASK_RUNNING;
 		switch_task(current, head);
@@ -109,12 +159,13 @@ void sched(void)
 		head = list_entry(runq.next, struct task, list);
 	}
 
+	/* only one runnable task, nothing to do */
 	if ( current == head ) {
 		unlock_irq(flags);
 		return;
 	}
 
-	dprintk("Sched: switch from %s to %s\n", current->name, head->name);
+	dprintk("sched: switch from %s to %s\n", current->name, head->name);
 	current->state = TASK_READY;
 	head->state = TASK_RUNNING;
 	switch_task(current, head);

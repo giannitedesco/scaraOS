@@ -37,7 +37,7 @@ _irq##nr:\
 	pusha ;\
 	pushl $##nr;\
 	call irq_handler;\
-	popl %eax ;\
+	addl $4,%esp ;\
 	popa ;\
 	iret
 

@@ -21,16 +21,11 @@ struct task {
 	struct thread		t;
 	const char		*name;
 	pid_t 			pid;
-	int			preempt;
 
 	/* Filesystem info */
 	struct inode		*root;
 	struct inode		*cwd;
 };
-
-/* Enable/disable pre-emption for the current task */
-#define get_cpu(x) ((x)->preempt++)
-#define put_cpu(x) ((x)->preempt--)
 
 /* Wait-queue manipulation */
 void sleep_on(struct waitq *);
@@ -38,6 +33,10 @@ void wake_up(struct waitq *);
 
 /* Run-queue manupulation */
 void task_to_runq(struct task *);
+
+int kernel_thread(const char *proc_name,
+			void (*thread_func)(void *),
+			void *priv);
 
 /* The scheduler */
 void sched_init(void);

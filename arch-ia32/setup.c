@@ -114,7 +114,7 @@ static void do_initcalls(void)
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
-static void init_task(void)
+static void init_task(void *priv)
 {
 	/* Initialise kernel subsystems */
 	blk_init();
@@ -128,17 +128,15 @@ static void init_task(void)
 	printk("init_task: completed\n");
 
 	for(;;) {
-		sti();
-		udelay(1000);
+		mdelay(100);
 		printk("A");
 	}
 }
 
-static void task2(void)
+static void task2(void *priv)
 {
 	for(;;) {
-		sti();
-		udelay(1000);
+		mdelay(100);
 		printk("B");
 	}
 }
@@ -146,8 +144,6 @@ static void task2(void)
 /* Entry point in to the kernel proper */
 void _asmlinkage setup(multiboot_info_t *mbi)
 {
-	struct task *i;
-
 	/* print a pretty message */
 	printk("ScaraOS v0.0.4 for IA-32\n");
 	if ( mbi->flags & MBF_CMDLINE ) {
@@ -180,30 +176,12 @@ void _asmlinkage setup(multiboot_info_t *mbi)
 	/* setup the idle task */
 	sched_init();
 
-	/* Finally, enable interupts */
-#if 0
-	init_task();
-#else
 	/* Setup the init task */
-	i = alloc_page();
-	i->pid = 1;
-	i->name = "[init]";
-	i->t.eip = (uint32_t)init_task;
-	i->t.esp = (uint32_t)i + PAGE_SIZE;
-	i->preempt = 1;
-	task_to_runq(i);
-#if 1
-	i = alloc_page();
-	i->pid = 1;
-	i->name = "[cpuhog]";
-	i->t.eip = (uint32_t)task2;
-	i->t.esp = (uint32_t)i;
-	i->t.esp += PAGE_SIZE;
-	i->preempt = 1;
-	task_to_runq(i);
-#endif
+	kernel_thread("[init]", init_task, NULL);
+	kernel_thread("[cpuhog]", task2, NULL);
+
+	/* Finally, enable interupts and let it rip */
 	sti();
 	sched();
-#endif
 	idle_task_func();
 }
