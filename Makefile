@@ -1,7 +1,9 @@
 ## Architecture
 ARCH=ia32
+EXTRA_DEFS=-DKDEBUG
 
-TOPDIR :=  $(shell /bin/pwd)
+TOPDIR :=  .
+#$(shell /bin/pwd)
 KERNEL_DIR = $(TOPDIR)/kernel
 ARCH_DIR = $(TOPDIR)/arch-$(ARCH)
 FS_DIR = $(TOPDIR)/fs
@@ -34,7 +36,7 @@ CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
 	-Wmissing-format-attribute \
-	-I$(TOPDIR)/include
+	-I$(TOPDIR)/include $(EXTRA_DEFS)
 
 # templates
 %.o: %.c
@@ -51,18 +53,24 @@ include fs/Makefile
 
 ARCH_OBJ = $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
 		$(patsubst %.c, %.o, $(ARCH_C_SOURCES))
+ARCH_DEP = $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
+		$(patsubst %.c, %.d, $(ARCH_C_SOURCES))
 KERNEL_OBJ = $(patsubst %.c, %.o, $(KERNEL_C_SOURCES))
+KERNEL_DEP = $(patsubst %.c, %.d, $(KERNEL_C_SOURCES))
 FS_OBJ = $(patsubst %.c, %.o, $(FS_C_SOURCES))
+FS_DEP = $(patsubst %.c, %.d, $(FS_C_SOURCES))
 
 ALL_SOURCES = $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
 		$(KERNEL_C_SOURCES) \
 		$(FS_C_SOURCES)
 
 # Generate dependencies
-Make.dep: Makefile
-	$(GCC) $(CFLAGS) -M $(ALL_SOURCES) > $@
-
-dep: ./include/arch Make.dep
+%.d: %.c
+	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
+%.d: %.S
+	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
+ALL_DEPS = $(ARCH_DEP) $(KERNEL_DEP) $(FS_DEP)
+dep: Makefile ./include/arch $(ALL_DEPS)
 
 $(KERNEL_DIR)/kernel.o: $(KERNEL_OBJ)
 	$(LD) -r -o $@ $^
@@ -96,7 +104,7 @@ boot.img: kernel.elf.gz menu.lst
 boot_floppy: boot.img
 
 clean:
-	$(RM) -f Make.dep \
+	$(RM) -f $(ALL_DEPS) \
 		$(KERNEL_OBJ) $(KERNEL_DIR)/kernel.o \
 		$(ARCH_OBJ) $(ARCH_DIR)/arch.o \
 		$(FS_OBJ) $(FS_DIR)/fs.o \
@@ -106,6 +114,4 @@ squeaky: clean
 	$(RM) -f ./include/arch
 
 # Include the dependency file if one exists
-ifeq (Make.dep, $(wildcard Make.dep))
-include Make.dep
-endif
+include $(ALL_DEPS)
