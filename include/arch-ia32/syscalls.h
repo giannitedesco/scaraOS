@@ -1,9 +1,6 @@
 #ifndef __ARCH_IA32_SYSCALLS_INCLUDED__
 #define __ARCH_IA32_SYSCALLS_INCLUDED__
 
-#ifndef __ASM__
-#endif /* __ASM__ */
-
 #define _SYS_exit		0
 #define _SYS_exec		1
 #define _SYS_fork		2
@@ -15,6 +12,7 @@
 #define _SYS_ARG3		3
 #define _SYS_REGS		4
 
+#ifndef __ASM__
 typedef uint32_t (*sys0_t)(void);
 typedef uint32_t (*sys1_t)(uint32_t);
 typedef uint32_t (*sys2_t)(uint32_t, uint32_t);
@@ -36,4 +34,6 @@ static inline uint32_t syscall1(uint32_t nr, uint32_t arg)
 			: "%eax", "%ebx");
 	return ret;
 }
+#endif /* __ASM__ */
+
 #endif /* __ARCH_IA32_SYSCALLS_INCLUDED__ */
