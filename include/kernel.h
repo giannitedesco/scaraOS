@@ -45,9 +45,10 @@ _printf(1, 2) void printk(const char *, ...);
 _printf(1, 2) _noreturn void panic(const char *, ...);
 
 #if KDEBUG
-#define kassert(x) do {} while(0)
+#define BUG_ON(x) if ( x ) panic("%s:%s:%u: %s\n", \
+			__FILE__, __FUNCTION__, __LINE__, #x)
 #else 
-#define kassert(x) do {} while(0)
+#define BUG_ON(x) do {} while(0)
 #endif
 
 /* Driver initialisation */
