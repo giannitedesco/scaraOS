@@ -8,7 +8,7 @@ KERNEL_DIR = $(TOPDIR)/kernel
 ARCH_DIR = $(TOPDIR)/arch-$(ARCH)
 FS_DIR = $(TOPDIR)/fs
 
-.PHONY: dep all clean squeaky boot_floppy
+.PHONY: all clean squeaky boot_floppy
 
 ## Target toolchain prefix
 CROSS_COMPILE=
@@ -39,10 +39,14 @@ CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-I$(TOPDIR)/include $(EXTRA_DEFS)
 
 # templates
-%.o: %.c
+%.o: %.c ./include/arch
 	$(GCC) $(CFLAGS) -c -o $@ $<
-%.o: %.S
+%.o: %.S ./include/arch
 	$(GCC) $(CFLAGS) -D__ASM__ -c -o $@ $<
+%.d: %.c ./include/arch
+	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
+%.d: %.S ./include/arch
+	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
 
 ./include/arch:
 	$(LN) -sf arch-$(ARCH) ./include/arch
@@ -51,26 +55,31 @@ include arch-$(ARCH)/Makefile
 include kernel/Makefile
 include fs/Makefile
 
-ARCH_OBJ = $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
+ARCH_OBJ := $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
 		$(patsubst %.c, %.o, $(ARCH_C_SOURCES))
-ARCH_DEP = $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
-		$(patsubst %.c, %.d, $(ARCH_C_SOURCES))
-KERNEL_OBJ = $(patsubst %.c, %.o, $(KERNEL_C_SOURCES))
-KERNEL_DEP = $(patsubst %.c, %.d, $(KERNEL_C_SOURCES))
-FS_OBJ = $(patsubst %.c, %.o, $(FS_C_SOURCES))
-FS_DEP = $(patsubst %.c, %.d, $(FS_C_SOURCES))
+KERNEL_OBJ := $(patsubst %.c, %.o, $(KERNEL_C_SOURCES))
+FS_OBJ := $(patsubst %.c, %.o, $(FS_C_SOURCES))
 
-ALL_SOURCES = $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
+ALL_SOURCES := $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
 		$(KERNEL_C_SOURCES) \
 		$(FS_C_SOURCES)
 
+IMAGE_OBJ := $(ARCH_DIR)/arch.o \
+		$(KERNEL_DIR)/kernel.o \
+		$(FS_DIR)/fs.o
+
 # Generate dependencies
-%.d: %.c
-	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
-%.d: %.S
-	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
-ALL_DEPS = $(ARCH_DEP) $(KERNEL_DEP) $(FS_DEP)
-dep: Makefile ./include/arch $(ALL_DEPS)
+ARCH_DEP := $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
+		$(patsubst %.c, %.d, $(ARCH_C_SOURCES))
+KERNEL_DEP := $(patsubst %.c, %.d, $(KERNEL_C_SOURCES))
+FS_DEP := $(patsubst %.c, %.d, $(FS_C_SOURCES))
+ALL_DEPS := $(ARCH_DEP) $(KERNEL_DEP) $(FS_DEP)
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),squeaky)
+include $(ALL_DEPS)
+endif
+endif
 
 $(KERNEL_DIR)/kernel.o: $(KERNEL_OBJ)
 	$(LD) -r -o $@ $^
@@ -81,10 +90,7 @@ $(ARCH_DIR)/arch.o: $(ARCH_OBJ)
 $(FS_DIR)/fs.o: $(FS_OBJ)
 	$(LD) -r -o $@ $^
 
-IMAGE_OBJ = $(ARCH_DIR)/arch.o \
-		$(KERNEL_DIR)/kernel.o \
-		$(FS_DIR)/fs.o
-kernel.elf: dep $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
+kernel.elf: $(ALL_DEPS) $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	$(LD) -o $@ -T $(ARCH_DIR)/kernel.lnk -nostdlib -N $(IMAGE_OBJ)
 
 kernel.elf.stripped: kernel.elf
@@ -112,6 +118,3 @@ clean:
 
 squeaky: clean
 	$(RM) -f ./include/arch
-
-# Include the dependency file if one exists
-include $(ALL_DEPS)
