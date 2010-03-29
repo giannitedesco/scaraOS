@@ -3,10 +3,11 @@
  * wait queues and eventually semaphores...
 */
 
-#define DEBUG_MODULE 0
 #include <kernel.h>
 #include <task.h>
 #include <arch/processor.h>
+#include <arch/regs.h>
+#include <arch/syscalls.h>
 
 static LIST_HEAD(runq);
 static LIST_HEAD(delq);
@@ -121,14 +122,27 @@ int kernel_thread(const char *proc_name,
 	return tsk->pid;
 }
 
-void syscall_exit(void)
+static void do_exit(uint32_t code)
 {
 	struct task *tsk = __this_task;
 	long flags;
 
 	lock_irq(flags);
 	list_move_tail(&tsk->list, &delq);
+	tsk->exit_code = code;
+	tsk->state = TASK_ZOMBIE;
 	unlock_irq(flags);
+}
+
+uint32_t syscall_exit(uint32_t code)
+{
+	do_exit(code);
+	return 0;
+}
+
+uint32_t syscall_fork(uint32_t flags)
+{
+	return -1;
 }
 
 /* Crappy round-robin type scheduler, just picks the
@@ -158,6 +172,9 @@ static void flush_delq(void)
 	struct task *tsk, *tmp;
 
 	list_for_each_entry_safe(tsk, tmp, &delq, list) {
+		BUG_ON(tsk->state != TASK_ZOMBIE);
+		printk("task: %s exited with code 0x%lx\n",
+			tsk->name, tsk->exit_code);
 		list_del(&tsk->list);
 		free_page(tsk);
 	}

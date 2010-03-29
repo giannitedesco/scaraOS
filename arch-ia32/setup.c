@@ -133,11 +133,17 @@ _noreturn static void init_task(void *priv)
 	}
 }
 
+#include <arch/regs.h>
+#include <arch/syscalls.h>
 _noreturn static void task2(void *priv)
 {
 	for(;;) {
 		mdelay(100);
 		printk("B");
+		asm volatile ("movl $0x0,%%eax\n"
+				"movl $0x666, %%ebx\n"
+				"int $0xff\n"
+				::: "%eax", "%ebx");
 	}
 }
 

@@ -6,6 +6,7 @@
 #include <arch/descriptor.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
+#include <arch/regs.h>
 #include <task.h>
 
 #define load_idt(idtr) \
@@ -40,7 +41,19 @@ void idt_interrupt(void *handler, uint8_t intr)
 	unlock_irq(flags);
 }
 
-static void ctx_dump(struct ia32_exc_ctx *ctx)
+/* Add a new interrupt vector to the IDT  */
+void idt_supervisor_interrupt(void *handler, uint8_t intr)
+{
+	long flags;
+	lock_irq(flags);
+	IDT[intr].gate.selector		= __KERNEL_CS;
+	IDT[intr].gate.offset_low	= (uint16_t)(((uint32_t)handler)&0xffff);
+	IDT[intr].gate.offset_high 	= (uint16_t)(((uint32_t)handler)>>16);
+	IDT[intr].gate.access		= D_PRESENT | D_INT | D_DPL3;
+	unlock_irq(flags);
+}
+
+void ctx_dump(struct intr_ctx *ctx)
 {
 	struct task *tsk = __this_task;
 	printk("Task pid=%lu name=%s: CS=%.8lx\n",
@@ -53,7 +66,7 @@ static void ctx_dump(struct ia32_exc_ctx *ctx)
 	/* TODO: stack trace */
 }
 
-_noreturn static void page_fault(struct ia32_exc_ctx *ctx)
+_noreturn static void page_fault(struct intr_ctx *ctx)
 {
 	uint32_t cr2;
 	get_cr2(cr2);
@@ -74,7 +87,7 @@ static const struct {
 	uint16_t type;
 	uint16_t err_code;
 	char * const name;
-	void (*handler)(struct ia32_exc_ctx *ctx);
+	void (*handler)(struct intr_ctx *ctx);
 }exc[]={
 	{EXC_TYPE_FAULT, 0, "Divide Error"},
 	{EXC_TYPE_TRAP /* or fault */, 0, "Debug"},
@@ -102,7 +115,7 @@ static const struct {
 	{EXC_TYPE_FAULT, 0, "SIMD Exception"},
 };
 
-void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx)
+void exc_handler(uint32_t exc_num, struct intr_ctx ctx)
 {
 	static const char * const tname[] = {
 		"UNKNOWN",
@@ -138,7 +151,7 @@ void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx)
 		idle_task_func();
 }
 
-void panic_exc(struct ia32_exc_ctx ctx)
+void panic_exc(struct intr_ctx ctx)
 {
 	ctx_dump(&ctx);
 	/* FIXME: check CPL in ctx.cs so that userspace can't invoke a kernel
@@ -210,7 +223,7 @@ void __init idt_init(void)
 	idt_interrupt(_irq15, 0x3e);
 
 	/* System call */
-	idt_interrupt(_panic, 0xf0);
+	idt_supervisor_interrupt(_panic, 0xf0);
 	idt_interrupt(_syscall, 0xff);
 
 	/* Yay - we're finished */
