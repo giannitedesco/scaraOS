@@ -364,6 +364,14 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 				continue;
 
 			case 'p':
+				if ( str < end ) {
+					*str = '0';
+					str++;
+				}
+				if ( str < end ) {
+					*str = 'x';
+					str++;
+				}
 				if (field_width == -1) {
 					field_width = 2*sizeof(void *);
 					flags |= ZEROPAD;
