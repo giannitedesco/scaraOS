@@ -139,13 +139,16 @@ static int init_task(void *priv)
 	}
 }
 
+#if 0
 static int task2(void *priv)
 {
 	for(;;) {
 		mdelay(100);
 		printk("B");
 	}
+	return -1;
 }
+#endif
 
 /* Entry point in to the kernel proper */
 _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
@@ -184,6 +187,8 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* Setup the init task */
 	kernel_thread("[init]", init_task, NULL);
+
+	/* pre-emptive multi-tasking demo */
 	//kernel_thread("[cpuhog]", task2, NULL);
 
 	/* start jiffie counter */
