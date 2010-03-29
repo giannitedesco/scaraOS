@@ -42,4 +42,6 @@ int kernel_thread(const char *proc_name,
 void sched_init(void);
 void sched(void);
 
+void syscall_exit(void);
+
 #endif /* __TASK_HEADER_INCLUDED__ */

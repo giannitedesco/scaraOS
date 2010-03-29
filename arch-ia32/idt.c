@@ -138,11 +138,6 @@ void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx)
 		idle_task_func();
 }
 
-void syscall_exc(struct ia32_exc_ctx ctx)
-{
-	printk("syscall\n");
-}
-
 void panic_exc(struct ia32_exc_ctx ctx)
 {
 	ctx_dump(&ctx);

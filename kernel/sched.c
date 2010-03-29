@@ -9,6 +9,7 @@
 #include <arch/processor.h>
 
 static LIST_HEAD(runq);
+static LIST_HEAD(delq);
 
 /* Sleep the current task on a wait queue */
 void sleep_on(struct waitq *q)
@@ -120,6 +121,16 @@ int kernel_thread(const char *proc_name,
 	return tsk->pid;
 }
 
+void syscall_exit(void)
+{
+	struct task *tsk = __this_task;
+	long flags;
+
+	lock_irq(flags);
+	list_move_tail(&tsk->list, &delq);
+	unlock_irq(flags);
+}
+
 /* Crappy round-robin type scheduler, just picks the
  * next task on the run queue
  */
@@ -142,11 +153,24 @@ static struct task *get_next_task(struct task *current)
 	return ret;
 }
 
+static void flush_delq(void)
+{
+	struct task *tsk, *tmp;
+
+	list_for_each_entry_safe(tsk, tmp, &delq, list) {
+		list_del(&tsk->list);
+		free_page(tsk);
+	}
+}
+
 void sched(void)
 {
 	struct task *current;
 	struct task *head;
 	long flags;
+
+	if ( unlikely(!list_empty(&delq)) )
+		flush_delq();
 
 	lock_irq(flags);
 

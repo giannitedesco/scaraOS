@@ -2,6 +2,7 @@ ARCH_C_SOURCES = $(ARCH_DIR)/8259a.c \
 		$(ARCH_DIR)/dma.c \
 		$(ARCH_DIR)/floppy.c \
 		$(ARCH_DIR)/idt.c \
+		$(ARCH_DIR)/syscalls.c \
 		$(ARCH_DIR)/irq.c \
 		$(ARCH_DIR)/mm.c \
 		$(ARCH_DIR)/pci.c \
