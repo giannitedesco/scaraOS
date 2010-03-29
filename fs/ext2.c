@@ -5,20 +5,20 @@
 #include <ext2.h>
 
 /* Lookup a name in an inode */
-static struct inode *ext2_lookup(struct inode *i, char *n)
+static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 {
+	struct ext2_dir_entry_2 *dir;
 	struct buffer *bh;
 	ino_t inum;
-	int x,y;
-	int nlen=strlen(n);
-	struct ext2_dir_entry_2 *dir;
+	int x, y;
 	char *j;
 
 	y = EXT2_NDIR_BLOCKS < i->i_blocks ? EXT2_NDIR_BLOCKS : i->i_blocks;
 
-	for(x=0; x<y; x++) {
+	for(x = 0; x < y; x++) {
 		/* pre-allocation ?? */
-		if ( i->u.ext2.block[x]==0 ) continue;
+		if ( i->u.ext2.block[x] == 0 )
+			continue;
 
 		/* Read the block */
 		bh=blk_read(i->i_sb->s_dev, i->u.ext2.block[x]);
@@ -65,7 +65,7 @@ static int ext2_read_inode(struct inode *i)
 	}
 
 	/* 2. Calculate block group number */
-	block_group = (i->i_ino) / i->i_sb->u.ext2.s_inodes_per_group;
+	block_group = (i->i_ino - 1) / i->i_sb->u.ext2.s_inodes_per_group;
 	if ( block_group >= i->i_sb->u.ext2.s_groups_count ) {
 		printk("EXT2: Bad group %lu\n", block_group);
 		return -1;
@@ -78,8 +78,8 @@ static int ext2_read_inode(struct inode *i)
 	gdp = (struct ext2_group_desc *)b->b_buf;
 	
 	/* 4. Obtain correct block from inode table */
-	offset = (i->i_ino - 1) % i->i_sb->u.ext2.s_inodes_per_group;
-	block = gdp[desc].bg_inode_table + (offset / i->i_sb->s_blocksize);
+	block = gdp[desc].bg_inode_table + 
+		((i->i_ino - 1) / i->i_sb->u.ext2.s_inodes_per_block);
 	if ( !(b=blk_read(i->i_sb->s_dev, block)) ) {
 		printk("EXT2: Unable to read inode block - inode=%lu, block=%lu\n",
 			i->i_ino, block);
@@ -87,12 +87,13 @@ static int ext2_read_inode(struct inode *i)
 	}
 
 	/* 5. Obtain the inode pointer */
-	offset = (i->i_ino - 1) & (i->i_sb->s_blocksize - 1);
-	offset *= i->i_sb->u.ext2.s_es->s_inode_size;
+	offset = (i->i_ino - 1) * i->i_sb->u.ext2.s_es->s_inode_size;
+	offset &= (i->i_sb->s_blocksize - 1);
 	raw_inode = (struct ext2_inode *)(b->b_buf + offset);
 	
 	/* 6. Copy the inode */
 	i->i_fop = NULL;
+	printk("Inode %lu mode %o\n", i->i_ino, raw_inode->i_mode);
 	if ( S_ISDIR(raw_inode->i_mode) ) {
 		i->i_iop = &ext2_dir_iop;
 	}else{
@@ -194,7 +195,6 @@ static int ext2_get_super(struct super *sb)
 		goto err;
 	}
 
-	ext2_lookup(sb->s_root, "cunt");
 	return 0;
 err:
 	blk_free(bh);

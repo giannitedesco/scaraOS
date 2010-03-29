@@ -69,7 +69,7 @@ struct super_ops {
 };
 
 struct inode_ops {
-	struct inode *(*lookup)(struct inode *, char *name);
+	struct inode *(*lookup)(struct inode *, const char *name, size_t nlen);
 };
 
 struct file_ops {
@@ -87,6 +87,6 @@ struct inode *iget(struct super *, ino_t);
 void iput(struct inode *);
 
 /* Dentry cache interface */
-struct inode *namei(char *);
+struct inode *namei(const char *);
 
 #endif /* __VFS_HEADER_INCLUDED__ */
