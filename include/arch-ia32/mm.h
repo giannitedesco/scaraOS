@@ -99,7 +99,6 @@ extern uint32_t _init_pgd, _init_pgt;
 #define PTE_RES3	(1<<11)
 
 /* #PF handler */
-void pagefault(uint32_t, uint32_t);
 void ia32_mm_init(void *ptr, size_t len);
 void ia32_setup_initmem(void);
 

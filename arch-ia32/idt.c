@@ -56,7 +56,12 @@ static void page_fault(struct ia32_exc_ctx *ctx)
 {
 	uint32_t cr2;
 	get_cr2(cr2);
-	printk("#PF fault_addr=%p\n", cr2);
+	printk("#PF in %s mode: %s fault_addr=%p/%s%s\n",
+		(ctx->err_code & 0x4) ? "supervisor" : "user",
+		(ctx->err_code & 0x1) ? "PROTECTION_VIOLATION" : "NONPRESENT",
+		cr2,
+		(ctx->err_code & 0x2) ? "WRITE" : "READ",
+		(ctx->err_code & 0x8) ? " RSVD_BIT_SET" : "");
 	ctx_dump(ctx);
 	idle_task_func();
 }
@@ -151,6 +156,7 @@ void panic_exc(struct ia32_exc_ctx ctx)
 void panic(void)
 {
 	asm volatile("int $0xf0");
+	idle_task_func();
 }
 
 void __init idt_init(void)

@@ -37,7 +37,7 @@ multiboot_entry:
 
 	/* Enable paging */
 	movl	%cr0,%edx
-	orl	$0x80000000,%edx
+	orl	$0x80010000,%edx
 	movl	%edx,%cr0
 
 	/* Fixup stack pointer */

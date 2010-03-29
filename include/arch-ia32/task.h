@@ -33,6 +33,6 @@ static inline struct task *this_task(void)
 }
 #endif
 
-void idle_task_func(void);
+_noreturn void idle_task_func(void);
 
 #endif /* __ARCH_IA32_TASK_INCLUDED__ */

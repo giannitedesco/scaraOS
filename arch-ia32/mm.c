@@ -11,7 +11,6 @@
 static void *bootmem_begin;
 static void *bootmem_end;
 static void *bootmem_ptr;
-static pgd_t kernel_pgdir;
 
 /* lower and upper memory */
 uint32_t mem_lo, mem_hi;
@@ -34,19 +33,13 @@ static void *bootmem_alloc(unsigned int pages)
 void ia32_setup_initmem(void)
 {
 	unsigned int i;
-	uint8_t *pgd_ptr;
-	uint8_t *pgt_ptr;
 	pgd_t dir;
 	pgt_t tbl;
 
-	pgd_ptr = &__init_pgd;
-	pgt_ptr = &__init_pgt;
+	dir = &__init_pgd_pa;
+	tbl = &__init_pgt_pa;
 
-	/* Assume space for initial page table and page directory */
-	dir = (pgd_t)__pa(pgd_ptr);
-	tbl = (pgt_t)__pa(pgt_ptr);
-
-	for (i=0; i < NR_PDE; i++)
+	for (i = 0; i < NR_PDE; i++)
 		dir[i] = 0;
 
 	for (i=0; i < NR_PTE; i++)
@@ -67,6 +60,9 @@ static void map_ram(pgd_t pgdir, pgt_t pgtbl)
 {
 	unsigned long i;
 
+	/* Only use PAGE_OFFSET mapping, so zap identity map now */
+	pgdir[0] = 0;
+
 	for(i=0; i < nr_physpages; i++) {
 		pgtbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
 		if ( (i & 0x3ff) == 0 ) {
@@ -84,7 +80,7 @@ static void write_protect(pgt_t pgtbl, void *vptr, size_t len)
 	uint32_t pa_begin, pa_end, i;
 
 	pa_begin = __pa(vptr) & ~PAGE_MASK;
-	pa_end = pa_begin + (len - 1);
+	pa_end = pa_begin + len;
 	pa_end = (pa_end + PAGE_MASK) & ~PAGE_MASK;
 
 	pa_begin >>= PAGE_SHIFT;
@@ -92,8 +88,8 @@ static void write_protect(pgt_t pgtbl, void *vptr, size_t len)
 
 	printk("Write protecting %u pages @ 0x%x\n",
 		(pa_end + 1) - pa_begin, vptr);
-	for(i = pa_begin; i <= pa_end; i++)
-		pgtbl[i] = (i << PAGE_SHIFT) | PDE_PRESENT;
+	for(i = pa_begin; i < pa_end; i++)
+		pgtbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT;
 
 	__flush_tlb();
 }
@@ -282,15 +278,9 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	/* Map in all physical memory */
 	/* FIXME: initial page table is leaked */
 	tbls = bootmem_alloc(nr_pgtbls);
-	get_pdbr(kernel_pgdir);
-	kernel_pgdir = __va(kernel_pgdir);
-	map_ram(kernel_pgdir, tbls);
+	map_ram(&__init_pgd, tbls);
 	write_protect(tbls, &__begin, &__rodata_end - &__begin);
 	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
-
-	/* Only use PAGE_OFFSET mapping, so zap identity map now */
-	kernel_pgdir[0] = 0;
-	__flush_tlb();
 
 	buddy_init();
 
