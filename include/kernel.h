@@ -41,6 +41,7 @@ typedef uint32_t umode_t;
 #endif
 
 void printkv(const char *, va_list);
+void hex_dumpk(const uint8_t *tmp, size_t len, size_t llen);
 _printf(1, 2) void printk(const char *, ...);
 _printf(1, 2) _noreturn void panic(const char *, ...);
 
