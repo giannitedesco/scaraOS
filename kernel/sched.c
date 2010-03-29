@@ -51,13 +51,13 @@ void wake_up(struct waitq *q)
 
 /* The task that becomes the idle task needs to call this function - interrupts
  * should be disabled by the caller */
+static struct task *idle_task;
 void sched_init(void)
 {
-	struct task *t = __this_task;
-	t->state = TASK_RUNNING;
-	t->name = "[idle]";
-	t->pid = 0;
-	list_add(&t->list, &runq);
+	idle_task =  __this_task;
+	idle_task->state = TASK_RUNNING;
+	idle_task->name = "[idle]";
+	idle_task->pid = 0;
 }
 
 /* Put a task on the runq */
@@ -79,7 +79,8 @@ static void task_push_word(struct task *tsk, uint32_t word)
 	*(uint32_t *)tsk->t.esp = word;
 }
 
-_noreturn static void kthread_init(void (*thread_func)(void *), void *priv)
+_noreturn _asmlinkage
+static void kthread_init(void (*thread_func)(void *), void *priv)
 {
 	sti();
 	printk("kthread_init: thread_func=%p priv=%p\n", thread_func, priv);
@@ -95,7 +96,6 @@ int kernel_thread(const char *proc_name,
 	struct task *tsk;
 	static pid_t pid = 1;
 	static pid_t ret;
-	//unsigned int i;
 	long eflags;
 
 	tsk = alloc_page();
@@ -112,11 +112,7 @@ int kernel_thread(const char *proc_name,
 	task_push_word(tsk, (uint32_t)priv);
 	task_push_word(tsk, (uint32_t)thread_func);
 
-	/* pusha - why the fuck this isn't needed i have no idea... */
-	//for(i = 0; i < 8; i++)
-	//	task_push_word(tsk, 0);
-
-	/* pushfl */
+	/* then why is this needed? */
 	get_eflags(eflags);
 	task_push_word(tsk, eflags);
 
@@ -126,10 +122,26 @@ int kernel_thread(const char *proc_name,
 
 /* Crappy round-robin type scheduler, just picks the
  * next task on the run queue
- *
- * FIXME: idle task needs special treatment, don't run it when other tasks
- * are in the runnable state
-*/
+ */
+static struct task *get_next_task(struct task *current)
+{
+	struct task *ret;
+
+	if ( list_empty(&runq) ) {
+		ret = idle_task;
+		printk("Idling...\n");
+	}else{
+		ret = list_entry(runq.next, struct task, list);
+		if ( current == ret ) {
+			list_move_tail(&current->list, &runq);
+			ret = list_entry(runq.next, struct task, list);
+		}
+	}
+
+	BUG_ON(ret->state == TASK_SLEEPING);
+	return ret;
+}
+
 void sched(void)
 {
 	struct task *current;
@@ -139,35 +151,15 @@ void sched(void)
 	lock_irq(flags);
 
 	current = __this_task;
-	head = list_entry(runq.next, struct task, list);
-
-	/* Task is sleeping, go to head of runq */
-	if ( current->state == TASK_SLEEPING ) {
-		dprintk("sched: Current task sleeps: switch from %s to %s\n",
-			current->name, head->name);
-		head->state = TASK_RUNNING;
-		switch_task(current, head);
-		unlock_irq(flags);
-		return;
-	}
-
-	/* sched called while runnable task is still running, expire the
-	 * little fucker
-	 */
-	if ( current == head ) {
-		list_move_tail(&current->list, &runq);
-		head = list_entry(runq.next, struct task, list);
-	}
-
-	/* only one runnable task, nothing to do */
-	if ( current == head ) {
-		unlock_irq(flags);
-		return;
-	}
+	head = get_next_task(current);
+	if ( current == head )
+		goto out;
 
 	dprintk("sched: switch from %s to %s\n", current->name, head->name);
 	current->state = TASK_READY;
 	head->state = TASK_RUNNING;
 	switch_task(current, head);
+
+out:
 	unlock_irq(flags);
 }

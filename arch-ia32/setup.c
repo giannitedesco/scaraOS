@@ -135,12 +135,6 @@ _noreturn static void init_task(void *priv)
 
 _noreturn static void task2(void *priv)
 {
-#if 0
-	const char *fucker = "HELLO WORLD";
-	*(uint32_t *)fucker = 0xfeedface;
-	printk("%s\n", fucker);
-#endif
-
 	for(;;) {
 		mdelay(100);
 		printk("B");
