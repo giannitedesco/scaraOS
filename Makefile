@@ -40,7 +40,7 @@ CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 %.o: %.c
 	$(GCC) $(CFLAGS) -c -o $@ $<
 %.o: %.S
-	$(GCC) $(CFLAGS) -c -o $@ $<
+	$(GCC) $(CFLAGS) -D__ASM__ -c -o $@ $<
 
 ./include/arch:
 	$(LN) -sf arch-$(ARCH) ./include/arch
