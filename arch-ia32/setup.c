@@ -16,8 +16,9 @@
 #include <arch/8259a.h>
 #include <arch/idt.h>
 #include <arch/pci.h>
-
 #include <arch/multiboot.h>
+#include <arch/regs.h>
+#include <arch/syscalls.h>
 
 /* Global descriptor table */
 static const dt_entry_t __desc_aligned GDT[] = {
@@ -114,8 +115,10 @@ static void do_initcalls(void)
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
-_noreturn static void init_task(void *priv)
+static int init_task(void *priv)
 {
+	uint32_t ret;
+
 	/* Initialise kernel subsystems */
 	blk_init();
 	vfs_init();
@@ -125,7 +128,10 @@ _noreturn static void init_task(void *priv)
 
 	/* Mount the root filesystem etc.. */
 	vfs_mount_root();
-	printk("init_task: completed\n");
+
+	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
+	printk("exec: /sbin/init: %i\n", (int)ret);
+	return ret;
 
 	for(;;) {
 		mdelay(100);
@@ -133,17 +139,11 @@ _noreturn static void init_task(void *priv)
 	}
 }
 
-#include <arch/regs.h>
-#include <arch/syscalls.h>
-_noreturn static void task2(void *priv)
+static int task2(void *priv)
 {
 	for(;;) {
 		mdelay(100);
 		printk("B");
-		asm volatile ("movl $0x0,%%eax\n"
-				"movl $0x666, %%ebx\n"
-				"int $0xff\n"
-				::: "%eax", "%ebx");
 	}
 }
 
@@ -151,16 +151,18 @@ _noreturn static void task2(void *priv)
 _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 {
 	/* print a pretty message */
-	printk("ScaraOS v0.0.4 for IA-32\n");
+	printk("ScaraOS v0.0.4 for IA-32");
 	if ( mbi->flags & MBF_CMDLINE ) {
-		printk("cmd: %s\n", (char *)__va(mbi->cmdline));
 		cmdline = __va(mbi->cmdline);
+		printk(": %s", cmdline);
 	}
+	printk("\n");
 
 	/* Need this quite quickly */
 	idt_init();
 
 	/* Fire up the kernel memory allocators */
+	BUG_ON((mbi->flags & MBF_MMAP) == 0);
 	if ( mbi->flags & MBF_MMAP ) {
 		ia32_mm_init(__va(mbi->mmap), mbi->mmap_length);
 	}else{
@@ -182,7 +184,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* Setup the init task */
 	kernel_thread("[init]", init_task, NULL);
-	kernel_thread("[cpuhog]", task2, NULL);
+	//kernel_thread("[cpuhog]", task2, NULL);
 
 	/* start jiffie counter */
 	pit_start_timer1();

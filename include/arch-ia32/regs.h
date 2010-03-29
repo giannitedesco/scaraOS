@@ -18,9 +18,9 @@ struct intr_ctx {
 	uint32_t eflags;
 };
 
-_asmlinkage void exc_handler(uint32_t exc_num, struct intr_ctx ctx);
-_asmlinkage void syscall_exc(struct intr_ctx ctx);
-_asmlinkage _noreturn void panic_exc(struct intr_ctx ctx);
+_asmlinkage void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx);
+_asmlinkage void syscall_exc(volatile struct intr_ctx ctx);
+_asmlinkage _noreturn void panic_exc(volatile struct intr_ctx ctx);
 void ctx_dump(struct intr_ctx *ctx);
 
 #endif

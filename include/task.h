@@ -37,7 +37,7 @@ void wake_up(struct waitq *);
 void task_to_runq(struct task *);
 
 int kernel_thread(const char *proc_name,
-			void (*thread_func)(void *),
+			int (*thread_func)(void *),
 			void *priv);
 
 /* The scheduler */

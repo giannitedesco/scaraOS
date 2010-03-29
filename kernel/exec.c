@@ -6,6 +6,5 @@
 
 uint32_t syscall_exec(uint32_t path)
 {
-	printk("syscall: EXEC\n");
 	return -1;
 }

@@ -115,7 +115,7 @@ static const struct {
 	{EXC_TYPE_FAULT, 0, "SIMD Exception"},
 };
 
-void exc_handler(uint32_t exc_num, struct intr_ctx ctx)
+void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 {
 	static const char * const tname[] = {
 		"UNKNOWN",
@@ -125,7 +125,7 @@ void exc_handler(uint32_t exc_num, struct intr_ctx ctx)
 	};
 
 	if ( exc[exc_num].handler ) {
-		(*exc[exc_num].handler)(&ctx);
+		(*exc[exc_num].handler)((struct intr_ctx *)&ctx);
 		return;
 	}
 
@@ -151,9 +151,9 @@ void exc_handler(uint32_t exc_num, struct intr_ctx ctx)
 		idle_task_func();
 }
 
-void panic_exc(struct intr_ctx ctx)
+void panic_exc(volatile struct intr_ctx ctx)
 {
-	ctx_dump(&ctx);
+	ctx_dump((struct intr_ctx *)&ctx);
 	/* FIXME: check CPL in ctx.cs so that userspace can't invoke a kernel
 	 * panic heh */
 	cli();

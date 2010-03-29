@@ -81,18 +81,35 @@ static void task_push_word(struct task *tsk, uint32_t word)
 	*(uint32_t *)tsk->t.esp = word;
 }
 
+static void do_exit(uint32_t code)
+{
+	struct task *tsk = __this_task;
+	long flags;
+
+	lock_irq(flags);
+	list_move_tail(&tsk->list, &delq);
+	tsk->exit_code = code;
+	tsk->state = TASK_ZOMBIE;
+	unlock_irq(flags);
+}
+
+uint32_t syscall_exit(uint32_t code)
+{
+	do_exit(code);
+	return 0;
+}
+
 _noreturn _asmlinkage
-static void kthread_init(void (*thread_func)(void *), void *priv)
+static void kthread_init(int (*thread_func)(void *), void *priv)
 {
 	sti();
-	printk("kthread_init: thread_func=%p priv=%p\n", thread_func, priv);
-	(*thread_func)(priv);
-	printk("FIXME: call __exit() when implemented\n");
+	dprintk("kthread_init: thread_func=%p priv=%p\n", thread_func, priv);
+	do_exit((*thread_func)(priv));
 	idle_task_func();
 }
 
 int kernel_thread(const char *proc_name,
-			void (*thread_func)(void *),
+			int (*thread_func)(void *),
 			void *priv)
 {
 	struct task *tsk;
@@ -122,24 +139,6 @@ int kernel_thread(const char *proc_name,
 	return tsk->pid;
 }
 
-static void do_exit(uint32_t code)
-{
-	struct task *tsk = __this_task;
-	long flags;
-
-	lock_irq(flags);
-	list_move_tail(&tsk->list, &delq);
-	tsk->exit_code = code;
-	tsk->state = TASK_ZOMBIE;
-	unlock_irq(flags);
-}
-
-uint32_t syscall_exit(uint32_t code)
-{
-	do_exit(code);
-	return 0;
-}
-
 uint32_t syscall_fork(uint32_t flags)
 {
 	return -1;
@@ -154,7 +153,8 @@ static struct task *get_next_task(struct task *current)
 
 	if ( list_empty(&runq) ) {
 		ret = idle_task;
-		printk("Idling...\n");
+		if ( current != ret)
+			dprintk("Idling...\n");
 	}else{
 		ret = list_entry(runq.next, struct task, list);
 		if ( current == ret ) {
@@ -173,8 +173,8 @@ static void flush_delq(void)
 
 	list_for_each_entry_safe(tsk, tmp, &delq, list) {
 		BUG_ON(tsk->state != TASK_ZOMBIE);
-		printk("task: %s exited with code 0x%lx\n",
-			tsk->name, tsk->exit_code);
+		dprintk("task: %s exited with code %i\n",
+			tsk->name, (int)tsk->exit_code);
 		list_del(&tsk->list);
 		free_page(tsk);
 	}

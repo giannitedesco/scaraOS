@@ -19,7 +19,7 @@ static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
 	[_SYS_exec] {.type = _SYS_ARG1, .u.arg1 = syscall_exec },
 };
 
-void syscall_exc(struct intr_ctx ctx)
+void syscall_exc(volatile struct intr_ctx ctx)
 {
 	const struct syscall_desc *sys;
 	uint32_t ret;
@@ -42,10 +42,11 @@ void syscall_exc(struct intr_ctx ctx)
 		ret = sys->u.arg3(ctx.ebx, ctx.ecx, ctx.edx);
 		break;
 	case _SYS_REGS:
-		ret = sys->u.argreg(&ctx);
+		ret = sys->u.argreg((struct intr_ctx *)&ctx);
 		break;
+	default:
+		ret = -1;
 	}
 
 	ctx.eax = ret;
 }
-
