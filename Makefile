@@ -99,7 +99,7 @@ all: kernel.elf.gz
 boot.img: kernel.elf.gz menu.lst
 	e2fsck -y ./boot.img || true
 	e2cp kernel.elf.gz ./boot.img:kernel
-	e2cp menu.lst ./boot.img:boot/grub/
+	e2cp menu.lst ./boot.img:
 
 boot_floppy: boot.img
 
