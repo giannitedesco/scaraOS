@@ -111,7 +111,7 @@ void vga_init(void)
 	static const char * const m[] = {"none", "colour", "monochrome"};
 
 	if ( monitor < sizeof(m)/sizeof(*m) )
-		printk("vga: monitor detected: %s\n", m[monitor]);
+		dprintk("vga: monitor detected: %s\n", m[monitor]);
 	else
 		printk("vga: monitor not recognised\n");
 }
