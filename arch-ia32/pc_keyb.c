@@ -54,7 +54,7 @@ static void __init pc_keyb_init(void)
 	irq_on(1);
 
 	/* Ah, all done */
-	printk("AT keyboard enabled\n");
+	dprintk("AT keyboard enabled\n");
 }
 
 driver_init(pc_keyb_init);
