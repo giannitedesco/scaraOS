@@ -1,4 +1,3 @@
-#define __ASM__	1
 #include <arch/multiboot.h>
 #include <arch/mm.h>
 .section .text.init
