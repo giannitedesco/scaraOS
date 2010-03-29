@@ -6,7 +6,7 @@
 #include <arch/vga.h>
 #include <arch/io.h>
 
-static volatile unsigned char *vidmem;
+static volatile unsigned char *vidmem = VIDMEM;
 static uint16_t attrib = 0x0017;
 static signed short xpos, ypos;
 static unsigned int monitor = MONITOR_NONE;
@@ -14,7 +14,6 @@ static unsigned int monitor = MONITOR_NONE;
 void _asmlinkage vga_preinit(void)
 {
 	int i;
-	vidmem = (unsigned char *)VIDMEM;
 
 	/* Detect monitor type */
 	switch (*(((uint8_t *)0x410)) & 0x30) {
@@ -31,9 +30,6 @@ void _asmlinkage vga_preinit(void)
 	default:
 		monitor = MONITOR_UNKNOWN;
 	}
-
-	xpos = 0;
-	ypos = 0;
 
 	/* Clear the screeen */
 	for (i = 0; i < COLS * ROWS * 2; i += 2) {
