@@ -59,7 +59,6 @@ void buddy_init(void);
 void *alloc_pages(unsigned int order);
 void free_pages(void *ptr, unsigned int order);
 
-
 /*
  * Kernel memory allocator
  */

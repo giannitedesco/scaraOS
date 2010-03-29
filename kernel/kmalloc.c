@@ -115,7 +115,7 @@ void kmem_free(void *ptr)
 	void **pptr;
 
 	if ( !(p->flags & PG_slab) ) {
-		printk("kmem: 0x%x not a slab page!\n", page_address(p));
+		printk("kmem: %p not a slab page!\n", page_address(p));
 		return;
 	}
 

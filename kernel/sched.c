@@ -79,10 +79,10 @@ static void task_push_word(struct task *tsk, uint32_t word)
 	*(uint32_t *)tsk->t.esp = word;
 }
 
-static void kthread_init(void (*thread_func)(void *), void *priv)
+_noreturn static void kthread_init(void (*thread_func)(void *), void *priv)
 {
 	sti();
-	printk("kthread_init: thread_func=%x priv=%x\n", thread_func, priv);
+	printk("kthread_init: thread_func=%p priv=%p\n", thread_func, priv);
 	(*thread_func)(priv);
 	printk("FIXME: call __exit() when implemented\n");
 	idle_task_func();

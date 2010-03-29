@@ -67,7 +67,7 @@ static void cpuid_init(void)
 	cpuid(1, &eax, &ebx, &ecx, &edx);
 	__this_cpu->features=edx;
 
-	printk("cpu: %u.%uMHz %s cpuid=%i ",
+	printk("cpu: %lu.%luMHz %s cpuid=%i ",
 		((__this_cpu->loops_ms*10)/5000),
 		((__this_cpu->loops_ms*10)/50)%100,
 		desc, cpuid_level);
@@ -148,12 +148,12 @@ _noreturn static void task2(void *priv)
 }
 
 /* Entry point in to the kernel proper */
-void _asmlinkage setup(multiboot_info_t *mbi)
+_noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 {
 	/* print a pretty message */
 	printk("ScaraOS v0.0.4 for IA-32\n");
 	if ( mbi->flags & MBF_CMDLINE ) {
-		printk("cmd: %s\n", __va(mbi->cmdline));
+		printk("cmd: %s\n", (char *)__va(mbi->cmdline));
 		cmdline = __va(mbi->cmdline);
 	}
 

@@ -5,7 +5,7 @@
 
 #define COLS		80
 #define ROWS		25
-#define VIDMEM		(0xB8000+PAGE_OFFSET)
+#define VIDMEM		__va(0xB8000)
 
 void vga_preinit(void);
 

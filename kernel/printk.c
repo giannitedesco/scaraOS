@@ -12,24 +12,26 @@ signed short xpos, ypos;
 void vga_curs ( uint16_t x, uint16_t y );
 void vga_put(uint8_t);
 
-void printk(const char *format, ...)
+void printkv(const char *format, va_list va)
 {
 	static char buf[512];
-	va_list args;
-	int len, i;
 	long flags;
+	int len, i;
 
-	va_start(args,format);
-	len = vsnprintf(buf, sizeof(buf), format, args);
-
+	len = vsnprintf(buf, sizeof(buf), format, va);
 	/* Don't want interrupts coming in and
 	 * mangling our output */
 	lock_irq(flags);
-
 	for(i = 0; i < len; i++)
 		vga_put(buf[i]);
-
-	unlock_irq(flags);
-	va_end(args);
 	vga_curs(xpos, ypos);
+	unlock_irq(flags);
+}
+
+void printk(const char *format, ...)
+{
+	va_list va;
+	va_start(va, format);
+	printkv(format, va);
+	va_end(va);
 }

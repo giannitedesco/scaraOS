@@ -60,7 +60,7 @@ static int ext2_read_inode(struct inode *i)
 
 	/* 1. Check inode number */
 	if ( i->i_ino > i->i_sb->u.ext2.s_es->s_inodes_count ) {
-		printk("EXT2: bad inode %u\n", i->i_ino);
+		printk("EXT2: bad inode %lu\n", i->i_ino);
 		return -1;
 	}
 

@@ -43,20 +43,21 @@ void idt_interrupt(void *handler, uint8_t intr)
 static void ctx_dump(struct ia32_exc_ctx *ctx)
 {
 	struct task *tsk = __this_task;
-	printk("Task pid=%u name=%s: CS=%p\n", tsk->pid, tsk->name, ctx->cs);
-	printk("  EIP=0x%.8x EFLAGS=0x%.8x\n", ctx->eip, ctx->eflags);
-	printk("  EAX=0x%.8x    EBX=0x%.8x\n", ctx->eax, ctx->ebx);
-	printk("  ECX=0x%.8x    EDX=0x%.8x\n", ctx->ecx, ctx->edx);
-	printk("  ESP=0x%.8x    EBP=0x%.8x\n", ctx->esp, ctx->ebp);
-	printk("  ESI=0x%.8x    EDI=0x%.8x\n", ctx->edi, ctx->esi);
+	printk("Task pid=%lu name=%s: CS=%.8lx\n",
+			tsk->pid, tsk->name, ctx->cs);
+	printk("  EIP=0x%.8lx EFLAGS=0x%.8lx\n", ctx->eip, ctx->eflags);
+	printk("  EAX=0x%.8lx    EBX=0x%.8lx\n", ctx->eax, ctx->ebx);
+	printk("  ECX=0x%.8lx    EDX=0x%.8lx\n", ctx->ecx, ctx->edx);
+	printk("  ESP=0x%.8lx    EBP=0x%.8lx\n", ctx->esp, ctx->ebp);
+	printk("  ESI=0x%.8lx    EDI=0x%.8lx\n", ctx->edi, ctx->esi);
 	/* TODO: stack trace */
 }
 
-static void page_fault(struct ia32_exc_ctx *ctx)
+_noreturn static void page_fault(struct ia32_exc_ctx *ctx)
 {
 	uint32_t cr2;
 	get_cr2(cr2);
-	printk("#PF in %s mode: %s fault_addr=%p/%s%s\n",
+	printk("#PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
 		(ctx->err_code & 0x4) ? "supervisor" : "user",
 		(ctx->err_code & 0x1) ? "PROTECTION_VIOLATION" : "NONPRESENT",
 		cr2,
@@ -115,7 +116,7 @@ void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx)
 		return;
 	}
 
-	printk("%s: %s @ 0x%x",
+	printk("%s: %s @ 0x%.8lx",
 		tname[exc[exc_num].type], exc[exc_num].name, ctx.eip);
 	if ( exc[exc_num].err_code ) {
 		if ( ctx.err_code & 0x1 )
@@ -144,8 +145,6 @@ void syscall_exc(struct ia32_exc_ctx ctx)
 
 void panic_exc(struct ia32_exc_ctx ctx)
 {
-	printk("Panic: ");
-
 	ctx_dump(&ctx);
 	/* FIXME: check CPL in ctx.cs so that userspace can't invoke a kernel
 	 * panic heh */
@@ -153,8 +152,14 @@ void panic_exc(struct ia32_exc_ctx ctx)
 	idle_task_func();
 }
 
-void panic(void)
+void panic(const char *fmt, ...)
 {
+	va_list va;
+	va_start(va, fmt);
+	printk("Panic: ");
+	printkv(fmt, va);
+	va_end(va);
+
 	asm volatile("int $0xf0");
 	idle_task_func();
 }

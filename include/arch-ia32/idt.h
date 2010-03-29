@@ -24,9 +24,9 @@ void idt_init(void);
 void idt_exception(void *, uint8_t);
 void idt_interrupt(void *, uint8_t);
 
-void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx);
-void syscall_exc(struct ia32_exc_ctx ctx);
-void panic_exc(struct ia32_exc_ctx ctx);
+_asmlinkage void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx);
+_asmlinkage void syscall_exc(struct ia32_exc_ctx ctx);
+_asmlinkage _noreturn void panic_exc(struct ia32_exc_ctx ctx);
 
 /* Exception handlers  */
 void int_null(void);

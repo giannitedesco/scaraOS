@@ -86,7 +86,7 @@ static void write_protect(pgt_t pgtbl, void *vptr, size_t len)
 	pa_begin >>= PAGE_SHIFT;
 	pa_end >>= PAGE_SHIFT;
 
-	printk("Write protecting %u pages @ 0x%x\n",
+	printk("Write protecting %lu pages @ %p\n",
 		(pa_end + 1) - pa_begin, vptr);
 	for(i = pa_begin; i < pa_end; i++)
 		pgtbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT;
@@ -96,10 +96,11 @@ static void write_protect(pgt_t pgtbl, void *vptr, size_t len)
 
 static void print_e820(void *addr, size_t len)
 {
+#if DEBUG_E820
 	void *end = addr + len;
 
-	printk("e820 map from BIOS (%u bytes at 0x%x)\n", len, addr);
-	printk(" o kernel @ 0x%x - 0x%x (cmdline = 0x%x)\n",
+	printk("e820 map from BIOS (%lu bytes at %p)\n", len, addr);
+	printk(" o kernel @ 0x%.8lx - 0x%.8lx (cmdline = 0x%.8lx)\n",
 		__pa(&__begin), __pa(&__end), __pa(cmdline));
 
 	for(;;) {
@@ -109,7 +110,7 @@ static void print_e820(void *addr, size_t len)
 		if ( addr + map->size + sizeof(map->size) > end )
 			break;
 
-		dprintk(" o (%u) 0x%x -> 0x%x (0x%x) :",
+		dprintk(" o (%lu) 0x%.8lx -> 0x%.8lx (0x%.8lx) :",
 			map->size + sizeof(map->size),
 			map->base_addr_low,
 			map->base_addr_low + map->length_low,
@@ -135,6 +136,7 @@ static void print_e820(void *addr, size_t len)
 
 		addr += map->size + sizeof(map->size);
 	}
+#endif
 }
 
 static uint32_t size_up_ram(void *addr, size_t len)
@@ -210,7 +212,7 @@ static void reserve_pages(void *vptr, size_t len)
 
 	pa_begin &= ~PAGE_MASK;
 	pa_end = (pa_end + PAGE_MASK) & ~PAGE_MASK;
-	//printk("reserve_pages: %x - %x\n", pa_begin, pa_end);
+	//printk("reserve_pages: %.8lx - %.8lx\n", pa_begin, pa_end);
 
 	reserve_page_range(pa_begin >> PAGE_SHIFT, pa_end >> PAGE_SHIFT);
 }
@@ -230,7 +232,7 @@ static void reserve_from_e820(void *addr, size_t len)
 			break;
 
 		if ( map->base_addr_low != contig_end ) {
-			printk("e820 hole: %x - %x\n",
+			printk("e820 hole: %.8lx - %.8lx\n",
 				contig_end, map->base_addr_low);
 			reserve_pages(__va(contig_end),
 					map->base_addr_low - contig_end);
@@ -263,7 +265,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	bootmem_end = bootmem_ptr = bootmem_begin;
 
 	/* Calculate size of physical memory */
-	//print_e820(e820_map, e820_len);
+	print_e820(e820_map, e820_len);
 	tot_mem = size_up_ram(e820_map, e820_len);
 	nr_physpages = tot_mem >> PAGE_SHIFT;
 
@@ -280,7 +282,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	tbls = bootmem_alloc(nr_pgtbls);
 	map_ram(&__init_pgd, tbls);
 	write_protect(tbls, &__begin, &__rodata_end - &__begin);
-	printk("Kernel page tables = %u pages @ 0x%x\n", nr_pgtbls, tbls);
+	printk("Kernel page tables = %lu pages @ %p\n", nr_pgtbls, tbls);
 
 	buddy_init();
 
@@ -289,7 +291,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 		pfa_size += PAGE_SIZE - (pfa_size & PAGE_MASK);
 
 	pfa = bootmem_alloc(pfa_size >> PAGE_SHIFT);
-	printk("Kernel page frame array %u entries/%u pages @ 0x%x\n",
+	printk("Kernel page frame array %lu entries/%lu pages @ %p\n",
 		pfa_size, pfa_size >> PAGE_SHIFT, pfa);
 
 	reserve_from_e820(e820_map, e820_len);
@@ -308,7 +310,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	}
 
 	/* Print some stats */
-	printk("mem: ram=%uMB %u/%u pageframes free (%u reserved)\n",
+	printk("mem: ram=%luMB %lu/%lu pageframes free (%lu reserved)\n",
 		tot_mem/(1 << 20), nr_freepages, nr_physpages, nr_reserved);
 
 	kmalloc_init();

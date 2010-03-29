@@ -6,7 +6,7 @@
 #include <arch/vga.h>
 #include <arch/io.h>
 
-static volatile unsigned char *vidmem = VIDMEM;
+static volatile uint8_t *vidmem = (uint8_t *)VIDMEM;
 static uint16_t attrib = 0x0017;
 static signed short xpos, ypos;
 static unsigned int monitor = MONITOR_NONE;

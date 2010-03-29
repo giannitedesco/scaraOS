@@ -37,11 +37,18 @@ typedef uint32_t umode_t;
 #if DEBUG_MODULE
 #define dprintk printk
 #else
-#define dprintk(x...) do {}while(0);
+#define dprintk(x...) do {}while(0)
 #endif
 
-void printk(const char *, ...);
-_noreturn void panic(void);
+void printkv(const char *, va_list);
+_printf(1, 2) void printk(const char *, ...);
+_printf(1, 2) _noreturn void panic(const char *, ...);
+
+#if KDEBUG
+#define kassert(x) do {} while(0)
+#else 
+#define kassert(x) do {} while(0)
+#endif
 
 /* Driver initialisation */
 #define driver_init(fn) __initcall(fn)

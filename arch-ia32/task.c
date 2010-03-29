@@ -12,4 +12,6 @@ void idle_task_func(void)
 		"rep; nop\n"
 		"hlt;\n"
 		"jmp 1b\n");
+	for(;;)
+		/* shutup gcc */;
 }
