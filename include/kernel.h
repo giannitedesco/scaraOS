@@ -41,6 +41,7 @@ typedef uint32_t umode_t;
 #endif
 
 void printk(const char *, ...);
+_noreturn void panic(void);
 
 /* Driver initialisation */
 #define driver_init(fn) __initcall(fn)

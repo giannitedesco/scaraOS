@@ -4,9 +4,9 @@
 #include <kernel.h>
 #include <arch/mm.h>
 #include <arch/descriptor.h>
-#include <arch/task.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
+#include <task.h>
 
 #define load_idt(idtr) \
 	asm volatile("lidt (%0)": :"r" (idtr));
@@ -40,52 +40,117 @@ void idt_interrupt(void *handler, uint8_t intr)
 	unlock_irq(flags);
 }
 
-static const struct {
-	int fault;
-	char * const name;
-}exc[]={
-	{1, "Divide Error"},
-	{1, "Debug"},
-	{0, "NMI"},
-	{0, "Breakpoint"},
-	{0, "Overflow"},
+static void ctx_dump(struct ia32_exc_ctx *ctx)
+{
+	struct task *tsk = __this_task;
+	printk("Task pid=%u name=%s: CS=%p\n", tsk->pid, tsk->name, ctx->cs);
+	printk("  EIP=0x%.8x EFLAGS=0x%.8x\n", ctx->eip, ctx->eflags);
+	printk("  EAX=0x%.8x    EBX=0x%.8x\n", ctx->eax, ctx->ebx);
+	printk("  ECX=0x%.8x    EDX=0x%.8x\n", ctx->ecx, ctx->edx);
+	printk("  ESP=0x%.8x    EBP=0x%.8x\n", ctx->esp, ctx->ebp);
+	printk("  ESI=0x%.8x    EDI=0x%.8x\n", ctx->edi, ctx->esi);
+	/* TODO: stack trace */
+}
 
-	{1, "Bounds Check"},
-	{1, "Invalid Opcode"},
-	{1, "Coprocessor not available"},
-	{1, "Double fault"},
-	{1, "Coprocessor segment overrun"},
-
-	{1, "Invalid TSS"},
-	{1, "Segment not present"},
-	{1, "Stack segment"},
-	{1, "General Protection"},
-	{1, "Page Fault"},
-
-	{0, NULL},
-	{1, "FPU error"},
-	{1, "Alignment Check"},
-	{1, "Machine Check"},
-	{1, "SIMD Exception"},
-};
-
-void exc_handler(struct ia32_exc_ctx ctx)
+static void page_fault(struct ia32_exc_ctx *ctx)
 {
 	uint32_t cr2;
-	printk("%s: %s @ 0x%x with err_code=0x%x\n",
-		exc[ctx.exc_num].fault ? "fault" : "trap",
-		exc[ctx.exc_num].name, ctx.eip, ctx.err_code);
 	get_cr2(cr2);
-	printk("CR2 is 0x%x\n", cr2);
+	printk("#PF fault_addr=%p\n", cr2);
+	ctx_dump(ctx);
+	idle_task_func();
+}
 
-	/* Can't handle faults just yet */
-	if ( exc[ctx.exc_num].fault )
+#define EXC_TYPE_FAULT		1
+#define EXC_TYPE_TRAP		2
+#define EXC_TYPE_ABORT		3
+static const struct {
+	uint16_t type;
+	uint16_t err_code;
+	char * const name;
+	void (*handler)(struct ia32_exc_ctx *ctx);
+}exc[]={
+	{EXC_TYPE_FAULT, 0, "Divide Error"},
+	{EXC_TYPE_TRAP /* or fault */, 0, "Debug"},
+	{EXC_TYPE_TRAP, 0, "NMI"},
+	{EXC_TYPE_TRAP, 0, "Breakpoint"},
+	{EXC_TYPE_TRAP, 0, "Overflow"},
+
+	{EXC_TYPE_FAULT, 0, "Bounds Check"},
+	{EXC_TYPE_FAULT, 0, "Invalid Opcode"},
+	{EXC_TYPE_FAULT, 0, "Coprocessor not available"},
+	{EXC_TYPE_ABORT, 1, "Double fault"},
+	{EXC_TYPE_FAULT, 0, "Coprocessor segment overrun"},
+
+	{EXC_TYPE_FAULT, 1, "Invalid TSS"},
+	{EXC_TYPE_FAULT, 1, "Segment not present"},
+	{EXC_TYPE_FAULT, 1, "Stack segment"},
+	{EXC_TYPE_FAULT, 1, "General Protection"},
+	{EXC_TYPE_FAULT, 1, "Page Fault",
+			.handler = page_fault},
+
+	{0, 0, NULL},
+	{EXC_TYPE_FAULT, 0, "FPU error"},
+	{EXC_TYPE_FAULT, 1, "Alignment Check"},
+	{EXC_TYPE_ABORT, 0, "Machine Check"},
+	{EXC_TYPE_FAULT, 0, "SIMD Exception"},
+};
+
+void exc_handler(uint32_t exc_num, struct ia32_exc_ctx ctx)
+{
+	static const char * const tname[] = {
+		"UNKNOWN",
+		"fault",
+		"trap",
+		"abort condition",
+	};
+
+	if ( exc[exc_num].handler ) {
+		(*exc[exc_num].handler)(&ctx);
+		return;
+	}
+
+	printk("%s: %s @ 0x%x",
+		tname[exc[exc_num].type], exc[exc_num].name, ctx.eip);
+	if ( exc[exc_num].err_code ) {
+		if ( ctx.err_code & 0x1 )
+			printk(" EXT");
+		switch ( ctx.err_code & 0x6 ) {
+		case 0:
+			printk(" GDT");
+			break;
+		case 2:
+			printk(" IDT");
+			break;
+		case 4:
+			printk(" LDT");
+			break;
+		}
+	}
+	printk("\n");
+	if ( exc[exc_num].type != EXC_TYPE_TRAP )
 		idle_task_func();
 }
 
-void syscall(void)
+void syscall_exc(struct ia32_exc_ctx ctx)
 {
 	printk("syscall\n");
+}
+
+void panic_exc(struct ia32_exc_ctx ctx)
+{
+	printk("Panic: ");
+
+	ctx_dump(&ctx);
+	/* FIXME: check CPL in ctx.cs so that userspace can't invoke a kernel
+	 * panic heh */
+	cli();
+	idle_task_func();
+}
+
+void panic(void)
+{
+	asm volatile("int $0xf0");
 }
 
 void __init idt_init(void)
@@ -139,7 +204,8 @@ void __init idt_init(void)
 	idt_interrupt(_irq15, 0x3e);
 
 	/* System call */
-	idt_interrupt(_syscall, 0x80);
+	idt_interrupt(_panic, 0xf0);
+	idt_interrupt(_syscall, 0xff);
 
 	/* Yay - we're finished */
 	load_idt(&loadidt);

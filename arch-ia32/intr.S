@@ -1,34 +1,38 @@
-#define __ASM__ 1
+#include <arch/idt.h>
 
 .globl int_null
 int_null: iret
 
-.globl _syscall
-_syscall:
-	pusha
-	call syscall
-	popa
-	iret
+#define DO_intr(name, c_call) \
+.globl name;		\
+name:			\
+	pushl $0 ;	\
+	pusha;		\
+	call c_call;	\
+	popa;		\
+	addl $4,%esp ;	\
+	iret;
 
 #define DO_exc(nr) \
 .globl _exc##nr; \
 _exc##nr:\
 	pushl $0 ;\
-	pushl $##nr ;\
 	pusha ;\
+	pushl $##nr ;\
 	call exc_handler ;\
+	addl $4,%esp ;\
 	popa ;\
-	addl $8,%esp ;\
+	addl $4,%esp ;\
 	iret
 
 #define DO_excf(nr) \
 .globl _exc##nr; \
 _exc##nr:\
-	pushl $##nr ;\
 	pusha ;\
+	pushl $##nr ;\
 	call exc_handler ;\
-	popa ;\
 	addl $4,%esp ;\
+	popa ;\
 	iret
 
 #define DO_irq(nr) \
@@ -40,6 +44,9 @@ _irq##nr:\
 	addl $4,%esp ;\
 	popa ;\
 	iret
+
+DO_intr(_syscall, syscall_exc)
+DO_intr(_panic, panic_exc)
 
 DO_irq(0)
 DO_irq(1)
@@ -69,6 +76,7 @@ DO_exc(7)
 DO_excf(8)
 DO_exc(9)
 DO_excf(10)
+
 DO_excf(11)
 DO_excf(12)
 DO_excf(13)

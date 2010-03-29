@@ -114,7 +114,7 @@ static void do_initcalls(void)
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
-static void init_task(void *priv)
+_noreturn static void init_task(void *priv)
 {
 	/* Initialise kernel subsystems */
 	blk_init();
@@ -133,8 +133,9 @@ static void init_task(void *priv)
 	}
 }
 
-static void task2(void *priv)
+_noreturn static void task2(void *priv)
 {
+	//*(uint32_t *)0xdeadbeef = 0xfeedface;
 	for(;;) {
 		mdelay(100);
 		printk("B");
