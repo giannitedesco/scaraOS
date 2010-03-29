@@ -13,7 +13,6 @@ struct inode {
 
 	/* Filled in by super->read_inode */
 	const struct inode_ops	*i_iop;
-	const struct file_ops	*i_fop;
 	umode_t			i_mode;
 	uid_t			i_uid;
 	gid_t			i_gid;
@@ -70,9 +69,6 @@ struct super_ops {
 
 struct inode_ops {
 	struct inode *(*lookup)(struct inode *, const char *name, size_t nlen);
-};
-
-struct file_ops {
 };
 
 /* VFS functions called by arch kernel */

@@ -2,10 +2,8 @@
  * Kernel block device management routines.
  *
  * TODO:
- *   o Buffer cache
- *   o Write support (with deferral)
- *   o Request queuing and asynchronous operation
- *   o readahead
+ *   o Write support
+ *   o Asynchronous API
 */
 
 #include <kernel.h>
@@ -30,13 +28,11 @@ struct buffer *blk_read(struct blkdev *dev, int logical)
 	if ( !(ret=kmem_alloc(&bh_cache)) )
 		return NULL;
 
-	ret->b_dev=dev;
-	ret->b_block=logical;
-	ret->b_buf=kmalloc(dev->count*dev->sectsize);
-	ret->b_flags=0;
-	ret->b_count=1;
-
-	if ( !ret->b_buf ) {
+	ret->b_dev = dev;
+	ret->b_block = logical;
+	ret->b_buf = kmalloc(dev->count * dev->sectsize);
+	ret->b_len = dev->count * dev->sectsize;
+	if ( NULL == ret->b_buf ) {
 		kfree(ret);
 		return NULL;
 	}
@@ -48,20 +44,13 @@ struct buffer *blk_read(struct blkdev *dev, int logical)
 		return NULL;
 	}
 
-	ret->b_flags=BH_uptodate;
-	ret->b_len=dev->count*dev->sectsize;
 	return ret;
 }
 
 void blk_free(struct buffer *b)
 {
-	if ( b == NULL )
-		return;
-	if ( !b->b_count ) {
-		printk("blk_free: Buffer already free!\n");
-		return;
-	}
-	put_buffer(b);
+	kfree(b->b_buf);
+	kfree(b);
 }
 
 /* Set blocksize of device (NOTE: Blocksize is not the same as sector size) */

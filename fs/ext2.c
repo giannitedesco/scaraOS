@@ -26,7 +26,7 @@ static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 		/* Search for the item */
 		for(j = bh->b_buf; j < (bh->b_buf + bh->b_len); ) {
 			dir = (struct ext2_dir_entry_2 *)j;
-			printk("EXT2: dentry: %.*s\n",
+			dprintk("EXT2: dentry: %.*s\n",
 				dir->name_len, dir->name);
 			if ( (dir->name_len == nlen) &&
 				!memcmp(dir->name, n, nlen) ) {
@@ -92,8 +92,7 @@ static int ext2_read_inode(struct inode *i)
 	raw_inode = (struct ext2_inode *)(b->b_buf + offset);
 	
 	/* 6. Copy the inode */
-	i->i_fop = NULL;
-	printk("Inode %lu mode %o\n", i->i_ino, raw_inode->i_mode);
+	dprintk("Inode %lu mode %o\n", i->i_ino, raw_inode->i_mode);
 	if ( S_ISDIR(raw_inode->i_mode) ) {
 		i->i_iop = &ext2_dir_iop;
 	}else{
@@ -128,22 +127,24 @@ static int ext2_get_super(struct super *sb)
 	int db_count, i;
 
 	/* Set blocksize for the device */
-	if (blk_set_blocksize(sb->s_dev, EXT2_MIN_BLOCK_SIZE)) {
-		printk("EXT2: Unable to set blocksize %d\n", EXT2_MIN_BLOCK_SIZE);
+	if ( blk_set_blocksize(sb->s_dev, EXT2_MIN_BLOCK_SIZE) ) {
+		printk("EXT2: Unable to set blocksize %d\n",
+			EXT2_MIN_BLOCK_SIZE);
 		return -1;
 	}
 
 	/* Read in the super block */
-	if ( !(bh=blk_read(sb->s_dev,1)) ) {
+	bh = blk_read(sb->s_dev, 1);
+	if ( NULL == bh ) {
 		printk("EXT2: %s: unable to read super\n",
 			sb->s_dev->name);
 		return -1;
 	}
 
-	s=(struct ext2_super_block *)bh->b_buf;
+	s = (struct ext2_super_block *)bh->b_buf;
 
 	/* Check the super block */
-	if ( s->s_magic!=EXT2_SUPER_MAGIC ) {
+	if ( s->s_magic != EXT2_SUPER_MAGIC ) {
 		printk("EXT2: Bad voodoo magic on superblock!\n");
 		goto err;
 	}
@@ -154,43 +155,42 @@ static int ext2_get_super(struct super *sb)
 	}
 
 	/* Fill in the superblock structures */
-	sb->s_blocksize=EXT2_MIN_BLOCK_SIZE;
-	sb->s_ops=&ext2_superops;
+	sb->s_blocksize = EXT2_MIN_BLOCK_SIZE;
+	sb->s_ops = &ext2_superops;
 
 	/* Fill in custom structures */
-	sb->u.ext2.s_sbh=bh;
-	sb->u.ext2.s_es=s;
-	sb->u.ext2.s_inodes_per_block=sb->s_blocksize / 
-		s->s_inode_size;
-	sb->u.ext2.s_blocks_per_group=s->s_blocks_per_group;
-	sb->u.ext2.s_inodes_per_group=s->s_inodes_per_group;
-	sb->u.ext2.s_itb_per_group=s->s_inodes_per_group / 
-		sb->u.ext2.s_inodes_per_block;
-	sb->u.ext2.s_desc_per_block=sb->s_blocksize / 
-		sizeof(struct ext2_group_desc);
-	sb->u.ext2.s_groups_count=(s->s_blocks_count - 
-		s->s_first_data_block + 
-		(sb->u.ext2.s_blocks_per_group-1)) /
-		sb->u.ext2.s_blocks_per_group;
+	sb->u.ext2.s_sbh = bh;
+	sb->u.ext2.s_es = s;
+	sb->u.ext2.s_inodes_per_block = sb->s_blocksize / s->s_inode_size;
+	sb->u.ext2.s_blocks_per_group = s->s_blocks_per_group;
+	sb->u.ext2.s_inodes_per_group = s->s_inodes_per_group;
+	sb->u.ext2.s_itb_per_group = s->s_inodes_per_group / 
+					sb->u.ext2.s_inodes_per_block;
+	sb->u.ext2.s_desc_per_block = sb->s_blocksize / 
+					sizeof(struct ext2_group_desc);
+	sb->u.ext2.s_groups_count = (s->s_blocks_count - 
+					s->s_first_data_block + 
+					(sb->u.ext2.s_blocks_per_group-1)) /
+					sb->u.ext2.s_blocks_per_group;
 
 	/* Read in the group descriptors */
-	db_count = (sb->u.ext2.s_groups_count + sb->u.ext2.s_desc_per_block - 1) /
-		sb->u.ext2.s_desc_per_block;
+	db_count = (sb->u.ext2.s_groups_count +
+		sb->u.ext2.s_desc_per_block - 1) / sb->u.ext2.s_desc_per_block;
 	sb->u.ext2.s_group_desc = kmalloc(db_count * sizeof(struct buffer *));
-	for(i=0; i<db_count; i++) {
+	for(i = 0; i < db_count; i++) {
 		int j;
-		sb->u.ext2.s_group_desc[i]=blk_read(sb->s_dev, i+2);
+		sb->u.ext2.s_group_desc[i] = blk_read(sb->s_dev, i + 2);
 		if ( !sb->u.ext2.s_group_desc[i] ) {
-			for(j=0; j<i; j++)
-				blk_free(sb->u.ext2.s_group_desc[i]);
 			printk("EXT2: unable to read group descriptors\n");
+			for(j = 0; j < i; j++)
+				blk_free(sb->u.ext2.s_group_desc[i]);
 			goto err;
 		}
 	}
 
 	/* Lookup root inode */
 	sb->s_root = iget(sb, EXT2_ROOT_INO);
-	if ( !sb->s_root ) {
+	if ( NULL == sb->s_root ) {
 		printk("EXT2: get root inode failed\n");
 		goto err;
 	}

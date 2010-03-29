@@ -2,6 +2,7 @@
  * Core of the VFS layer
  * TODO
  *  o Proper mount/umount
+ *  o Make sure to add extra ref for task->root / task->cwd
 */
 #include <kernel.h>
 #include <mm.h>
@@ -33,7 +34,7 @@ void vfs_add_fstype(struct vfs_fstype *t)
 }
 
 /* Retrieve a filesystem type object */
-static struct vfs_fstype *vfs_get_fstype(char *name)
+static struct vfs_fstype *vfs_get_fstype(const char *name)
 {
 	struct vfs_fstype *r;
 
@@ -49,15 +50,17 @@ static struct vfs_fstype *vfs_get_fstype(char *name)
 void vfs_mount_root(void)
 {
 	static struct super sb;
-	char *type="ext2";
-	char *dev="floppy0";
+	const char *type = "ext2";
+	const char *dev = "floppy0";
 	
-	if ( !(sb.s_type = vfs_get_fstype(type)) ) {
+	sb.s_type = vfs_get_fstype(type);
+	if ( NULL == sb.s_type ) {
 		printk("vfs: unknown fstype %s\n", type);
 		return;
 	}
 
-	if ( !(sb.s_dev = blkdev_get(dev)) ) {
+	sb.s_dev = blkdev_get(dev);
+	if ( NULL == sb.s_dev ) {
 		printk("vfs: unknown block device %s\n", dev);
 		return;
 	}
@@ -73,5 +76,5 @@ void vfs_mount_root(void)
 
 	/* Setup the tasks structures */
 	__this_task->root = superblocks->s_root;
-	__this_task->cwd = superblocks->s_root;
+	__this_task->cwd = __this_task->root;
 }

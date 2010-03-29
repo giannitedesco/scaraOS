@@ -6,22 +6,14 @@ struct buffer {
 	block_t 	b_block;
 	char 		*b_buf;
 	size_t		b_len;
-	uint32_t 	b_flags;
-	uint32_t	b_count;
 };
-
-#define BH_uptodate	0x01
-#define BH_dirty	0x02
-
-#define get_buffer(b)	((b)->b_count++)
-#define put_buffer(b)	((b)->b_count--)
 
 struct blkdev {
 	/* Used only by bio subsystem */
 	struct blkdev *next;
 
 	/* Hardcoded by driver */
-	char *name;
+	const char *name;
 	unsigned int sectsize;
 	int (*ll_rw_blk)(int, block_t, char *, size_t);
 
@@ -37,6 +29,6 @@ void blk_free(struct buffer *);
 
 /* Block device maangement */
 void blkdev_add(struct blkdev *);
-struct blkdev *blkdev_get(char *);
+struct blkdev *blkdev_get(const char *);
 
 #endif /* __BLK_HEADER_INCLUDED__ */
