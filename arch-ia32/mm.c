@@ -42,7 +42,7 @@ void ia32_setup_initmem(void)
 	for (i = 0; i < NR_PDE; i++)
 		dir[i] = 0;
 
-	for (i=0; i < NR_PTE; i++)
+	for (i = 0; i < NR_PTE; i++)
 		tbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
 
 	/* 0-4MB identity mapped */
@@ -63,13 +63,15 @@ static void map_ram(pgd_t pgdir, pgt_t pgtbl)
 	/* Only use PAGE_OFFSET mapping, so zap identity map now */
 	pgdir[0] = 0;
 
-	for(i=0; i < nr_physpages; i++) {
+	for(i = 0; i < nr_physpages; i++) {
 		pgtbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
-		if ( (i & 0x3ff) == 0 ) {
-			pgdir[dir(__va(i << PAGE_SHIFT))] =
-				(uint32_t)__pa(&pgtbl[i]) |
-					PDE_PRESENT | PDE_RW;
-		}
+	}
+
+	for(i = 0; i < nr_physpages; i++) {
+		if ( (i & 0x3ff) )
+			continue;
+		pgdir[dir(__va(i << PAGE_SHIFT))] =
+			(uint32_t)__pa(&pgtbl[i]) | PDE_PRESENT | PDE_RW;
 	}
 
 	__flush_tlb();
@@ -281,8 +283,8 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	/* FIXME: initial page table is leaked */
 	tbls = bootmem_alloc(nr_pgtbls);
 	map_ram(&__init_pgd, tbls);
-	write_protect(tbls, &__begin, &__rodata_end - &__begin);
 	printk("Kernel page tables = %lu pages @ %p\n", nr_pgtbls, tbls);
+	write_protect(tbls, &__begin, &__rodata_end - &__begin);
 
 	buddy_init();
 
