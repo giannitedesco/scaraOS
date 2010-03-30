@@ -14,6 +14,7 @@ __extension__ typedef unsigned long long uint64_t;
 __extension__ typedef signed long long int64_t;
 
 typedef uint32_t size_t;
+typedef int32_t ssize_t;
 
 #define BITS_PER_LONG 32
 

@@ -2,7 +2,6 @@
  * Core of the VFS layer
  * TODO
  *  o Proper mount/umount
- *  o Make sure to add extra ref for task->root / task->cwd
 */
 #include <kernel.h>
 #include <mm.h>
@@ -76,5 +75,5 @@ void vfs_mount_root(void)
 
 	/* Setup the tasks structures */
 	__this_task->root = superblocks->s_root;
-	__this_task->cwd = __this_task->root;
+	__this_task->cwd = iref(__this_task->root);
 }

@@ -4,6 +4,51 @@
 #include <vfs.h>
 #include <ext2.h>
 
+static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
+{
+	size_t first_block, last_block, num_blk, x;
+	struct buffer *bh;
+	ssize_t copied;
+
+	if ( off + len > i->i_size )
+		len = i->i_size - off;
+
+	first_block = off & ~(i->i_sb->s_blocksize - 1);
+	last_block = (off + len) & ~(i->i_sb->s_blocksize - 1);
+	num_blk = last_block - first_block;
+	dprintk("EXT2: pread %lu @ %lu: blocks %lu - %lu\n",
+		len, off, first_block, last_block);
+
+	BUG_ON(last_block >= EXT2_NDIR_BLOCKS);
+
+	for(copied = 0, x = first_block; x <= last_block; x++) {
+		size_t clen, coff;
+
+		bh = blk_read(i->i_sb->s_dev, i->u.ext2.block[x]);
+		if ( NULL == bh )
+			return copied;
+
+		coff = off & (i->i_sb->s_blocksize - 1);
+		clen = (coff + len > i->i_sb->s_blocksize) ? 
+				i->i_sb->s_blocksize - coff : len;
+		dprintk("EXT2: got block %lu, copy %lu bytes at %lu\n",
+			i->u.ext2.block[x], clen, coff);
+		memcpy(buf, bh->b_buf + coff, clen);
+		copied += clen;
+		len -= clen;
+		off += clen;
+
+		blk_free(bh);
+	}
+
+	return copied;
+}
+
+static const struct inode_ops ext2_reg_iop = {
+	.lookup = nul_inode_lookup,
+	.pread = ext2_pread,
+};
+
 /* Lookup a name in an inode */
 static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 {
@@ -21,7 +66,9 @@ static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 			continue;
 
 		/* Read the block */
-		bh=blk_read(i->i_sb->s_dev, i->u.ext2.block[x]);
+		bh = blk_read(i->i_sb->s_dev, i->u.ext2.block[x]);
+		if ( NULL == bh )
+			return NULL;
 
 		/* Search for the item */
 		for(j = bh->b_buf; j < (bh->b_buf + bh->b_len); ) {
@@ -46,6 +93,7 @@ static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 /* Directory ops */
 static const struct inode_ops ext2_dir_iop = {
 	.lookup = ext2_lookup,
+	.pread = nul_inode_pread,
 };
 
 /* Fill in an inode structure for iget */
@@ -74,7 +122,7 @@ static int ext2_read_inode(struct inode *i)
 	/* 3. Obtain block group descriptor */
 	group_desc = block_group / i->i_sb->u.ext2.s_desc_per_block;
 	desc = block_group % i->i_sb->u.ext2.s_desc_per_block;
-	b=i->i_sb->u.ext2.s_group_desc[group_desc];
+	b = i->i_sb->u.ext2.s_group_desc[group_desc];
 	gdp = (struct ext2_group_desc *)b->b_buf;
 	
 	/* 4. Obtain correct block from inode table */
@@ -93,10 +141,18 @@ static int ext2_read_inode(struct inode *i)
 	
 	/* 6. Copy the inode */
 	dprintk("Inode %lu mode %o\n", i->i_ino, raw_inode->i_mode);
-	if ( S_ISDIR(raw_inode->i_mode) ) {
+	switch(raw_inode->i_mode & S_IFMT) {
+	case S_IFDIR:
 		i->i_iop = &ext2_dir_iop;
-	}else{
-		i->i_iop = NULL;
+		break;
+	case S_IFREG:
+		i->i_iop = &ext2_reg_iop;
+		break;
+	default:
+		printk("EXT2: Unsupported file type: 0%o\n",
+			raw_inode->i_mode);
+		blk_free(b);
+		return -1;
 	}
 
 	i->i_mode = raw_inode->i_mode;

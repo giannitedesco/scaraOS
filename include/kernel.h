@@ -31,6 +31,7 @@ typedef uint32_t uid_t;
 typedef uint32_t gid_t;
 typedef uint32_t nlink_t;
 typedef uint32_t loff_t;
+typedef uint32_t off_t;
 typedef uint32_t umode_t;
 
 /* Common kernel API stuff */

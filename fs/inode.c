@@ -15,9 +15,19 @@
 #include <vfs.h>
 #include <mm.h>
 
+struct inode *nul_inode_lookup(struct inode *i, const char *name, size_t nlen)
+{
+	return NULL; /* ENOTDIR */
+}
+
+ssize_t nul_inode_pread(struct inode *i, void *buf, size_t len, off_t off)
+{
+	return -1; /* EBADF? */
+}
+
 struct m_cache inode_cache={
-	.name="inode",
-	.size=sizeof(struct inode)
+	.name = "inode",
+	.size = sizeof(struct inode)
 };
 
 /* Retrieve an inode given a mounted fs descriptor and an
@@ -26,36 +36,43 @@ struct inode *iget(struct super *sb, ino_t ino)
 {
 	struct inode *ret;
 
-	if ( !sb || !sb->s_ops->read_inode ) return NULL;
+	if ( NULL == sb || NULL == sb->s_ops->read_inode )
+		return NULL;
 
-	if ( !(ret=kmem_alloc(&inode_cache)) )
+	ret = kmem_alloc(&inode_cache);
+	if ( NULL == ret )
 		return NULL;
 
 	/* Fill in the stuff read_inode needs */
-	ret->i_ino=ino;
-	ret->i_sb=sb;
+	ret->i_ino = ino;
+	ret->i_sb = sb;
 
 	if ( sb->s_ops->read_inode(ret) ) {
 		kmem_free(ret);
 		return NULL;
 	}
 
-	ret->i_count=1;
+	ret->i_count = 1;
 	return ret;
+}
+
+struct inode *iref(struct inode *i)
+{
+	i->i_count++;
+	return i;
 }
 
 /* Release an inode so that it can be freed
  * under memory pressure */
 void iput(struct inode *i)
 {
-	if ( i==NULL ) return;
-
-	if ( !i->i_count ) {
-		printk("iput: Inode already free\n");
+	if ( NULL == i )
 		return;
-	}
 
-	if ( --i->i_count ) return;
+	BUG_ON(i->i_count == 0);
+
+	if ( --i->i_count )
+		return;
 
 	kmem_free(i);
 }

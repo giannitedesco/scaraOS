@@ -16,7 +16,7 @@ struct inode {
 	umode_t			i_mode;
 	uid_t			i_uid;
 	gid_t			i_gid;
-	loff_t			i_size;
+	off_t			i_size;
 	nlink_t			i_nlink;
 
 	unsigned long		i_blocks;
@@ -45,7 +45,7 @@ struct super {
 	struct vfs_fstype *s_type;
 
 	/* Here is what get_super must fill in */
-	int s_blocksize;
+	unsigned int s_blocksize;
 	const struct super_ops *s_ops;
 	struct inode *s_root;
 
@@ -69,7 +69,11 @@ struct super_ops {
 
 struct inode_ops {
 	struct inode *(*lookup)(struct inode *, const char *name, size_t nlen);
+	ssize_t (*pread)(struct inode *, void *buf, size_t len, off_t off);
 };
+
+struct inode *nul_inode_lookup(struct inode *, const char *name, size_t nlen);
+ssize_t nul_inode_pread(struct inode *, void *buf, size_t len, off_t off);
 
 /* VFS functions called by arch kernel */
 void vfs_init(void);
@@ -80,6 +84,7 @@ void vfs_add_fstype(struct vfs_fstype *);
 
 /* Inode cache interface */
 struct inode *iget(struct super *, ino_t);
+struct inode *iref(struct inode *i);
 void iput(struct inode *);
 
 /* Dentry cache interface */
