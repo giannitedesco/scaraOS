@@ -14,7 +14,6 @@ multiboot_header:
 	.long	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 multiboot_entry:
-	/* Assumes __end is page aligned and safe to use! */
 	movl $__init_stack_top_pa, %esp
 
 	/* Reset EFLAGS */
@@ -57,9 +56,6 @@ multiboot_entry:
 	movl	%eax, %fs
 	movl	%eax, %gs
 	movl	%eax, %ss
-
-	/* Initialise output to screen */
-	call	vga_preinit
 
 	/* Main part of kernel */
 	popl	%eax

@@ -11,7 +11,7 @@ static uint16_t attrib = 0x0017;
 static signed short xpos, ypos;
 static unsigned int monitor = MONITOR_NONE;
 
-void _asmlinkage vga_preinit(void)
+void vga_preinit(void)
 {
 	int i;
 
