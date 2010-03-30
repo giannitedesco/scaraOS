@@ -4,6 +4,7 @@ Version 0.0.4
  + Implement syscall layer and exit syscall
  + Fix EXT2 and namei()
  + Implement pread() for regular files
+ + Overhaul build system, dep checks are now correct
 
 Version 0.0.3
  + Memory initialisation cleanups
