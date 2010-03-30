@@ -29,7 +29,6 @@ static void *bootmem_alloc(unsigned int pages)
 }
 
 /* Identity map 4MB of memory, and also map it to PAGE_OFFSET */
-/* TODO: Don't bother with pagetable if we have PSE */
 void ia32_setup_initmem(void)
 {
 	unsigned int i;
@@ -56,6 +55,8 @@ void ia32_setup_initmem(void)
 }
 
 /* Map in all present RAM */
+/* TODO: Don't bother with pagetable if we have PSE, set PSE bit in cr4 */
+/* TODO: Use global page and set PGE bit in cr4 if possible */
 static void map_ram(pgd_t pgdir, pgt_t pgtbl)
 {
 	unsigned long i;

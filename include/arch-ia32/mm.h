@@ -48,10 +48,6 @@ typedef uint32_t *pgt_t;
 #define __pa(x)		((unsigned long)(x)-PAGE_OFFSET)
 #define __va(x)		((void *)((unsigned long)(x)+PAGE_OFFSET))
 
-/* Initial page directory and table at 3MB phys,
-* this gives us 2MB-4KB for kernel code etc.. */
-extern uint32_t _init_pgd, _init_pgt;
-
 /* Macros to mask top 10, middle 10, and bottom 12 bits of
 * an address respectively */
 #define __dir(x)		(((unsigned long)(x))&0xFFC00000)
