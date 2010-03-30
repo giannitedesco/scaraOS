@@ -1,3 +1,10 @@
+Version 0.0.4
+ + Many fixes to scheduler
+ + Don't allocate timeslices to idle task when there's work to do
+ + Implement syscall layer and exit syscall
+ + Fix EXT2 and namei()
+ + Implement pread() for regular files
+
 Version 0.0.3
  + Memory initialisation cleanups
  + Protect critical regions from interrupts
