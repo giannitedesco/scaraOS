@@ -11,23 +11,38 @@
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 #define PAGE_MASK	(PAGE_SIZE - 1UL)
 
+/* Full chunks: nowhere, c_o poulated c_o.list is in objcache->o_full */
+/* Partial chunks: c_o populated and c_o.list is in objcache->o_partials */
+/* Free chunks: in page allocator system, see: kernel/buddy.c */
+struct chunk_hdr {
+	union {
+		struct {
+			struct chunk_hdr *next;
+			uint8_t *ptr;
+		}c_r;
+		struct {
+			struct _objcache *cache;
+			uint8_t *free_list;
+			unsigned int inuse;
+			struct list_head list;
+		}c_o;
+	};
+};
+
 /* There is one of these structures for every page
  * frame in the system. */
 struct page {
 	union {
 		struct list_head list;
-		struct {
-			struct m_cache *cache;
-			struct m_slab *slab;
-		}slab;
+		struct chunk_hdr chunk_hdr;
 	}u;
 	uint32_t count;
 	uint32_t flags;
 };
 
 /* Page flags */
-#define PG_reserved	0x01U
-#define PG_slab		0x02U
+#define PG_reserved	(1<<0)
+#define PG_slab		(1<<1)
 
 /* Page reference counts */
 #define get_page(p) ((p)->count++)
@@ -63,27 +78,25 @@ void free_pages(void *ptr, unsigned int order);
  * Kernel memory allocator
  */
 
-struct m_slab {
-	struct m_slab *next;
-	void **obj; /* next free object */
-};
+typedef struct _memchunk *memchunk_t;
+typedef struct _mempool *mempool_t;
+typedef struct _objcache *objcache_t;
 
-struct m_cache {
-	struct m_cache *next;
-	char *name; /* cache name */
-	size_t size; /* size of object */
-	size_t num_obj; /* number of objects per slab */
-	unsigned int order; /* order for get_free_pages() */
-	struct m_slab *slab; /* slabs */
-};
+void memchunk_init(void);
 
-#define NR_AREA (PAGE_SHIFT-1)
+_malloc mempool_t mempool_new(const char *label, size_t numchunks);
+void mempool_free(mempool_t m);
 
-int kmem_add_cache(struct m_cache *);
-void *kmem_alloc(struct m_cache *);
-void kmem_free(void *);
+_malloc objcache_t objcache_init(mempool_t p, const char *l, size_t obj_sz);
+void objcache_fini(objcache_t o);
+void *objcache_alloc(objcache_t o);
+_malloc void *objcache_alloc0(objcache_t o);
+void objcache_free(void *obj);
+void objcache_free2(objcache_t o, void *obj);
+
 void kmalloc_init(void);
-void *kmalloc(size_t sz);
-#define kfree(x) kmem_free(x)
+_malloc void *kmalloc(size_t sz);
+_malloc void *kmalloc0(size_t sz);
+void kfree(void *);
 
 #endif /* __MM_HEADER_INCLUDED__ */

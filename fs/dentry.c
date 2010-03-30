@@ -15,10 +15,9 @@
 #include <mm.h>
 #include <task.h>
 
-struct m_cache dentry_cache={
-	.name="dentry",
-	.size=sizeof(struct dentry)
-};
+void _dentry_cache_init(void)
+{
+}
 
 /* Resolve a name to an inode */
 struct inode *namei(const char *name)

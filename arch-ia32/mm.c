@@ -283,6 +283,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	/* Map in all physical memory */
 	/* FIXME: initial page table is leaked */
 	tbls = bootmem_alloc(nr_pgtbls);
+	BUG_ON(NULL == tbls);
 	map_ram(&__init_pgd, tbls);
 	printk("Kernel page tables = %lu pages @ %p\n", nr_pgtbls, tbls);
 	write_protect(tbls, &__begin, &__rodata_end - &__begin);
@@ -290,12 +291,12 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	buddy_init();
 
 	pfa_size = nr_physpages * sizeof(struct page);
-	if ( pfa_size & PAGE_MASK )
-		pfa_size += PAGE_SIZE - (pfa_size & PAGE_MASK);
+	pfa_size = (pfa_size + PAGE_MASK) & ~PAGE_MASK;
 
 	pfa = bootmem_alloc(pfa_size >> PAGE_SHIFT);
-	printk("Kernel page frame array %lu entries/%lu pages @ %p\n",
-		pfa_size, pfa_size >> PAGE_SHIFT, pfa);
+	BUG_ON(NULL == pfa);
+	printk("Page frame array: %lu pages @ %p, struct page=%u bytes\n",
+		pfa_size >> PAGE_SHIFT, pfa, sizeof(struct page));
 
 	reserve_from_e820(e820_map, e820_len);
 
@@ -307,14 +308,15 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 		if ( p->count )
 			continue;
 
-		p->count = 0;
-		p->flags = 0;
-		free_pages(page_address(p), 0);
+		/* free_pages() will call put_page() */
+		p->count = 1;
+		free_page(page_address(p));
 	}
 
 	/* Print some stats */
 	printk("mem: ram=%luMB %lu/%lu pageframes free (%lu reserved)\n",
 		tot_mem/(1 << 20), nr_freepages, nr_physpages, nr_reserved);
 
+	memchunk_init();
 	kmalloc_init();
 }

@@ -25,10 +25,12 @@ ssize_t nul_inode_pread(struct inode *i, void *buf, size_t len, off_t off)
 	return -1; /* EBADF? */
 }
 
-struct m_cache inode_cache={
-	.name = "inode",
-	.size = sizeof(struct inode)
-};
+static objcache_t inode_cache;
+void _inode_cache_init(void)
+{
+	inode_cache = objcache_init(NULL, "inode", sizeof(struct inode));
+	BUG_ON(NULL == inode_cache);
+}
 
 /* Retrieve an inode given a mounted fs descriptor and an
  * inode number */
@@ -36,10 +38,7 @@ struct inode *iget(struct super *sb, ino_t ino)
 {
 	struct inode *ret;
 
-	if ( NULL == sb || NULL == sb->s_ops->read_inode )
-		return NULL;
-
-	ret = kmem_alloc(&inode_cache);
+	ret = objcache_alloc(inode_cache);
 	if ( NULL == ret )
 		return NULL;
 
@@ -48,7 +47,7 @@ struct inode *iget(struct super *sb, ino_t ino)
 	ret->i_sb = sb;
 
 	if ( sb->s_ops->read_inode(ret) ) {
-		kmem_free(ret);
+		objcache_free2(inode_cache, ret);
 		return NULL;
 	}
 
@@ -74,5 +73,5 @@ void iput(struct inode *i)
 	if ( --i->i_count )
 		return;
 
-	kmem_free(i);
+	objcache_free2(inode_cache, i);
 }

@@ -27,20 +27,20 @@ void free_pages(void *ptr, unsigned int order)
 {
 	struct page *page;
 
-	if ( !ptr )
+	if ( NULL == ptr )
 		return;
-	if ( order )
-		return;
+	BUG_ON(order != 0);
 
 	page = virt_to_page(ptr);
-
-	/* Stitch in to free area list */
-	list_add_tail(&page->u.list, &free_list[order]);
+	page->flags = 0;
+	put_page(page);
 
 	/* TODO: Coalesce with buddy */
 
+	/* Stitch in to free area list */
+	BUG_ON(page->count != 0);
+	list_add_tail(&page->u.list, &free_list[order]);
 	nr_freepages++;
-	put_page(page);
 }
 
 /* allocate 2^order physically contigous pages */
@@ -52,9 +52,12 @@ void *alloc_pages(unsigned int order)
 		goto fail;
 
 	page = list_entry(free_list[order].next, struct page, u.list);
+
+	/* TODO: Split larger block */
 	if ( page == NULL )
 		goto fail;
 
+	BUG_ON(page->count != 0);
 	/* Remove from list */
 	list_del(&page->u.list);
 

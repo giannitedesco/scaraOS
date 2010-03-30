@@ -12,15 +12,11 @@
 static struct vfs_fstype *fs_types;
 static struct super *superblocks;
 
-/* Various slab caches */
-extern struct m_cache inode_cache;
-extern struct m_cache dentry_cache;
-
 /* Initialise all aspects of the VFS layer */
 void vfs_init(void)
 {
-	kmem_add_cache(&inode_cache);
-	kmem_add_cache(&dentry_cache);
+	_inode_cache_init();
+	_dentry_cache_init();
 }
 
 /* Add a filesystem type */

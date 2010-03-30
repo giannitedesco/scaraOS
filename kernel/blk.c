@@ -10,47 +10,46 @@
 #include <mm.h>
 #include <blk.h>
 
-static struct m_cache bh_cache={
-	.name = "buffer",
-	.size = sizeof(struct buffer)
-};
+static objcache_t bh_cache;
 
 void blk_init(void)
 {
-	kmem_add_cache(&bh_cache);
+	bh_cache = objcache_init(NULL, "buffer", sizeof(struct buffer));
+	BUG_ON(NULL == bh_cache);
 }
 
 /* Read a block in to a buffer */
 struct buffer *blk_read(struct blkdev *dev, int logical)
 {
-	struct buffer *ret;
+	struct buffer *bh;
 
-	if ( !(ret=kmem_alloc(&bh_cache)) )
+	bh = objcache_alloc(bh_cache);
+	if ( NULL == bh )
 		return NULL;
 
-	ret->b_dev = dev;
-	ret->b_block = logical;
-	ret->b_buf = kmalloc(dev->count * dev->sectsize);
-	ret->b_len = dev->count * dev->sectsize;
-	if ( NULL == ret->b_buf ) {
-		kfree(ret);
+	bh->b_dev = dev;
+	bh->b_block = logical;
+	bh->b_buf = kmalloc(dev->count * dev->sectsize);
+	bh->b_len = dev->count * dev->sectsize;
+	if ( NULL == bh->b_buf ) {
+		kfree(bh);
 		return NULL;
 	}
 
 	/* Synchronously read from the device */
-	if ( dev->ll_rw_blk(0, logical * dev->count, ret->b_buf, dev->count) ) {
-		kfree(ret->b_buf);
-		kfree(ret);
+	if ( dev->ll_rw_blk(0, logical * dev->count, bh->b_buf, dev->count) ) {
+		kfree(bh->b_buf);
+		objcache_free2(bh_cache, bh);
 		return NULL;
 	}
 
-	return ret;
+	return bh;
 }
 
-void blk_free(struct buffer *b)
+void blk_free(struct buffer *bh)
 {
-	kfree(b->b_buf);
-	kfree(b);
+	kfree(bh->b_buf);
+	objcache_free2(bh_cache, bh);
 }
 
 /* Set blocksize of device (NOTE: Blocksize is not the same as sector size) */

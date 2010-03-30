@@ -77,6 +77,8 @@ ssize_t nul_inode_pread(struct inode *, void *buf, size_t len, off_t off);
 
 /* VFS functions called by arch kernel */
 void vfs_init(void);
+void _inode_cache_init(void);
+void _dentry_cache_init(void);
 void vfs_mount_root(void);
 
 /* Object registration */

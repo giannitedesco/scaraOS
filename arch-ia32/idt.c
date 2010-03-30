@@ -71,7 +71,7 @@ _noreturn static void page_fault(struct intr_ctx *ctx)
 	uint32_t cr2;
 	get_cr2(cr2);
 	printk("#PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
-		(ctx->err_code & 0x4) ? "supervisor" : "user",
+		(ctx->err_code & 0x4) ? "user" : "supervisor",
 		(ctx->err_code & 0x1) ? "PROTECTION_VIOLATION" : "NONPRESENT",
 		cr2,
 		(ctx->err_code & 0x2) ? "WRITE" : "READ",
