@@ -8,7 +8,10 @@
 static int do_exec(const char *path)
 {
 	struct inode *inode;
+	unsigned int i;
 	Elf32_Ehdr hdr;
+	uint8_t *phbuf, *ph;
+	size_t phbufsz;
 	ssize_t ret;
 
 	inode = namei(path);
@@ -26,7 +29,51 @@ static int do_exec(const char *path)
 		return ret;
 	}
 
-	hex_dumpk((uint8_t *)&hdr, sizeof(hdr), 16);
+	if ( !memcmp(hdr.e_ident, ELFMAG, sizeof(hdr.e_ident)) ) {
+		printk("exec: bad ELF magic\n");
+		return -1; /* ENOEXEC */
+	}
+
+	if ( hdr.e_type != ET_EXEC ) {
+		printk("exec: not an ELF executable\n");
+		return -1;
+	}
+
+	if ( hdr.e_machine != EM_386 ) {
+		printk("exec: not an IA-32 executable\n");
+		return -1;
+	}
+
+	if ( hdr.e_phentsize < sizeof(Elf32_Phdr) ) {
+		printk("exec: Unexpectedly short program header entry size\n");
+		return -1;
+	}
+
+	printk("exec: Program header contains %u entries\n", hdr.e_phnum);
+
+	phbufsz = hdr.e_phentsize * hdr.e_phnum;
+	phbuf = kmalloc(phbufsz);
+	if ( NULL == phbuf )
+		return -1; /* ENOMEM */
+
+	ret = inode->i_iop->pread(inode, phbuf, phbufsz, hdr.e_phoff);
+	if ( ret <= 0 || (size_t)ret != phbufsz ) {
+		printk("exec: unable to read header\n");
+		goto err_free;
+	}
+
+	for(ph = phbuf, i = 0; i < hdr.e_phnum; i++, ph += hdr.e_phentsize) {
+		Elf32_Phdr *phdr = (Elf32_Phdr *)ph;
+		if ( phdr->p_type != PT_LOAD )
+			continue;
+		printk("LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
+			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
+	}
+
+	kfree(phbuf);
+	return -1;
+err_free:
+	kfree(phbuf);
 	return -1;
 }
 
