@@ -324,8 +324,6 @@ static void do_cache_free(struct _objcache *o, struct chunk_hdr *c, void *obj)
 			o->o_cur = NULL;
 		}
 		memchunk_put(o->o_pool, c);
-		printk("put chunk from %s to pool %p\n",
-			o->o_label, o->o_pool);
 	}
 }
 
