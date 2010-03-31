@@ -317,6 +317,32 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	printk("mem: ram=%luMB %lu/%lu pageframes free (%lu reserved)\n",
 		tot_mem/(1 << 20), nr_freepages, nr_physpages, nr_reserved);
 
-	memchunk_init();
-	kmalloc_init();
+	mm_init();
+}
+
+void setup_kthread_ctx(struct arch_ctx *ctx)
+{
+	ctx->pgd = &__init_pgd_pa;
+}
+
+int setup_new_ctx(struct arch_ctx *ctx)
+{
+	pgd_t pgd, kpgd;
+	unsigned int i;
+
+	kpgd = &__init_pgd;
+	pgd = alloc_page();
+	if ( NULL == pgd )
+		return -1;
+
+	for (i = 0; i < NR_PDE; i++)
+		pgd[i] = kpgd[i];
+
+	ctx->pgd = (pgd_t)__pa(pgd);
+	return 0;
+}
+
+void destroy_ctx(struct arch_ctx *ctx)
+{
+	free_page(__va(ctx->pgd));
 }

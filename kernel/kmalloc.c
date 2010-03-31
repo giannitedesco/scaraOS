@@ -9,7 +9,7 @@
 static objcache_t general_cache[NR_CACHE];
 static char general_names[12][NR_CACHE]; /* 12 chars gets us "size-123456" */
 
-void kmalloc_init(void)
+void _kmalloc_init(void)
 {
 	unsigned int i;
 	size_t sz;

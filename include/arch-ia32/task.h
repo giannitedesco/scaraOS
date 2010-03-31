@@ -2,6 +2,7 @@
 #define __ARCH_IA32_TASK_INCLUDED__
 
 #ifndef __ASM__
+/* per-thread state */
 struct thread {
 	uint32_t esp;
 	uint32_t eip;
@@ -15,8 +16,7 @@ struct thread {
 	"movl %%esp,%0\n"	/* save ESP */		\
 	"movl %2,%%esp\n"	/* restore ESP */	\
 	"movl $1f,%1\n"		/* save EIP */		\
-	"pushl %3\n"		/* restore EIP */	\
-	"ret\n"						\
+	"jmp *%3\n"		/* restore EIP */	\
 	"1:\n"						\
 	"popfl\n"					\
 	"popa\n"					\
@@ -33,6 +33,8 @@ static inline struct task *this_task(void)
 	return ret;
 }
 #endif
+
+void set_context(struct task *tsk);
 
 _noreturn void idle_task_func(void);
 

@@ -27,6 +27,11 @@
 typedef uint32_t *pgd_t;
 typedef uint32_t *pgt_t;
 
+/* per memory context state */
+struct arch_ctx {
+	pgd_t pgd;
+};
+
 #define load_pdbr(pgdir) \
 	asm volatile("movl %0,%%cr3": :"r" (pgdir));
 #define get_pdbr(pgdir) \
@@ -95,6 +100,10 @@ typedef uint32_t *pgt_t;
 /* #PF handler */
 void ia32_mm_init(void *ptr, size_t len);
 void ia32_setup_initmem(void);
+
+void setup_kthread_ctx(struct arch_ctx *ctx);
+int setup_new_ctx(struct arch_ctx *ctx);
+void destroy_ctx(struct arch_ctx *ctx);
 
 #endif /* __ASM__ */
 #endif /* __ARCH_IA32_MM__ */

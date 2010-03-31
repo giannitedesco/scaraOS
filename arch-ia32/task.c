@@ -3,7 +3,13 @@
 #include <task.h>
 #include <mm.h>
 
-uint8_t _section(".init.pgalign") idle_task_struct[PAGE_SIZE];
+void set_context(struct task *tsk)
+{
+	//BUG_ON(NULL == tsk->ctx);
+	//BUG_ON(NULL == tsk);
+	//printk("Context switch to %p\n", tsk->ctx->arch.pgd);
+	load_pdbr(tsk->ctx->arch.pgd);
+}
 
 void idle_task_func(void)
 {

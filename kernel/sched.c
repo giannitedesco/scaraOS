@@ -60,6 +60,7 @@ void sched_init(void)
 	idle_task->state = TASK_RUNNING;
 	idle_task->name = "[idle]";
 	idle_task->pid = 0;
+	idle_task->ctx = get_kthread_ctx();
 }
 
 /* Put a task on the runq */
@@ -91,6 +92,7 @@ static void do_exit(uint32_t code)
 	tsk->exit_code = code;
 	tsk->state = TASK_ZOMBIE;
 	unlock_irq(flags);
+	sched();
 }
 
 uint32_t syscall_exit(uint32_t code)
@@ -115,7 +117,6 @@ int kernel_thread(const char *proc_name,
 	struct task *tsk;
 	static pid_t pid = 1;
 	static pid_t ret;
-	long eflags;
 
 	tsk = alloc_page();
 	if ( NULL == tsk )
@@ -130,10 +131,9 @@ int kernel_thread(const char *proc_name,
 	/* push arguments to kthread init */
 	task_push_word(tsk, (uint32_t)priv);
 	task_push_word(tsk, (uint32_t)thread_func);
+	task_push_word(tsk, 0x13371337); /* WHAT THE FUCK?!?! */
 
-	/* then why is this needed? */
-	eflags = get_eflags();
-	task_push_word(tsk, eflags);
+	tsk->ctx = get_kthread_ctx();
 
 	task_to_runq(tsk);
 	return tsk->pid;
@@ -180,16 +180,24 @@ static void flush_delq(void)
 	}
 }
 
+static void task_switch(struct task *current, struct task *next)
+{
+	BUG_ON(((struct task *)next->t.esp <= next + 1));
+	if ( current->ctx != next->ctx )
+		set_context(next);
+	switch_task(current, next);
+}
+
 void sched(void)
 {
 	struct task *current;
 	struct task *head;
 	long flags;
 
+	lock_irq(flags);
+
 	if ( unlikely(!list_empty(&delq)) )
 		flush_delq();
-
-	lock_irq(flags);
 
 	current = __this_task;
 	head = get_next_task(current);
@@ -199,7 +207,7 @@ void sched(void)
 	dprintk("sched: switch from %s to %s\n", current->name, head->name);
 	current->state = TASK_READY;
 	head->state = TASK_RUNNING;
-	switch_task(current, head);
+	task_switch(current, head);
 
 out:
 	unlock_irq(flags);

@@ -1,4 +1,5 @@
 KERNEL_C_SOURCES = \
+	$(KERNEL_DIR)/mm.c \
 	$(KERNEL_DIR)/blk.c \
 	$(KERNEL_DIR)/blkdev.c \
 	$(KERNEL_DIR)/buddy.c \

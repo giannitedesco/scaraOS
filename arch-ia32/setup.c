@@ -134,15 +134,15 @@ static int init_task(void *priv)
 	ret = syscall1(_SYS_exec, (uint32_t)"/bin/bash");
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
-	return ret;
 
 	for(;;) {
 		mdelay(100);
 		printk("A");
 	}
+	return ret;
 }
 
-#if 0
+#if 1
 static int task2(void *priv)
 {
 	for(;;) {
@@ -171,12 +171,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* Fire up the kernel memory allocators */
 	BUG_ON((mbi->flags & MBF_MMAP) == 0);
-	if ( mbi->flags & MBF_MMAP ) {
-		ia32_mm_init(__va(mbi->mmap), mbi->mmap_length);
-	}else{
-		/* this won't work */
-		ia32_mm_init(NULL, 0);
-	}
+	ia32_mm_init(__va(mbi->mmap), mbi->mmap_length);
 
 	/* Prints out CPU MHz */
 	calibrate_delay_loop();
@@ -194,7 +189,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 	kernel_thread("[init]", init_task, NULL);
 
 	/* pre-emptive multi-tasking demo */
-	//kernel_thread("[cpuhog]", task2, NULL);
+	kernel_thread("[cpuhog]", task2, NULL);
 
 	/* start jiffie counter */
 	pit_start_timer1();

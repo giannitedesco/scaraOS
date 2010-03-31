@@ -24,10 +24,14 @@ struct task {
 	pid_t 			pid;
 	uint32_t		exit_code;
 
+	struct mem_ctx		*ctx;
+
 	/* Filesystem info */
 	struct inode		*root;
 	struct inode		*cwd;
 };
+
+void task_set_context(struct task *, struct mem_ctx *);
 
 /* Wait-queue manipulation */
 void sleep_on(struct waitq *);

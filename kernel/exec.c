@@ -13,6 +13,8 @@ static int do_exec(const char *path)
 	uint8_t *phbuf, *ph;
 	size_t phbufsz;
 	ssize_t ret;
+	struct mem_ctx *ctx;
+	struct task *tsk;
 
 	inode = namei(path);
 	if ( NULL == inode ) {
@@ -69,6 +71,13 @@ static int do_exec(const char *path)
 		printk("LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
 	}
+
+	tsk = __this_task;
+	ctx = mem_ctx_new();
+	if ( NULL == ctx )
+		goto err_free;
+	mem_ctx_put(tsk->ctx);
+	tsk->ctx = ctx;
 
 	kfree(phbuf);
 	return -1;

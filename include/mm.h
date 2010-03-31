@@ -11,6 +11,28 @@
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 #define PAGE_MASK	(PAGE_SIZE - 1UL)
 
+struct mem_ctx {
+	/* maps etc. */
+	unsigned int		count;
+	struct arch_ctx		arch;
+};
+struct mem_ctx *mem_ctx_new(void);
+void mem_ctx_free(struct mem_ctx *ctx);
+struct mem_ctx *get_kthread_ctx(void);
+
+static inline struct mem_ctx *mem_ctx_get(struct mem_ctx *ctx)
+{
+	ctx->count++;
+	return ctx;
+}
+
+static inline void mem_ctx_put(struct mem_ctx *ctx)
+{
+	BUG_ON(0 == ctx->count);
+	if ( 0 == --ctx->count )
+		mem_ctx_free(ctx);
+}
+
 /* Full chunks: nowhere, c_o poulated c_o.list is in objcache->o_full */
 /* Partial chunks: c_o populated and c_o.list is in objcache->o_partials */
 /* Free chunks: in page allocator system, see: kernel/buddy.c */
@@ -82,7 +104,9 @@ typedef struct _memchunk *memchunk_t;
 typedef struct _mempool *mempool_t;
 typedef struct _objcache *objcache_t;
 
-void memchunk_init(void);
+void mm_init(void);
+void _memchunk_init(void);
+void _kmalloc_init(void);
 
 _malloc mempool_t mempool_new(const char *label, size_t numchunks);
 void mempool_free(mempool_t m);
@@ -94,7 +118,6 @@ _malloc void *objcache_alloc0(objcache_t o);
 void objcache_free(void *obj);
 void objcache_free2(objcache_t o, void *obj);
 
-void kmalloc_init(void);
 _malloc void *kmalloc(size_t sz);
 _malloc void *kmalloc0(size_t sz);
 void kfree(void *);

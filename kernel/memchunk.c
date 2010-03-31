@@ -49,7 +49,7 @@ static void do_cache_init(struct _mempool *p, struct _objcache *o,
 	//	p->p_label, o->o_label, o->o_sz);
 }
 
-void memchunk_init(void)
+void _memchunk_init(void)
 {
 	struct _memchunk *m = &mc;
 
