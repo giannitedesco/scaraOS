@@ -37,18 +37,9 @@ struct inode *namei(const char *name)
 	}
 
 	/* Check for some bogus bugs */
-	if ( NULL == i ) {
-		printk("uhm, bad shit...\n");
-		return NULL;
-	}
-	if ( NULL == i->i_iop ) {
-		printk("no inode ops\n");
-		return NULL;
-	}
-	if ( NULL == i->i_iop->lookup ) {
-		printk("no lookup iop\n");
-		return NULL;
-	}
+	BUG_ON(NULL == i);
+	BUG_ON(NULL == i->i_iop);
+	BUG_ON(NULL == i->i_iop->lookup);
 
 	/* Iterate the components of the filename
 	 * looking up each one as we go */
