@@ -7,9 +7,17 @@ int_null: iret
 .globl name;		\
 name:			\
 	pushl $0 ;	\
+	pushl %ds;	\
+	pushl %es;	\
+	pushl %fs;	\
+	pushl %gs;	\
 	pusha;		\
 	call c_call;	\
 	popa;		\
+	popl %gs;	\
+	popl %fs;	\
+	popl %es;	\
+	popl %ds;	\
 	addl $4,%esp ;	\
 	iret;
 
@@ -17,32 +25,56 @@ name:			\
 .globl _exc##nr; \
 _exc##nr:\
 	pushl $0 ;\
+	pushl %ds;	\
+	pushl %es;	\
+	pushl %fs;	\
+	pushl %gs;	\
 	pusha ;\
 	pushl $##nr ;\
 	call exc_handler ;\
 	addl $4,%esp ;\
 	popa ;\
+	popl %gs;	\
+	popl %fs;	\
+	popl %es;	\
+	popl %ds;	\
 	addl $4,%esp ;\
 	iret
 
 #define DO_excf(nr) \
 .globl _exc##nr; \
 _exc##nr:\
+	pushl %ds;	\
+	pushl %es;	\
+	pushl %fs;	\
+	pushl %gs;	\
 	pusha ;\
 	pushl $##nr ;\
 	call exc_handler ;\
 	addl $4,%esp ;\
 	popa ;\
+	popl %gs;	\
+	popl %fs;	\
+	popl %es;	\
+	popl %ds;	\
 	iret
 
 #define DO_irq(nr) \
 .globl _irq##nr;\
 _irq##nr:\
+	pushl %ds;	\
+	pushl %es;	\
+	pushl %fs;	\
+	pushl %gs;	\
 	pusha ;\
 	pushl $##nr;\
 	call irq_handler;\
 	addl $4,%esp ;\
 	popa ;\
+	popl %gs;	\
+	popl %fs;	\
+	popl %es;	\
+	popl %ds;	\
 	iret
 
 DO_intr(_syscall, syscall_exc)
