@@ -25,7 +25,7 @@ static int do_exec(const char *path)
 	
 	ret = inode->i_iop->pread(inode, &hdr, sizeof(hdr), 0);
 	if ( ret <= 0 || (size_t)ret != sizeof(hdr) ) {
-		printk("exec: unable to read header\n");
+		printk("exec: unable to read ELF header\n");
 		return ret;
 	}
 
@@ -58,7 +58,7 @@ static int do_exec(const char *path)
 
 	ret = inode->i_iop->pread(inode, phbuf, phbufsz, hdr.e_phoff);
 	if ( ret <= 0 || (size_t)ret != phbufsz ) {
-		printk("exec: unable to read header\n");
+		printk("exec: unable to read program header\n");
 		goto err_free;
 	}
 

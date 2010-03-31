@@ -20,11 +20,10 @@ static struct gdtr loadidt = { sizeof(IDT) - 1, (uint32_t)IDT};
 void idt_exception(void *handler, uint8_t intr)
 {
 	long flags;
-
 	lock_irq(flags);
 	IDT[intr].gate.selector		= __KERNEL_CS;
-	IDT[intr].gate.offset_low	= (uint16_t)(((uint32_t)handler)&0xffff);
-	IDT[intr].gate.offset_high 	= (uint16_t)(((uint32_t)handler)>>16);
+	IDT[intr].gate.offset_low	= (uint32_t)handler & 0xffff;
+	IDT[intr].gate.offset_high 	= (uint32_t)handler >> 16;
 	IDT[intr].gate.access		= D_PRESENT | D_TRAP | D_DPL3;
 	unlock_irq(flags);
 }
@@ -35,21 +34,21 @@ void idt_interrupt(void *handler, uint8_t intr)
 	long flags;
 	lock_irq(flags);
 	IDT[intr].gate.selector		= __KERNEL_CS;
-	IDT[intr].gate.offset_low	= (uint16_t)(((uint32_t)handler)&0xffff);
-	IDT[intr].gate.offset_high 	= (uint16_t)(((uint32_t)handler)>>16);
-	IDT[intr].gate.access		= D_PRESENT | D_INT;
+	IDT[intr].gate.offset_low	= (uint32_t)handler & 0xffff;
+	IDT[intr].gate.offset_high 	= (uint32_t)handler >> 16;
+	IDT[intr].gate.access		= D_PRESENT | D_INT | D_DPL3;
 	unlock_irq(flags);
 }
 
 /* Add a new interrupt vector to the IDT  */
-void idt_supervisor_interrupt(void *handler, uint8_t intr)
+void idt_user_interrupt(void *handler, uint8_t intr)
 {
 	long flags;
 	lock_irq(flags);
 	IDT[intr].gate.selector		= __KERNEL_CS;
-	IDT[intr].gate.offset_low	= (uint16_t)(((uint32_t)handler)&0xffff);
-	IDT[intr].gate.offset_high 	= (uint16_t)(((uint32_t)handler)>>16);
-	IDT[intr].gate.access		= D_PRESENT | D_INT | D_DPL3;
+	IDT[intr].gate.offset_low	= (uint32_t)handler & 0xffff;
+	IDT[intr].gate.offset_high 	= (uint32_t)handler >> 16;
+	IDT[intr].gate.access		= D_PRESENT | D_INT;
 	unlock_irq(flags);
 }
 
@@ -68,12 +67,10 @@ void ctx_dump(struct intr_ctx *ctx)
 
 _noreturn static void page_fault(struct intr_ctx *ctx)
 {
-	uint32_t cr2;
-	get_cr2(cr2);
 	printk("#PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
 		(ctx->err_code & 0x4) ? "user" : "supervisor",
 		(ctx->err_code & 0x1) ? "PROTECTION_VIOLATION" : "NONPRESENT",
-		cr2,
+		pf_address(),
 		(ctx->err_code & 0x2) ? "WRITE" : "READ",
 		(ctx->err_code & 0x8) ? " RSVD_BIT_SET" : "");
 	ctx_dump(ctx);
@@ -223,8 +220,8 @@ void __init idt_init(void)
 	idt_interrupt(_irq15, 0x3e);
 
 	/* System call */
-	idt_supervisor_interrupt(_panic, 0xf0);
-	idt_interrupt(_syscall, 0xff);
+	idt_interrupt(_panic, 0xf0);
+	idt_user_interrupt(_syscall, 0xff);
 
 	/* Yay - we're finished */
 	load_idt(&loadidt);

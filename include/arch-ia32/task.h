@@ -3,7 +3,8 @@
 
 #ifndef __ASM__
 struct thread {
-	uint32_t esp,eip;
+	uint32_t esp;
+	uint32_t eip;
 };
 
 /* Actual task switching macro - can't be a function heh */

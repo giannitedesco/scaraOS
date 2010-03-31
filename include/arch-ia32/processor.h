@@ -50,7 +50,7 @@ static inline unsigned long pf_address(void)
 	return address;
 }
 
-static inline unsigned long eflags(void)
+static inline uint32_t get_eflags(void)
 {
 	unsigned long ef;
 	asm volatile("pushf; popl %0":"=r" (ef));
@@ -71,7 +71,6 @@ static inline void cpuid(int op, int *eax, int *ebx, int *ecx, int *edx)
 #define lock_irq(x) asm volatile("pushfl; popl %0; cli":"=g" (x): : "memory")
 #define unlock_irq(x) asm volatile("pushl %0; popfl": :"g" (x): "memory", "cc")
 
-#define get_eflags(x) asm volatile("pushfl; popl %0;":"=g" (x): : "memory")
 /* CPU information */
 extern struct cpu_info cpu_bsp;
 #define __this_cpu (&cpu_bsp)

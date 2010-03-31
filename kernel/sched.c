@@ -132,7 +132,7 @@ int kernel_thread(const char *proc_name,
 	task_push_word(tsk, (uint32_t)thread_func);
 
 	/* then why is this needed? */
-	get_eflags(eflags);
+	eflags = get_eflags();
 	task_push_word(tsk, eflags);
 
 	task_to_runq(tsk);

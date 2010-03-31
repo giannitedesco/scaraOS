@@ -8,7 +8,7 @@ void idt_init(void);
 /* Used to modify the interrupt table */
 void idt_exception(void *, uint8_t);
 void idt_interrupt(void *, uint8_t);
-void idt_supervisor_interrupt(void *, uint8_t);
+void idt_user_interrupt(void *, uint8_t);
 
 /* Exception handlers  */
 void int_null(void);
