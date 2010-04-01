@@ -55,8 +55,8 @@ void idt_user_interrupt(void *handler, uint8_t intr)
 void ctx_dump(struct intr_ctx *ctx)
 {
 	struct task *tsk = __this_task;
-	printk("Task pid=%lu name=%s: CS=0x%lx DS=0x%.lx\n",
-			tsk->pid, tsk->name, ctx->cs, ctx->ds);
+	printk("Task pid=%lu name=%s: CS=0x%lx\n",
+			tsk->pid, tsk->name, ctx->cs);
 	printk("  EIP=0x%.8lx EFLAGS=0x%.8lx\n", ctx->eip, ctx->eflags);
 	printk("  EAX=0x%.8lx    EBX=0x%.8lx\n", ctx->eax, ctx->ebx);
 	printk("  ECX=0x%.8lx    EDX=0x%.8lx\n", ctx->ecx, ctx->edx);
