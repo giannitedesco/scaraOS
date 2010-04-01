@@ -27,10 +27,10 @@ void set_irq_handler(int irq, irqfn h)
 
 void irq_handler(int irq)
 {
-	irq_eoi(irq);
-
 	if ( irq >= 0 && irq < 16 )
 		irq_fns[irq](irq);
-	
+
+	irq_eoi(irq);
+
 	sched();
 }

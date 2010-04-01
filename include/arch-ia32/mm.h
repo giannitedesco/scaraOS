@@ -104,6 +104,7 @@ void ia32_setup_initmem(void);
 void setup_kthread_ctx(struct arch_ctx *ctx);
 int setup_new_ctx(struct arch_ctx *ctx);
 void destroy_ctx(struct arch_ctx *ctx);
+void *map_page_to_ctx(struct arch_ctx *tsk, vaddr_t addr, unsigned prot);
 
 #endif /* __ASM__ */
 #endif /* __ARCH_IA32_MM__ */

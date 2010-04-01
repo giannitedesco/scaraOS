@@ -50,4 +50,7 @@ void sched(void);
 
 _noreturn _asmlinkage void kthread_init(int (*thread_func)(void *), void *priv);
 
+/* Misc */
+int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot);
+
 #endif /* __TASK_HEADER_INCLUDED__ */

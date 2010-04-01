@@ -4,8 +4,8 @@
 #ifndef __ASM__
 /* per-thread state */
 struct thread {
-	uint32_t esp;
-	uint32_t eip;
+	vaddr_t	esp;
+	vaddr_t	eip;
 	struct intr_ctx *regs;
 };
 
@@ -39,7 +39,7 @@ void task_init_kthread(struct task *tsk,
 			int (*thread_func)(void *),
 			void *priv);
 int task_stack_overflowed(struct task *tsk);
-void task_init_exec(struct task *tsk, uint32_t ip);
+void task_init_exec(struct task *tsk, vaddr_t ip);
 void set_context(struct task *tsk);
 
 _noreturn void idle_task_func(void);

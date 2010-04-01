@@ -1,9 +1,107 @@
 #include <kernel.h>
 #include <mm.h>
 #include <task.h>
+#include <vfs.h>
 
 static objcache_t memctx;
+static objcache_t vmas;
 static struct mem_ctx *kthread_ctx;
+
+struct vma *lookup_vma(struct mem_ctx *ctx, vaddr_t va)
+{
+	struct rb_node *n;
+	struct vma *vma;
+	
+	for(n = ctx->vmas.rb_node; n; ) {
+		vma = rb_entry(n, struct vma, vma_rbt);
+		if ( va < vma->vma_begin )
+			n = n->rb_child[RB_LEFT];
+		else if ( va > vma->vma_end )
+			n = n->rb_child[RB_RIGHT];
+		else
+			return vma;
+	}
+
+	return NULL;
+}
+
+int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
+{
+	struct vma *vma;
+	void *ptr;
+
+	vma = lookup_vma(tsk->ctx, va);
+	if ( NULL == vma )
+		return -1;
+
+	if ( !(vma->vma_prot & prot) )
+		return -1;
+
+	ptr = map_page_to_ctx(&tsk->ctx->arch, va, prot);
+	if ( NULL == ptr )
+		return -1;
+
+	memset(ptr, 0, PAGE_SIZE);
+	if ( vma->vma_ino ) {
+		vma->vma_ino->i_iop->pread(vma->vma_ino,
+						ptr,
+						PAGE_SIZE,
+						vma->vma_off);
+	}
+
+	return 0;
+}
+
+static void vma_insert(struct mem_ctx *ctx, struct vma *vma)
+{
+	struct rb_node **p;
+	struct rb_node *parent;
+
+	memset(&vma->vma_rbt, 0, sizeof(vma->vma_rbt));
+	
+	for(p = &ctx->vmas.rb_node, parent = NULL; *p; ) {
+		struct vma *area;
+
+		parent = *p;
+		area = rb_entry(parent, struct vma, vma_rbt);
+		if ( vma->vma_end <= area->vma_begin )
+			p = &(*p)->rb_child[RB_LEFT];
+		else if ( vma->vma_begin >= area->vma_end )
+			p = &(*p)->rb_child[RB_RIGHT];
+		else
+			BUG_ON(vma);
+	}
+
+	rb_link_node(&vma->vma_rbt, parent, p);
+	rb_insert_color(&vma->vma_rbt, &ctx->vmas);
+}
+
+int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
+		struct inode *ino, off_t off)
+{
+	struct vma *vma;
+
+	vma = objcache_alloc(vmas);
+	if ( NULL == vma )
+		return -1; /* ENOMEM */
+
+	vma->vma_begin = va_round_down(va);
+	vma->vma_end = va_round_up(va + len);
+	vma->vma_prot = prot;
+
+	if ( ino ) {
+		vma->vma_ino = ino;
+		vma->vma_off = off - (va - vma->vma_begin);
+	}
+
+	printk("setup_vma: 0x%.8lx - 0x%.8lx (off=0x%lx)\n",
+		vma->vma_begin, vma->vma_end, vma->vma_off);
+
+	/* FIXME: kill overlapping vma's */
+
+	vma_insert(ctx, vma);
+	return 0;
+}
 
 struct mem_ctx *get_kthread_ctx(void)
 {
@@ -23,6 +121,7 @@ struct mem_ctx *mem_ctx_new(void)
 		return NULL;
 	}
 
+	ctx->vmas.rb_node = NULL;
 	ctx->count = 1;
 	return ctx;
 }
@@ -45,5 +144,9 @@ void mm_init(void)
 	BUG_ON(NULL == kthread_ctx);
 
 	kthread_ctx->count = 0;
+	kthread_ctx->vmas.rb_node = NULL;
 	setup_kthread_ctx(&kthread_ctx->arch);
+
+	vmas = objcache_init(NULL, "vma", sizeof(struct vma));
+	BUG_ON(NULL == vmas);
 }

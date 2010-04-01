@@ -22,4 +22,7 @@ typedef int32_t ssize_t;
 #define asmlinkage __attribute__((regparm(0)))
 #define __cacheline_aligned __attribute__((aligned(32)))
 
+typedef uint32_t vaddr_t;
+typedef uint32_t paddr_t;
+
 #endif /* __KERNEL_TYPES_INCLUDED__ */

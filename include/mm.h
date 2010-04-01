@@ -3,6 +3,7 @@
 
 #include <arch/mm.h>
 #include <list.h>
+#include <rbtree.h>
 
 /*
  * struct page
@@ -11,14 +12,44 @@
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 #define PAGE_MASK	(PAGE_SIZE - 1UL)
 
+static inline vaddr_t va_round_up(vaddr_t va)
+{
+	return (va + PAGE_MASK) & ~PAGE_MASK;
+}
+
+static inline vaddr_t va_round_down(vaddr_t va)
+{
+	return va & ~PAGE_MASK;
+}
+
+#define PROT_READ	(1 << 0)
+#define PROT_EXEC	(1 << 2)
+#define PROT_WRITE	(1 << 3)
+
+struct vma {
+	struct rb_node		vma_rbt;
+	vaddr_t			vma_begin;
+	vaddr_t			vma_end;
+	unsigned		vma_prot;
+
+	/* for file backed mappings */
+	off_t			vma_off;
+	struct inode		*vma_ino;
+};
+
 struct mem_ctx {
-	/* maps etc. */
+	struct rb_root		vmas;
 	struct arch_ctx		arch;
 	unsigned int		count;
 };
 struct mem_ctx *mem_ctx_new(void);
 void mem_ctx_free(struct mem_ctx *ctx);
 struct mem_ctx *get_kthread_ctx(void);
+
+/* Manipulating a tasks memory mappings */
+int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len,
+		unsigned prot, struct inode *ino, off_t off);
+struct vma *lookup_vma(struct mem_ctx *ctx, vaddr_t va);
 
 static inline struct mem_ctx *mem_ctx_get(struct mem_ctx *ctx)
 {
@@ -58,8 +89,8 @@ struct page {
 		struct list_head list;
 		struct chunk_hdr chunk_hdr;
 	}u;
-	uint32_t count;
-	uint32_t flags;
+	unsigned count;
+	unsigned flags;
 };
 
 /* Page flags */
@@ -82,7 +113,6 @@ struct page {
 #define MAX_ORDER 10U
 
 extern struct page *pfa;
-extern uint32_t mem_lo, mem_hi;
 extern unsigned long nr_physpages;
 extern unsigned long nr_freepages;
 extern char *cmdline;

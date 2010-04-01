@@ -7,14 +7,14 @@
 
 static int do_exec(const char *path)
 {
+	struct mem_ctx *ctx;
 	struct inode *inode;
+	uint8_t *phbuf, *ph;
+	struct task *tsk;
 	unsigned int i;
 	Elf32_Ehdr hdr;
-	uint8_t *phbuf, *ph;
 	size_t phbufsz;
 	ssize_t ret;
-	struct mem_ctx *ctx;
-	struct task *tsk;
 
 	inode = namei(path);
 	if ( NULL == inode ) {
@@ -64,25 +64,31 @@ static int do_exec(const char *path)
 		goto err_free; /* ENOEXEC */
 	}
 
+	tsk = __this_task;
+
+	ctx = mem_ctx_new();
+	if ( NULL == ctx )
+		goto err_free;
+
 	for(ph = phbuf, i = 0; i < hdr.e_phnum; i++, ph += hdr.e_phentsize) {
 		Elf32_Phdr *phdr = (Elf32_Phdr *)ph;
 		if ( phdr->p_type != PT_LOAD )
 			continue;
+		if ( setup_vma(ctx, phdr->p_vaddr, phdr->p_memsz,
+				PROT_READ|PROT_EXEC, inode, phdr->p_offset) )
+			goto err_free_ctx;
 		printk("LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
 	}
 	kfree(phbuf);
 
-	tsk = __this_task;
-	ctx = mem_ctx_new();
-	if ( NULL == ctx )
-		return -1; /* ENOMEM */
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
-
 	task_init_exec(tsk, hdr.e_entry);
+	return 0;
 
-	return -1;
+err_free_ctx:
+	mem_ctx_put(ctx);
 err_free:
 	kfree(phbuf);
 	return -1;

@@ -2,7 +2,6 @@
  * x86 specific setup code. This file bootstraps the kernel,
  * spawns the init task and then becomes the idle task
 */
-#define DEBUG_MODULE 1
 #include <kernel.h>
 #include <mm.h>
 #include <arch/multiboot.h>
@@ -345,4 +344,45 @@ int setup_new_ctx(struct arch_ctx *ctx)
 void destroy_ctx(struct arch_ctx *ctx)
 {
 	free_page(__va(ctx->pgd));
+}
+
+void *map_page_to_ctx(struct arch_ctx *ctx, vaddr_t addr, unsigned prot)
+{
+	void *ptr;
+	pgd_t pd;
+	pgt_t pt;
+	uint32_t pa;
+	uint32_t tblent;
+
+	ptr = alloc_page();
+	if ( NULL == ptr )
+		return NULL;
+
+	pa = __pa(ptr);
+	pd = __va(ctx->pgd);
+
+	if ( !(pd[dir(addr)] & PDE_PRESENT) ) {
+		pt = alloc_page();
+		if ( NULL == pt ) {
+			free_page(ptr);
+			return NULL;
+		}
+
+		memset(pt, 0, NR_PTE * sizeof(*pt));
+		pd[dir(addr)] = __pa(pt) | PDE_PRESENT | PDE_RW | PDE_USER;
+	}else{
+		pt = __va(__val(pd[dir(addr)]));
+	}
+
+	tblent = pa | PTE_PRESENT | PTE_USER;
+	if ( prot & PROT_WRITE )
+		tblent |= PTE_RW;
+
+	pt[tbl(addr)] = tblent;
+
+	/* FFS: use INVLPG */
+	__flush_tlb();
+	dprintk("ctx %p: page table %lu / %lu = 0x%.8lx\n",
+		ctx->pgd, dir(addr), tbl(addr), pa);
+	return ptr;
 }

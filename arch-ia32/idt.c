@@ -52,6 +52,26 @@ void idt_user_interrupt(void *handler, uint8_t intr)
 	unlock_irq(flags);
 }
 
+static void stack_dump(struct intr_ctx *ctx)
+{
+	uint32_t *stop, *sbase;
+	int i, max;
+
+	stop = (uint32_t *)((uint8_t *)ctx + sizeof(*ctx));
+	sbase = (uint32_t *)((uint8_t *)__this_task + PAGE_SIZE);
+	max = (sbase - stop > 32) ? 32 : sbase - stop;
+	for(i = 0; i < max; i += 4 ) {
+		printk(" 0x%.8lx", stop[i]);
+		if ( i + 1 < (sbase - stop) )
+			printk(" 0x%.8lx", stop[i + 1]);
+		if ( i + 2 < (sbase - stop) )
+			printk(" 0x%.8lx", stop[i + 2]);
+		if ( i + 3 < (sbase - stop) )
+			printk(" 0x%.8lx", stop[i + 3]);
+		printk("\n");
+	}
+}
+
 void ctx_dump(struct intr_ctx *ctx)
 {
 	struct task *tsk = __this_task;
@@ -62,12 +82,23 @@ void ctx_dump(struct intr_ctx *ctx)
 	printk("  ECX=0x%.8lx    EDX=0x%.8lx\n", ctx->ecx, ctx->edx);
 	printk("  ESP=0x%.8lx    EBP=0x%.8lx\n", ctx->esp, ctx->ebp);
 	printk("  ESI=0x%.8lx    EDI=0x%.8lx\n", ctx->edi, ctx->esi);
-	/* TODO: stack trace */
+	stack_dump(ctx);
 }
 
-_noreturn static void page_fault(struct intr_ctx *ctx)
+static void page_fault(struct intr_ctx *ctx)
 {
-	printk("#PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
+	if ( !(ctx->err_code & 0x1) ) {
+		unsigned prot;
+		if ( (ctx->err_code & 0x2) )
+			prot = PROT_WRITE;
+		else
+			prot = PROT_READ;
+		if ( !mm_pagefault(__this_task, pf_address(), prot) )
+			return;
+	}
+
+	cli();
+	printk("Unhandled #PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
 		(ctx->err_code & 0x4) ? "user" : "supervisor",
 		(ctx->err_code & 0x1) ? "PROTECTION_VIOLATION" : "NONPRESENT",
 		pf_address(),
@@ -126,6 +157,7 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 		return;
 	}
 
+	cli();
 	printk("%s: %s @ 0x%.8lx",
 		tname[exc[exc_num].type], exc[exc_num].name, ctx.eip);
 	if ( exc[exc_num].err_code ) {
@@ -145,32 +177,14 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 	}
 	printk("\n");
 	ctx_dump((struct intr_ctx *)&ctx);
-	if ( exc[exc_num].type != EXC_TYPE_TRAP )
-		idle_task_func();
+	idle_task_func();
 }
 
 void panic_exc(volatile struct intr_ctx ctx)
 {
-	uint32_t *stop, *sbase;
-	int i, max;
-
 	cli();
 	ctx_dump((struct intr_ctx *)&ctx);
-
-	stop = (uint32_t *)((uint8_t *)&ctx + sizeof(ctx));
-	sbase = (uint32_t *)((uint8_t *)__this_task + PAGE_SIZE);
-	max = (sbase - stop > 48) ? 48 : sbase - stop;
-	for(i = 0; i < max; i += 4 ) {
-		printk(" 0x%.8lx", stop[i]);
-		if ( i + 1 < (sbase - stop) )
-			printk(" 0x%.8lx", stop[i + 1]);
-		if ( i + 2 < (sbase - stop) )
-			printk(" 0x%.8lx", stop[i + 2]);
-		if ( i + 3 < (sbase - stop) )
-			printk(" 0x%.8lx", stop[i + 3]);
-		printk("\n");
-	}
-
+	stack_dump((struct intr_ctx *)&ctx);
 	idle_task_func();
 }
 
