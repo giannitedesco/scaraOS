@@ -10,4 +10,5 @@ KERNEL_C_SOURCES = \
 	$(KERNEL_DIR)/sched.c \
 	$(KERNEL_DIR)/exec.c \
 	$(KERNEL_DIR)/string.c \
+	$(KERNEL_DIR)/rbtree.c \
 	$(KERNEL_DIR)/vsprintf.c
