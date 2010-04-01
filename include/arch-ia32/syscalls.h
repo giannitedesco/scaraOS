@@ -10,14 +10,12 @@
 #define _SYS_ARG1		1
 #define _SYS_ARG2		2
 #define _SYS_ARG3		3
-#define _SYS_REGS		4
 
 #ifndef __ASM__
 typedef uint32_t (*sys0_t)(void);
 typedef uint32_t (*sys1_t)(uint32_t);
 typedef uint32_t (*sys2_t)(uint32_t, uint32_t);
 typedef uint32_t (*sys3_t)(uint32_t, uint32_t, uint32_t);
-typedef uint32_t (*sysreg_t)(struct intr_ctx *ctx);
 
 uint32_t syscall_exit(uint32_t);
 uint32_t syscall_fork(uint32_t);

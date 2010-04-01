@@ -48,4 +48,6 @@ int kernel_thread(const char *proc_name,
 void sched_init(void);
 void sched(void);
 
+_noreturn _asmlinkage void kthread_init(int (*thread_func)(void *), void *priv);
+
 #endif /* __TASK_HEADER_INCLUDED__ */

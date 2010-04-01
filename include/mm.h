@@ -13,8 +13,8 @@
 
 struct mem_ctx {
 	/* maps etc. */
-	unsigned int		count;
 	struct arch_ctx		arch;
+	unsigned int		count;
 };
 struct mem_ctx *mem_ctx_new(void);
 void mem_ctx_free(struct mem_ctx *ctx);

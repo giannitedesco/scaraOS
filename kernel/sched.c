@@ -47,8 +47,6 @@ void wake_up(struct waitq *q)
 	}
 
 	unlock_irq(flags);
-
-	sched();
 }
 
 /* The task that becomes the idle task needs to call this function - interrupts
@@ -76,12 +74,6 @@ void task_to_runq(struct task *t)
 	unlock_irq(flags);
 }
 
-static void task_push_word(struct task *tsk, uint32_t word)
-{
-	tsk->t.esp -= sizeof(word);
-	*(uint32_t *)tsk->t.esp = word;
-}
-
 static void do_exit(uint32_t code)
 {
 	struct task *tsk = __this_task;
@@ -101,8 +93,7 @@ uint32_t syscall_exit(uint32_t code)
 	return 0;
 }
 
-_noreturn _asmlinkage
-static void kthread_init(int (*thread_func)(void *), void *priv)
+_noreturn _asmlinkage void kthread_init(int (*thread_func)(void *), void *priv)
 {
 	sti();
 	dprintk("kthread_init: thread_func=%p priv=%p\n", thread_func, priv);
@@ -125,15 +116,8 @@ int kernel_thread(const char *proc_name,
 	ret = pid++;
 	tsk->pid = ret;
 	tsk->name = proc_name;
-	tsk->t.eip = (uint32_t)kthread_init;
-	tsk->t.esp = (uint32_t)tsk + PAGE_SIZE;
-
-	/* push arguments to kthread init */
-	task_push_word(tsk, (uint32_t)priv);
-	task_push_word(tsk, (uint32_t)thread_func);
-	task_push_word(tsk, 0x13371337); /* WHAT THE FUCK?!?! */
-
 	tsk->ctx = get_kthread_ctx();
+	task_init_kthread(tsk, thread_func, priv);
 
 	task_to_runq(tsk);
 	return tsk->pid;
@@ -180,35 +164,29 @@ static void flush_delq(void)
 	}
 }
 
-static void task_switch(struct task *current, struct task *next)
-{
-	BUG_ON(((struct task *)next->t.esp <= next + 1));
-	if ( current->ctx != next->ctx )
-		set_context(next);
-	switch_task(current, next);
-}
-
 void sched(void)
 {
 	struct task *current;
-	struct task *head;
+	struct task *next;
 	long flags;
 
 	lock_irq(flags);
 
-	if ( unlikely(!list_empty(&delq)) )
-		flush_delq();
-
 	current = __this_task;
-	head = get_next_task(current);
-	if ( current == head )
+	next = get_next_task(current);
+	if ( current == next )
 		goto out;
 
-	dprintk("sched: switch from %s to %s\n", current->name, head->name);
+	dprintk("sched: switch from %s to %s\n", current->name, next->name);
+	BUG_ON(task_stack_overflowed(next));
+	if ( current->ctx != next->ctx )
+		set_context(next);
 	current->state = TASK_READY;
-	head->state = TASK_RUNNING;
-	task_switch(current, head);
+	next->state = TASK_RUNNING;
+	switch_task(current, next);
 
+	if ( unlikely(!list_empty(&delq)) )
+		flush_delq();
 out:
 	unlock_irq(flags);
 }

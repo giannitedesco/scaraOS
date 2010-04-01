@@ -61,7 +61,7 @@ static int do_exec(const char *path)
 	ret = inode->i_iop->pread(inode, phbuf, phbufsz, hdr.e_phoff);
 	if ( ret <= 0 || (size_t)ret != phbufsz ) {
 		printk("exec: unable to read program header\n");
-		goto err_free;
+		goto err_free; /* ENOEXEC */
 	}
 
 	for(ph = phbuf, i = 0; i < hdr.e_phnum; i++, ph += hdr.e_phentsize) {
@@ -71,15 +71,17 @@ static int do_exec(const char *path)
 		printk("LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
 	}
+	kfree(phbuf);
 
 	tsk = __this_task;
 	ctx = mem_ctx_new();
 	if ( NULL == ctx )
-		goto err_free;
+		return -1; /* ENOMEM */
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
 
-	kfree(phbuf);
+	task_init_exec(tsk, hdr.e_entry);
+
 	return -1;
 err_free:
 	kfree(phbuf);

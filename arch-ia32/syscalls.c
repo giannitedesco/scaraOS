@@ -1,6 +1,7 @@
 #include <kernel.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
+#include <task.h>
 
 struct syscall_desc {
 	unsigned int type;
@@ -9,7 +10,6 @@ struct syscall_desc {
 		sys1_t arg1;
 		sys2_t arg2;
 		sys3_t arg3;
-		sysreg_t argreg;
 	}u;
 };
 
@@ -22,10 +22,15 @@ static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
 void syscall_exc(volatile struct intr_ctx ctx)
 {
 	const struct syscall_desc *sys;
+	struct task *tsk = __this_task;
 	uint32_t ret;
 
-	if ( ctx.eax >= _SYS_NR_SYSCALLS )
+	if ( ctx.eax >= _SYS_NR_SYSCALLS ) {
 		printk("Unknown syscall %lu\n", ctx.eax);
+		return;
+	}
+
+	tsk->t.regs = (struct intr_ctx *)&ctx;
 
 	sys = &syscall_tbl[ctx.eax];
 	switch( sys->type ) {
@@ -41,12 +46,10 @@ void syscall_exc(volatile struct intr_ctx ctx)
 	case _SYS_ARG3:
 		ret = sys->u.arg3(ctx.ebx, ctx.ecx, ctx.edx);
 		break;
-	case _SYS_REGS:
-		ret = sys->u.argreg((struct intr_ctx *)&ctx);
-		break;
 	default:
 		ret = -1;
 	}
 
 	ctx.eax = ret;
+	tsk->t.regs = NULL;
 }
