@@ -52,7 +52,7 @@ void wake_up(struct waitq *q)
 /* The task that becomes the idle task needs to call this function - interrupts
  * should be disabled by the caller */
 static struct task *idle_task;
-void sched_init(void)
+__init void sched_init(void)
 {
 	idle_task =  __this_task;
 	idle_task->state = TASK_RUNNING;

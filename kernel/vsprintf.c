@@ -21,6 +21,7 @@
 #include <arch/io.h>
 #include <arch/div64.h>
 
+#if 0
 /**
  * simple_strtoul - convert a string to an unsigned long
  * @cp: The start of the string
@@ -108,6 +109,7 @@ long long simple_strtoll(const char *cp,char **endp,unsigned int base)
 		return -simple_strtoull(cp+1,endp,base);
 	return simple_strtoull(cp,endp,base);
 }
+#endif
 
 static int skip_atoi(const char **s)
 {
@@ -497,6 +499,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 }
 
 
+#if 0
 /**
  * sprintf - Format a string and place it in a buffer
  * @buf: The buffer to place the result into
@@ -716,3 +719,4 @@ int sscanf(const char * buf, const char * fmt, ...)
 	va_end(args);
 	return i;
 }
+#endif

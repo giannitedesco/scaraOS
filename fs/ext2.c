@@ -262,7 +262,7 @@ static struct vfs_fstype ext2_fstype={
 	.read_super = ext2_get_super,
 };
 
-static void ext2_init(void)
+__init static void ext2_init(void)
 {
 	vfs_add_fstype(&ext2_fstype);
 }

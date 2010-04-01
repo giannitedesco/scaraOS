@@ -12,7 +12,7 @@
 
 static objcache_t bh_cache;
 
-void blk_init(void)
+__init void blk_init(void)
 {
 	bh_cache = objcache_init(NULL, "buffer", sizeof(struct buffer));
 	BUG_ON(NULL == bh_cache);

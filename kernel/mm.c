@@ -132,7 +132,7 @@ void mem_ctx_free(struct mem_ctx *ctx)
 	objcache_free2(memctx, ctx);
 }
 
-void mm_init(void)
+__init void mm_init(void)
 {
 	_memchunk_init();
 	_kmalloc_init();
