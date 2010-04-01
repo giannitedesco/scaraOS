@@ -144,6 +144,7 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 		}
 	}
 	printk("\n");
+	ctx_dump((struct intr_ctx *)&ctx);
 	if ( exc[exc_num].type != EXC_TYPE_TRAP )
 		idle_task_func();
 }
