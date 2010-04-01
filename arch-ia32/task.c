@@ -21,7 +21,7 @@ void task_init_kthread(struct task *tsk,
 	/* push arguments to kthread init */
 	task_push_word(tsk, (vaddr_t)priv);
 	task_push_word(tsk, (vaddr_t)thread_func);
-	task_push_word(tsk, 0x13371337); /* WHAT THE FUCK?!?! */
+	task_push_word(tsk, 0x13371337); /* return address */
 }
 
 void task_init_exec(struct task *tsk, vaddr_t ip)
