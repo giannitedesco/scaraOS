@@ -42,9 +42,9 @@ static inline struct page * rb_search_page_cache(struct inode * inode,
 		page = rb_entry(n, struct page, rb_page_cache);
 
 		if (offset < page->offset)
-			n = n->rb_left;
+			n = n->rb_child[RB_LEFT];
 		else if (offset > page->offset)
-			n = n->rb_right;
+			n = n->rb_child[RB_RIGHT];
 		else
 			return page;
 	}
@@ -65,9 +65,9 @@ static inline struct page * __rb_insert_page_cache(struct inode * inode,
 		page = rb_entry(parent, struct page, rb_page_cache);
 
 		if (offset < page->offset)
-			p = &(*p)->rb_left;
+			p = &(*p)->rb_child[RB_LEFT];
 		else if (offset > page->offset)
-			p = &(*p)->rb_right;
+			p = &(*p)->rb_child[RB_RIGHT];
 		else
 			return page;
 	}
@@ -96,13 +96,13 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 
 struct rb_node
 {
-	unsigned long  rb_parent_color;
 #define	RB_RED		0
 #define	RB_BLACK	1
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-} __attribute__((aligned(sizeof(long))));
-    /* The alignment might seem pointless, but allegedly CRIS needs it */
+	unsigned long  rb_parent_color;
+#define RB_LEFT		0
+#define RB_RIGHT	1
+	struct rb_node *rb_child[2];
+};
 
 struct rb_root
 {
@@ -150,7 +150,7 @@ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 				struct rb_node ** rb_link)
 {
 	node->rb_parent_color = (unsigned long )parent;
-	node->rb_left = node->rb_right = NULL;
+	node->rb_child[RB_LEFT] = node->rb_child[RB_RIGHT] = NULL;
 
 	*rb_link = node;
 }
