@@ -45,11 +45,6 @@ void set_context(struct task *tsk)
 
 void idle_task_func(void)
 {
-	asm volatile(
-		"1:\n"
-		"rep; nop\n"
-		"hlt;\n"
-		"jmp 1b\n");
 	for(;;)
-		/* shutup gcc */;
+		asm volatile("rep; nop\n""hlt;\n");
 }
