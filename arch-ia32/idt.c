@@ -151,10 +151,26 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 
 void panic_exc(volatile struct intr_ctx ctx)
 {
-	ctx_dump((struct intr_ctx *)&ctx);
-	/* FIXME: check CPL in ctx.cs so that userspace can't invoke a kernel
-	 * panic heh */
+	uint32_t *stop, *sbase;
+	int i, max;
+
 	cli();
+	ctx_dump((struct intr_ctx *)&ctx);
+
+	stop = (uint32_t *)((uint8_t *)&ctx + sizeof(ctx));
+	sbase = (uint32_t *)((uint8_t *)__this_task + PAGE_SIZE);
+	max = (sbase - stop > 48) ? 48 : sbase - stop;
+	for(i = 0; i < max; i += 4 ) {
+		printk(" 0x%.8lx", stop[i]);
+		if ( i + 1 < (sbase - stop) )
+			printk(" 0x%.8lx", stop[i + 1]);
+		if ( i + 2 < (sbase - stop) )
+			printk(" 0x%.8lx", stop[i + 2]);
+		if ( i + 3 < (sbase - stop) )
+			printk(" 0x%.8lx", stop[i + 3]);
+		printk("\n");
+	}
+
 	idle_task_func();
 }
 
