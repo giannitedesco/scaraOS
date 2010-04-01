@@ -11,9 +11,6 @@ static void *bootmem_begin;
 static void *bootmem_end;
 static void *bootmem_ptr;
 
-/* lower and upper memory */
-uint32_t mem_lo, mem_hi;
-
 /* Simple allocator for initial page tables and the PFA */
 static void *bootmem_alloc(unsigned int pages)
 {
