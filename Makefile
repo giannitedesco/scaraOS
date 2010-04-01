@@ -31,21 +31,22 @@ STRIP=$(CROSS_COMPILE)strip
 TARGET: all
 
 # Compiler flags
+LDFLAGS = -melf_i386 -nostdlib -N
 CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
-	-Wmissing-format-attribute \
+	-Wmissing-format-attribute -m32 \
 	-I$(TOPDIR)/include $(EXTRA_DEFS)
 
 # templates
-%.o: %.c ./include/arch
+%.o: %.c ./include/arch Makefile
 	$(GCC) $(CFLAGS) -c -o $@ $<
-%.o: %.S ./include/arch
+%.o: %.S ./include/arch Makefile
 	$(GCC) $(CFLAGS) -D__ASM__ -c -o $@ $<
-%.d: %.c ./include/arch
+%.d: %.c ./include/arch Makefile
 	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
-%.d: %.S ./include/arch
+%.d: %.S ./include/arch Makefile
 	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
 
 ./include/arch:
@@ -91,7 +92,7 @@ $(FS_DIR)/fs.o: $(FS_OBJ)
 	$(LD) -r -o $@ $^
 
 kernel.elf: $(ALL_DEPS) $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
-	$(LD) -o $@ -T $(ARCH_DIR)/kernel.lnk -nostdlib -N $(IMAGE_OBJ)
+	$(LD) $(LDFLAGS) -T $(ARCH_DIR)/kernel.lnk -o $@ $(IMAGE_OBJ)
 
 kernel.elf.stripped: kernel.elf
 	$(CP) $< $@
