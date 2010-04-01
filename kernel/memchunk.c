@@ -73,6 +73,7 @@ static struct chunk_hdr *memchunk_get(mempool_t p)
 	/* FIXME: search reserved pool */
 	BUG_ON(NULL == pptr);
 
+	M_POISON(pptr, PAGE_SIZE);
 	page = virt_to_page(pptr);
 	BUG_ON(page->count != 1);
 	c = &page->u.chunk_hdr;
@@ -91,6 +92,7 @@ static void memchunk_put(mempool_t p, struct chunk_hdr *hdr)
 	if ( p->p_num_reserve < p->p_reserve ) {
 	}
 	page = container_of(hdr, struct page, u.chunk_hdr);
+	M_POISON(page_address(page), PAGE_SIZE);
 	free_page(page_address(page));
 }
 
