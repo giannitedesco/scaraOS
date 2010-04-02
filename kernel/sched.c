@@ -74,7 +74,7 @@ void task_to_runq(struct task *t)
 	unlock_irq(flags);
 }
 
-static void do_exit(uint32_t code)
+_noreturn static void do_exit(uint32_t code)
 {
 	struct task *tsk = __this_task;
 	long flags;
@@ -157,8 +157,8 @@ static void flush_delq(void)
 
 	list_for_each_entry_safe(tsk, tmp, &delq, list) {
 		BUG_ON(tsk->state != TASK_ZOMBIE);
-		dprintk("task: %s exited with code %i\n",
-			tsk->name, (int)tsk->exit_code);
+		printk("task: %s exited with code %i (0x%.lx)\n",
+			tsk->name, (int)tsk->exit_code, tsk->exit_code);
 		list_del(&tsk->list);
 		free_page(tsk);
 	}
@@ -181,7 +181,8 @@ void sched(void)
 	BUG_ON(task_stack_overflowed(next));
 	if ( current->ctx != next->ctx )
 		set_context(next);
-	current->state = TASK_READY;
+	if ( likely(current->state == TASK_RUNNING) )
+		current->state = TASK_READY;
 	next->state = TASK_RUNNING;
 	switch_task(current, next);
 
