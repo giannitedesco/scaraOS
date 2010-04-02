@@ -106,7 +106,7 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 		BUG_ON(vma->vma_off & PAGE_MASK);
 	}
 
-	printk("setup_vma: 0x%.8lx - 0x%.8lx (off=0x%lx)\n",
+	dprintk("setup_vma: 0x%.8lx - 0x%.8lx (off=0x%lx)\n",
 		vma->vma_begin, vma->vma_end, vma->vma_off);
 
 	/* FIXME: kill overlapping vma's */

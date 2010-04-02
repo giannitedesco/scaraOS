@@ -1,3 +1,14 @@
+Version 0.0.5
+ + Fix build on x86_64
+ + Register/stack dump on all unhandlex exceptions
+ + Remove bogus save/restore of segment selectors in interrupt paths
+ + Fix oops on schedule after exit()
+ + Inode cache
+ + Pagecache
+ + Demand loading of ELF binaries from pagecache
+ + Fix a number of inode refcounting bugs exposed by adding inode cache
+ + Add option to poison all pages in buddy system
+
 Version 0.0.4
  + Many fixes to scheduler
  + Don't allocate timeslices to idle task when there's work to do

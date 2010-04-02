@@ -23,15 +23,16 @@ with my work.
 Current features:
  o Mostly written in C
  o Multiboot compliant
- o Fully pre-emptive multi-tasking
- o Paged memory management
- o Fully 32bit protected mode
- o 8259A PIC support
- o 8254 PIT support
- o VGA text mode output
- o Monitor detection
- o Floppy disk controller driver
+ o Pre-emptive multi-tasking
+ o Paged memory management including demand loading of files, anonymous
+   memory areas and ELF binaries.
+ o Virtual filesystem switch including inode and page cache
+ o EXT2 support
  o Slab allocator
  o Block I/O subsystem
- o Virtual filesystem switch
- o EXT2 support
+ o Floppy disk controller driver
+ o 32bit protected mode
+ o 8254 PIT support
+ o 8259A PIC support
+ o PCI device enumeration
+ o VGA text mode output

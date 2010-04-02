@@ -51,7 +51,7 @@ static int do_exec(const char *path)
 		return -1;
 	}
 
-	printk("exec: Program header contains %u entries\n", hdr.e_phnum);
+	dprintk("exec: Program header contains %u entries\n", hdr.e_phnum);
 
 	phbufsz = hdr.e_phentsize * hdr.e_phnum;
 	phbuf = kmalloc(phbufsz);

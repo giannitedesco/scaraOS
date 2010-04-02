@@ -119,7 +119,7 @@ static int dumb_task(void *priv)
 {
 	unsigned int i;
 
-	for(i = 0; i < 3; i++) {
+	for(i = 0; i < 100; i++) {
 		mdelay(100);
 		printk("%s", (char *)priv);
 	}
@@ -167,7 +167,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 	vga_preinit();
 
 	/* print a pretty message */
-	printk("ScaraOS v0.0.4 for IA-32");
+	printk("ScaraOS v0.0.5 for IA-32");
 	if ( mbi->flags & MBF_CMDLINE ) {
 		cmdline = __va(mbi->cmdline);
 		printk(": %s", cmdline);

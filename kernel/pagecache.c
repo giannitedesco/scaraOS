@@ -39,7 +39,7 @@ struct page *pagecache_file_readpage(struct inode *in, off_t off)
 		return NULL;
 	}
 
-	printk("pagecache: hard fault: %lu bytes read, %lu bytes to zero\n",
+	dprintk("pagecache: hard fault: %lu bytes read, %lu bytes to zero\n",
 		(size_t)ret, PAGE_SIZE - (size_t)ret);
 	memset((uint8_t *)ptr + (size_t)ret, 0, PAGE_SIZE - (size_t)ret);
 
