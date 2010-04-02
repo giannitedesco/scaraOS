@@ -340,30 +340,24 @@ int setup_new_ctx(struct arch_ctx *ctx)
 
 void destroy_ctx(struct arch_ctx *ctx)
 {
+	/* FIXME: destroy all pagetables too */
 	free_page(__va(ctx->pgd));
 }
 
-void *map_page_to_ctx(struct arch_ctx *ctx, vaddr_t addr, unsigned prot)
+int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
+			vaddr_t addr, unsigned prot)
 {
-	void *ptr;
 	pgd_t pd;
 	pgt_t pt;
 	uint32_t pa;
 	uint32_t tblent;
 
-	ptr = alloc_page();
-	if ( NULL == ptr )
-		return NULL;
-
-	pa = __pa(ptr);
 	pd = __va(ctx->pgd);
 
 	if ( !(pd[dir(addr)] & PDE_PRESENT) ) {
 		pt = alloc_page();
-		if ( NULL == pt ) {
-			free_page(ptr);
-			return NULL;
-		}
+		if ( NULL == pt )
+			return -1;
 
 		memset(pt, 0, NR_PTE * sizeof(*pt));
 		pd[dir(addr)] = __pa(pt) | PDE_PRESENT | PDE_RW | PDE_USER;
@@ -371,6 +365,7 @@ void *map_page_to_ctx(struct arch_ctx *ctx, vaddr_t addr, unsigned prot)
 		pt = __va(__val(pd[dir(addr)]));
 	}
 
+	pa = page_phys(page);
 	tblent = pa | PTE_PRESENT | PTE_USER;
 	if ( prot & PROT_WRITE )
 		tblent |= PTE_RW;
@@ -379,7 +374,7 @@ void *map_page_to_ctx(struct arch_ctx *ctx, vaddr_t addr, unsigned prot)
 
 	/* FFS: use INVLPG */
 	__flush_tlb();
-	dprintk("ctx %p: page table %lu / %lu = 0x%.8lx\n",
-		ctx->pgd, dir(addr), tbl(addr), pa);
-	return ptr;
+	dprintk("ctx %p: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
+		ctx->pgd, addr, dir(addr), tbl(addr), pa);
+	return 0;
 }

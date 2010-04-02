@@ -2,12 +2,12 @@
  * This code handles the interrupt descriptor tables.
 */
 #include <kernel.h>
-#include <arch/mm.h>
 #include <arch/descriptor.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
 #include <arch/regs.h>
 #include <task.h>
+#include <mm.h>
 
 #define load_idt(idtr) \
 	asm volatile("lidt (%0)": :"r" (idtr));

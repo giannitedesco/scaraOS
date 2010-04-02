@@ -119,11 +119,12 @@ static int dumb_task(void *priv)
 {
 	unsigned int i;
 
-	for(i = 0; i < 100; i++) {
+	for(i = 0; i < 3; i++) {
 		mdelay(100);
 		printk("%s", (char *)priv);
 	}
 
+	syscall1(_SYS_exec, (uint32_t)"/sbin/init");
 	return 123;
 }
 #endif

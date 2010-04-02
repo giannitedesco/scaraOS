@@ -25,6 +25,11 @@ ssize_t nul_inode_pread(struct inode *i, void *buf, size_t len, off_t off)
 	return -1; /* EBADF? */
 }
 
+struct page *nul_inode_readpage(struct inode *in, off_t off)
+{
+	return NULL; /* EBADF? */
+}
+
 static objcache_t inodes;
 static LIST_HEAD(slack_inodes);
 void _inode_cache_init(void)

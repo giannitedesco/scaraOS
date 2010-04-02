@@ -74,10 +74,14 @@ struct super_ops {
 struct inode_ops {
 	struct inode *(*lookup)(struct inode *, const char *name, size_t nlen);
 	ssize_t (*pread)(struct inode *, void *buf, size_t len, off_t off);
+	struct page *(*readpage)(struct inode *, off_t off);
 };
 
 struct inode *nul_inode_lookup(struct inode *, const char *name, size_t nlen);
 ssize_t nul_inode_pread(struct inode *, void *buf, size_t len, off_t off);
+struct page *nul_inode_readpage(struct inode *, off_t off);
+
+struct page *pagecache_file_readpage(struct inode *, off_t off);
 
 /* VFS functions called by arch kernel */
 void vfs_init(void);

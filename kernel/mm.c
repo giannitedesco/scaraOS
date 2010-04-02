@@ -27,8 +27,9 @@ struct vma *lookup_vma(struct mem_ctx *ctx, vaddr_t va)
 
 int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 {
+	struct page *page;
 	struct vma *vma;
-	void *ptr;
+	off_t off;
 
 	vma = lookup_vma(tsk->ctx, va);
 	if ( NULL == vma )
@@ -37,21 +38,26 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 	if ( !(vma->vma_prot & prot) )
 		return -1;
 
-	ptr = map_page_to_ctx(&tsk->ctx->arch, va, prot);
-	if ( NULL == ptr )
-		return -1;
+	off = vma->vma_off + ((va - vma->vma_begin) & ~PAGE_MASK);
+	va &= ~PAGE_MASK;
 
-	memset(ptr, 0, PAGE_SIZE);
 	if ( vma->vma_ino ) {
-		/* FIXME: read correct page for starters but in future,
-		 * use the page cache
-		 */
-		printk("Faulted in page at 0x%.8lx\n", va);
-		vma->vma_ino->i_iop->pread(vma->vma_ino,
-						ptr,
-						PAGE_SIZE,
-						vma->vma_off);
+		page = vma->vma_ino->i_iop->readpage(vma->vma_ino, off);
+		if ( NULL == page )
+			return -1;
+	}else{
+		void *ptr;
+
+		ptr = alloc_page();
+		if ( NULL == ptr )
+			return -1;
+
+		memset(ptr, 0, PAGE_SIZE);
+		page = virt_to_page(ptr);
 	}
+
+	if ( map_page_to_ctx(&tsk->ctx->arch, page, va, prot) )
+		return -1;
 
 	return 0;
 }

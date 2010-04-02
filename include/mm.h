@@ -1,9 +1,57 @@
 #ifndef __MM_HEADER_INCLUDED__
 #define __MM_HEADER_INCLUDED__
 
+/* Full chunks: nowhere, c_o poulated c_o.list is in objcache->o_full */
+/* Partial chunks: c_o populated and c_o.list is in objcache->o_partials */
+/* Free chunks: in page allocator system, see: kernel/buddy.c */
+struct slab_hdr {
+	union {
+		struct {
+			struct slab_hdr *next;
+			uint8_t *ptr;
+		}c_r;
+		struct {
+			struct _objcache *cache;
+			uint8_t *free_list;
+			unsigned int inuse;
+			struct list_head list;
+		}c_o;
+	};
+};
+
+struct pagecache_hdr {
+	struct rb_node	pc_rbt;
+	off_t 		pc_off;
+};
+
+/* There is one of these structures for every page
+ * frame in the system. */
+struct page {
+	union {
+		struct list_head list;
+		struct pagecache_hdr pagecache;
+		struct slab_hdr slab_hdr;
+	}u;
+	unsigned count;
+	unsigned flags;
+};
+
+/* Page flags */
+#define PG_reserved	(1<<0)
+#define PG_slab		(1<<1)
+#define PG_pagecache	(1<<2)
+
+/* Page reference counts */
+#define get_page(p) ((p)->count++)
+#define put_page(p) ((p)->count--)
+
+/* Getting at struct page's */
+#define page_address(page) __va( ((page) - pfa) << PAGE_SHIFT )
+#define page_phys(page) (((page) - pfa) << PAGE_SHIFT)
+#define virt_to_page(vaddr) (pfa + (__pa(vaddr) >> PAGE_SHIFT))
+#define phys_to_page(paddr) (pfa + (paddr >> PAGE_SHIFT))
+
 #include <arch/mm.h>
-#include <list.h>
-#include <rbtree.h>
 
 /*
  * struct page
@@ -63,55 +111,6 @@ static inline void mem_ctx_put(struct mem_ctx *ctx)
 	if ( 0 == --ctx->count )
 		mem_ctx_free(ctx);
 }
-
-/* Full chunks: nowhere, c_o poulated c_o.list is in objcache->o_full */
-/* Partial chunks: c_o populated and c_o.list is in objcache->o_partials */
-/* Free chunks: in page allocator system, see: kernel/buddy.c */
-struct slab_hdr {
-	union {
-		struct {
-			struct slab_hdr *next;
-			uint8_t *ptr;
-		}c_r;
-		struct {
-			struct _objcache *cache;
-			uint8_t *free_list;
-			unsigned int inuse;
-			struct list_head list;
-		}c_o;
-	};
-};
-
-struct pagecache_hdr {
-	struct rb_node	pc_rbt;
-	off_t 		pc_off;
-};
-
-/* There is one of these structures for every page
- * frame in the system. */
-struct page {
-	union {
-		struct list_head list;
-		struct pagecache_hdr pagecache;
-		struct slab_hdr slab_hdr;
-	}u;
-	unsigned count;
-	unsigned flags;
-};
-
-/* Page flags */
-#define PG_reserved	(1<<0)
-#define PG_slab		(1<<1)
-#define PG_pagecache	(1<<2)
-
-/* Page reference counts */
-#define get_page(p) ((p)->count++)
-#define put_page(p) ((p)->count--)
-
-/* Getting at struct page's */
-#define page_address(page) __va( ((page)-pfa) << PAGE_SHIFT )
-#define virt_to_page(kaddr) (pfa + (__pa(kaddr) >> PAGE_SHIFT))
-
 
 /* 
  * Buddy system 

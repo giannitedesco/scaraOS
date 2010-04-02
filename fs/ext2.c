@@ -47,6 +47,7 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 static const struct inode_ops ext2_reg_iop = {
 	.lookup = nul_inode_lookup,
 	.pread = ext2_pread,
+	.readpage = pagecache_file_readpage,
 };
 
 /* Lookup a name in an inode */
@@ -94,6 +95,7 @@ static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 static const struct inode_ops ext2_dir_iop = {
 	.lookup = ext2_lookup,
 	.pread = nul_inode_pread,
+	.readpage = nul_inode_readpage,
 };
 
 /* Fill in an inode structure for iget */

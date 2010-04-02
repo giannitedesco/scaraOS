@@ -1,7 +1,7 @@
 #ifndef __ARCH_IA32_VGA__
 #define __ARCH_IA32_VGA__
 
-#include <arch/mm.h>
+#include <mm.h>
 
 #define COLS		80
 #define ROWS		25
