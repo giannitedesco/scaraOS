@@ -6,6 +6,12 @@
 #include <kernel.h>
 #include <mm.h>
 
+#if PAGE_POISON
+#define P_POISON(ptr, len) memset(ptr, PAGE_POISON_PATTERN, len)
+#else
+#define P_POISON(ptr, len) do { } while(0);
+#endif
+
 /* pageframe array */
 struct page *pfa;
 
@@ -29,8 +35,9 @@ void free_pages(void *ptr, unsigned int order)
 
 	if ( NULL == ptr )
 		return;
-	BUG_ON(order != 0);
+	BUG_ON(order != 1);
 
+	P_POISON(ptr, order << PAGE_SHIFT);
 	page = virt_to_page(ptr);
 	page->flags = 0;
 	put_page(page);
@@ -48,6 +55,7 @@ void *alloc_pages(unsigned int order)
 {
 	struct page *page;
 
+	BUG_ON(order != 1);
 	if ( list_empty(&free_list[order]) )
 		goto fail;
 

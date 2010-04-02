@@ -6,8 +6,6 @@
 #ifndef _FIRESTORM_MEMCHUNK_HEADER_INCLUDED_
 #define _FIRESTORM_MEMCHUNK_HEADER_INCLUDED_
 
-#define MEMCHUNK_POISON 1
-#define MEMCHUNK_POISON_PATTERN 0x5a
 #define OBJCACHE_DEBUG_FREE 1
 #define OBJCACHE_POISON 1
 #define OBJCACHE_POISON_PATTERN 0xa5
@@ -22,7 +20,7 @@ struct _objcache {
 	/** Pointer to byte after last object in current chunk */
 	uint8_t *o_ptr_end;
 	/** Freshest chunk (we never allocated to o_ptr_end yet) */
-	struct chunk_hdr *o_cur;
+	struct slab_hdr *o_cur;
 	/** List of chunks which have a free list */
 	struct list_head o_partials;
 	/** List of full chunks */
@@ -36,7 +34,7 @@ struct _objcache {
 };
 
 struct _mempool {
-	struct chunk_hdr *p_reserved;
+	struct slab_hdr *p_reserved;
 	size_t p_num_reserve;
 	size_t p_reserve;
 	struct list_head p_caches;

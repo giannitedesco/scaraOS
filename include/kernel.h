@@ -10,6 +10,7 @@
 #include <compiler.h>
 #include <endian.h>
 #include <list.h>
+#include <rbtree.h>
 
 #include <arch/types.h>
 #include <arch/processor.h>

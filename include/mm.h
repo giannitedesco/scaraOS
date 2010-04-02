@@ -67,10 +67,10 @@ static inline void mem_ctx_put(struct mem_ctx *ctx)
 /* Full chunks: nowhere, c_o poulated c_o.list is in objcache->o_full */
 /* Partial chunks: c_o populated and c_o.list is in objcache->o_partials */
 /* Free chunks: in page allocator system, see: kernel/buddy.c */
-struct chunk_hdr {
+struct slab_hdr {
 	union {
 		struct {
-			struct chunk_hdr *next;
+			struct slab_hdr *next;
 			uint8_t *ptr;
 		}c_r;
 		struct {
@@ -87,7 +87,8 @@ struct chunk_hdr {
 struct page {
 	union {
 		struct list_head list;
-		struct chunk_hdr chunk_hdr;
+		struct rb_node pagecache;
+		struct slab_hdr slab_hdr;
 	}u;
 	unsigned count;
 	unsigned flags;
@@ -96,6 +97,7 @@ struct page {
 /* Page flags */
 #define PG_reserved	(1<<0)
 #define PG_slab		(1<<1)
+#define PG_pagecache	(1<<2)
 
 /* Page reference counts */
 #define get_page(p) ((p)->count++)
@@ -119,9 +121,11 @@ extern char *cmdline;
 //extern unsigned long nr_physpages;
 //extern unsigned long nr_freepages;
 
-#define alloc_page() alloc_pages(0)
-#define free_page(x) free_pages(x,0)
+#define alloc_page() alloc_pages(1)
+#define free_page(x) free_pages(x,1)
 
+#define PAGE_POISON 1
+#define PAGE_POISON_PATTERN 0x5a
 void buddy_init(void);
 void *alloc_pages(unsigned int order);
 void free_pages(void *ptr, unsigned int order);

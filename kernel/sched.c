@@ -85,12 +85,12 @@ _noreturn static void do_exit(uint32_t code)
 	tsk->state = TASK_ZOMBIE;
 	unlock_irq(flags);
 	sched();
+	panic("A BIT OF FUCKING PRECISION!\n");
 }
 
-uint32_t syscall_exit(uint32_t code)
+_noreturn uint32_t syscall_exit(uint32_t code)
 {
 	do_exit(code);
-	return 0;
 }
 
 _noreturn _asmlinkage void kthread_init(int (*thread_func)(void *), void *priv)

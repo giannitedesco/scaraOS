@@ -18,12 +18,6 @@
 #include <mm.h>
 #include <memchunk.h>
 
-#if MEMCHUNK_POISON
-#define M_POISON(ptr, len) memset(ptr, MEMCHUNK_POISON_PATTERN, len)
-#else
-#define M_POISON(ptr, len) do { } while(0);
-#endif
-
 #if OBJCACHE_POISON
 #define O_POISON(ptr, len) memset(ptr, OBJCACHE_POISON_PATTERN, len)
 #else
@@ -63,9 +57,9 @@ __init void _memchunk_init(void)
 			sizeof(struct _mempool));
 }
 
-static struct chunk_hdr *memchunk_get(mempool_t p)
+static struct slab_hdr *memchunk_get(mempool_t p)
 {
-	struct chunk_hdr *c;
+	struct slab_hdr *c;
 	struct page *page;
 	void *pptr;
 
@@ -73,10 +67,9 @@ static struct chunk_hdr *memchunk_get(mempool_t p)
 	/* FIXME: search reserved pool */
 	BUG_ON(NULL == pptr);
 
-	M_POISON(pptr, PAGE_SIZE);
 	page = virt_to_page(pptr);
 	BUG_ON(page->count != 1);
-	c = &page->u.chunk_hdr;
+	c = &page->u.slab_hdr;
 	page->flags |= PG_slab;
 
 	c->c_r.ptr = pptr;
@@ -84,15 +77,14 @@ static struct chunk_hdr *memchunk_get(mempool_t p)
 	return c;
 }
 
-static void memchunk_put(mempool_t p, struct chunk_hdr *hdr)
+static void memchunk_put(mempool_t p, struct slab_hdr *hdr)
 {
 	struct page *page;
 
 	/* FIXME: return page to reserved pool if it's depelted */
 	if ( p->p_num_reserve < p->p_reserve ) {
 	}
-	page = container_of(hdr, struct page, u.chunk_hdr);
-	M_POISON(page_address(page), PAGE_SIZE);
+	page = container_of(hdr, struct page, u.slab_hdr);
 	free_page(page_address(page));
 }
 
@@ -114,7 +106,7 @@ mempool_t mempool_new(const char *label, size_t numchunks)
 	p->p_num_reserve = 0;
 	p->p_label = label;
 	for(n = 0; n < numchunks; n++) {
-		struct chunk_hdr *tmp;
+		struct slab_hdr *tmp;
 		tmp = memchunk_get(&mc.m_gpool);
 		BUG_ON(NULL == tmp);
 		tmp->c_r.next = p->p_reserved;
@@ -127,7 +119,7 @@ mempool_t mempool_new(const char *label, size_t numchunks)
 void mempool_free(mempool_t p)
 {
 	struct _objcache *o, *tmp;
-	struct chunk_hdr *c, *nxt;
+	struct slab_hdr *c, *nxt;
 
 	printk("mempool: free: %s\n", p->p_label);
 	list_for_each_entry_safe(o, tmp, &p->p_caches, o_list) {
@@ -168,7 +160,7 @@ objcache_t objcache_init(mempool_t pool, const char *label, size_t obj_sz)
 
 void objcache_fini(objcache_t o)
 {
-	struct chunk_hdr *c, *tmp;
+	struct slab_hdr *c, *tmp;
 	size_t total = 0, obj = 0;
 
 	list_for_each_entry_safe(c, tmp, &o->o_full, c_o.list) {
@@ -205,7 +197,7 @@ void objcache_fini(objcache_t o)
 
 }
 
-static void *alloc_from_partial(struct _objcache *o, struct chunk_hdr *c)
+static void *alloc_from_partial(struct _objcache *o, struct slab_hdr *c)
 {
 	void *ret;
 	ret = c->c_o.free_list;
@@ -234,7 +226,7 @@ static void *alloc_fast(struct _objcache *o)
 
 static void *alloc_slow(struct _objcache *o)
 {
-	struct chunk_hdr *c;
+	struct slab_hdr *c;
 
 	c = memchunk_get(o->o_pool);
 	if ( NULL == c )
@@ -252,16 +244,16 @@ static void *alloc_slow(struct _objcache *o)
 	return alloc_fast(o);
 }
 
-static struct chunk_hdr *first_partial(struct _objcache *o)
+static struct slab_hdr *first_partial(struct _objcache *o)
 {
 	if ( list_empty(&o->o_partials) )
 		return NULL;
-	return list_entry(o->o_partials.next, struct chunk_hdr, c_o.list);
+	return list_entry(o->o_partials.next, struct slab_hdr, c_o.list);
 }
 
 static void *do_alloc(struct _objcache *o)
 {
-	struct chunk_hdr *c;
+	struct slab_hdr *c;
 
 	if ( NULL == o )
 		return NULL;
@@ -294,7 +286,7 @@ void *objcache_alloc0(objcache_t o)
 	return ret;
 }
 
-static void do_cache_free(struct _objcache *o, struct chunk_hdr *c, void *obj)
+static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 {
 #if OBJCACHE_DEBUG_FREE
 	uint8_t **tmp;
@@ -332,27 +324,27 @@ static void do_cache_free(struct _objcache *o, struct chunk_hdr *c, void *obj)
 void objcache_free(void *obj)
 {
 	struct page *page;
-	struct chunk_hdr *c;
+	struct slab_hdr *c;
 
 	if ( NULL == obj )
 		return;
 
 	page = virt_to_page(obj);
-	c = &page->u.chunk_hdr;
+	c = &page->u.slab_hdr;
 
 	do_cache_free(c->c_o.cache, c, obj);
 }
 
 void objcache_free2(objcache_t o, void *obj)
 {
-	struct chunk_hdr *c;
+	struct slab_hdr *c;
 	struct page *page;
 
 	if ( NULL == obj )
 		return;
 
 	page = virt_to_page(obj);
-	c = &page->u.chunk_hdr;
+	c = &page->u.slab_hdr;
 
 	BUG_ON(page->flags != PG_slab);
 	BUG_ON(page->count != 1);

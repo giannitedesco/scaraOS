@@ -21,7 +21,6 @@
 */
 
 #include <kernel.h>
-#include <rbtree.h>
 
 static void __rb_rotate(struct rb_node *node, struct rb_root *root,
 				unsigned int side)

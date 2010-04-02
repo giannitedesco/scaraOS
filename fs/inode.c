@@ -32,8 +32,7 @@ void _inode_cache_init(void)
 	BUG_ON(NULL == inode_cache);
 }
 
-/* Retrieve an inode given a mounted fs descriptor and an
- * inode number */
+/* Retrieve an inode given a mounted fs descriptor and an inode number */
 struct inode *iget(struct super *sb, ino_t ino)
 {
 	struct inode *ret;
@@ -55,23 +54,11 @@ struct inode *iget(struct super *sb, ino_t ino)
 	return ret;
 }
 
-struct inode *iref(struct inode *i)
-{
-	i->i_count++;
-	return i;
-}
-
 /* Release an inode so that it can be freed
  * under memory pressure */
-void iput(struct inode *i)
+void inode_free(struct inode *i)
 {
 	if ( NULL == i )
 		return;
-
-	BUG_ON(i->i_count == 0);
-
-	if ( --i->i_count )
-		return;
-
 	objcache_free2(inode_cache, i);
 }

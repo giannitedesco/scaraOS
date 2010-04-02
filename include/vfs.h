@@ -7,9 +7,12 @@
 /* Inode objects */
 struct inode {
 	/* Filled in by iget() */
+	struct rb_node		i_cache;
+	struct list_head	i_list;
 	ino_t			i_ino;
 	struct super		*i_sb;
 	uint32_t		i_count;
+	struct rb_root		i_pagecache;
 
 	/* Filled in by super->read_inode */
 	const struct inode_ops	*i_iop;
@@ -43,6 +46,7 @@ struct super {
 	/* These are not for filesystems to touch */
 	struct blkdev *s_dev;
 	struct vfs_fstype *s_type;
+	struct rb_tree *s_inode_cache;
 
 	/* Here is what get_super must fill in */
 	unsigned int s_blocksize;
@@ -86,8 +90,18 @@ void vfs_add_fstype(struct vfs_fstype *);
 
 /* Inode cache interface */
 struct inode *iget(struct super *, ino_t);
-struct inode *iref(struct inode *i);
-void iput(struct inode *);
+void inode_free(struct inode *i);
+static inline struct inode *iref(struct inode *i)
+{
+	i->i_count++;
+	return i;
+}
+static inline void iput(struct inode *i)
+{
+	BUG_ON(i->i_count == 0);
+	if ( 0 == --i->i_count )
+		inode_free(i);
+}
 
 /* Dentry cache interface */
 struct inode *namei(const char *);
