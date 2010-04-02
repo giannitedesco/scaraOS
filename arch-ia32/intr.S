@@ -33,6 +33,7 @@ _exc##nr:\
 	call exc_handler ;\
 	addl $4,%esp ;\
 	popa ;\
+	addl $4,%esp ;\
 	iret
 
 #define DO_irq(nr) \
