@@ -31,9 +31,9 @@ struct inode *namei(const char *name)
 
 	if ( *name == '/' ) {
 		name++;
-		i = __this_task->root;
+		i = iref(__this_task->root);
 	}else{
-		i = __this_task->cwd;
+		i = iref(__this_task->cwd);
 	}
 
 	/* Check for some bogus bugs */

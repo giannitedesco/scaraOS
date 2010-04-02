@@ -41,17 +41,17 @@ struct dentry {
 
 /* Superblock */
 struct super {
-	struct super *prev,*next;
+	struct list_head 	s_list;
 
 	/* These are not for filesystems to touch */
-	struct blkdev *s_dev;
-	struct vfs_fstype *s_type;
-	struct rb_tree *s_inode_cache;
+	struct blkdev 		*s_dev;
+	struct vfs_fstype 	*s_type;
+	struct rb_root 		s_inode_cache;
 
 	/* Here is what get_super must fill in */
-	unsigned int s_blocksize;
-	const struct super_ops *s_ops;
-	struct inode *s_root;
+	unsigned int 		s_blocksize;
+	const struct super_ops	*s_ops;
+	struct inode 		*s_root;
 
 	union {
 		struct ext2_sb_info	ext2;
@@ -83,7 +83,15 @@ ssize_t nul_inode_pread(struct inode *, void *buf, size_t len, off_t off);
 void vfs_init(void);
 void _inode_cache_init(void);
 void _dentry_cache_init(void);
-void vfs_mount_root(void);
+void _mounts_init(void);
+
+/* MM balancing */
+void vfs_squeeze(void);
+void _squeeze_inode_cache(void);
+
+/* Superblocks and mount points */
+int vfs_mount_root(const char *type, const char *dev);
+struct super *super_get(struct vfs_fstype *type, struct blkdev *blkdev);
 
 /* Object registration */
 void vfs_add_fstype(struct vfs_fstype *);

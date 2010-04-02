@@ -10,11 +10,11 @@
 #include <task.h>
 
 static struct vfs_fstype *fs_types;
-static struct super *superblocks;
 
 /* Initialise all aspects of the VFS layer */
 void vfs_init(void)
 {
+	_mounts_init();
 	_inode_cache_init();
 	_dentry_cache_init();
 }
@@ -41,35 +41,36 @@ static struct vfs_fstype *vfs_get_fstype(const char *name)
 	return NULL;
 }
 
-/* hack to mount the root filesystem */
-void vfs_mount_root(void)
+void vfs_squeeze(void)
 {
-	static struct super sb;
-	const char *type = "ext2";
-	const char *dev = "floppy0";
-	
-	sb.s_type = vfs_get_fstype(type);
-	if ( NULL == sb.s_type ) {
+	_squeeze_inode_cache();
+}
+
+/* hack to mount the root filesystem */
+int vfs_mount_root(const char *type, const char *dev)
+{
+	struct vfs_fstype *fstype;
+	struct blkdev *blkdev;
+	struct super *s;
+
+	fstype = vfs_get_fstype(type);
+	if ( NULL == fstype ) {
 		printk("vfs: unknown fstype %s\n", type);
-		return;
+		return -1;
 	}
 
-	sb.s_dev = blkdev_get(dev);
-	if ( NULL == sb.s_dev ) {
+	blkdev = blkdev_get(dev);
+	if ( NULL == blkdev ) {
 		printk("vfs: unknown block device %s\n", dev);
-		return;
+		return -1;
 	}
 
-	sb.s_blocksize = 0;
-
-	if ( sb.s_type->read_super(&sb) ) {
-		printk("vfs: error mounting root filesystem\n");
-		return;
-	}
-
-	superblocks = &sb;
+	s = super_get(fstype, blkdev);
+	if ( NULL == s )
+		return -1;
 
 	/* Setup the tasks structures */
-	__this_task->root = superblocks->s_root;
+	__this_task->root = s->s_root;
 	__this_task->cwd = iref(__this_task->root);
+	return 0;
 }

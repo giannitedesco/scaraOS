@@ -129,9 +129,13 @@ static int init_task(void *priv)
 	do_initcalls();
 
 	/* Mount the root filesystem etc.. */
-	vfs_mount_root();
+	if ( vfs_mount_root("ext2", "floppy0") ) {
+		panic("Unable to mount root filesystem\n");
+	}
 
-	ret = syscall1(_SYS_exec, (uint32_t)"/bin/bash");
+	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/bash");
+	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/flaps");
+
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
 
