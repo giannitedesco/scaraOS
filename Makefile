@@ -20,11 +20,10 @@ MAKE=make
 LN=ln
 CP=cp
 
-AS=$(CROSS_COMPILE)as
-AS86=$(CROSS_COMPILE)as
 GCC=$(CROSS_COMPILE)gcc
 CC=$(CROSS_COMPILE)gcc
 LD=$(CROSS_COMPILE)ld
+AR=$(CROSS_COMPILE)ar
 STRIP=$(CROSS_COMPILE)strip
 
 # Default target
@@ -41,16 +40,25 @@ CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 
 # templates
 %.o: %.c ./include/arch Makefile
-	$(GCC) $(CFLAGS) -c -o $@ $<
+	@echo " [C] $@"
+	@$(GCC) $(CFLAGS) -c -o $@ $<
 %.o: %.S ./include/arch Makefile
-	$(GCC) $(CFLAGS) -D__ASM__ -c -o $@ $<
+	@echo " [ASM] $@"
+	@$(GCC) $(CFLAGS) -D__ASM__ -c -o $@ $<
+%.a:
+	@echo " [AR] $@"
+	@$(AR) crs $@ $^
+
 %.d: %.c ./include/arch Makefile
-	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
+#	@echo " [DEP:C] $@"
+	@$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
 %.d: %.S ./include/arch Makefile
-	$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
+#	@echo " [DEP:ASM] $@"
+	@$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
 
 ./include/arch:
-	$(LN) -sf arch-$(ARCH) ./include/arch
+	@echo " [SYMLINK] ./include/arch -> arch-$(ARCH)"
+	@$(LN) -sf arch-$(ARCH) ./include/arch
 
 include arch-$(ARCH)/Makefile
 include kernel/Makefile
@@ -65,9 +73,9 @@ ALL_SOURCES := $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
 		$(KERNEL_C_SOURCES) \
 		$(FS_C_SOURCES)
 
-IMAGE_OBJ := $(ARCH_DIR)/arch.o \
-		$(KERNEL_DIR)/kernel.o \
-		$(FS_DIR)/fs.o
+IMAGE_OBJ := $(ARCH_DIR)/arch.a \
+		$(KERNEL_DIR)/kernel.a \
+		$(FS_DIR)/fs.a
 
 # Generate dependencies
 ARCH_DEP := $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
@@ -82,31 +90,31 @@ include $(ALL_DEPS)
 endif
 endif
 
-$(KERNEL_DIR)/kernel.o: $(KERNEL_OBJ)
-	$(LD) -r -o $@ $^
-
-$(ARCH_DIR)/arch.o: $(ARCH_OBJ)
-	$(LD) -r -o $@ $^
-
-$(FS_DIR)/fs.o: $(FS_OBJ)
-	$(LD) -r -o $@ $^
+$(KERNEL_DIR)/kernel.a: $(KERNEL_OBJ)
+$(ARCH_DIR)/arch.a: $(ARCH_OBJ)
+$(FS_DIR)/fs.a: $(FS_OBJ)
 
 kernel.elf: $(ALL_DEPS) $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
-	$(LD) $(LDFLAGS) -T $(ARCH_DIR)/kernel.lnk -o $@ $(IMAGE_OBJ)
+	@echo " [LINK] $@"
+	@$(LD) $(LDFLAGS) -T $(ARCH_DIR)/kernel.lnk -o $@ \
+		--whole-archive $(IMAGE_OBJ)
 
 kernel.elf.stripped: kernel.elf
-	$(CP) $< $@
-	$(STRIP) $@
+	@echo " [STRIP] $@"
+	@$(CP) $< $@
+	@$(STRIP) $@
 
 kernel.elf.gz: kernel.elf.stripped
-	gzip -c < $< > $@
+	@echo " [COMPRESS] $@"
+	@gzip -c < $< > $@
 
 all: kernel.elf.gz
 
 boot.img: kernel.elf.gz menu.lst
-	e2fsck -y ./boot.img || true
-	e2cp kernel.elf.gz ./boot.img:kernel
-	e2cp menu.lst ./boot.img:
+	@echo " [BOOTFLOPPY] $@"
+	@e2fsck -y ./boot.img || true
+	@e2cp kernel.elf.gz ./boot.img:kernel
+	@e2cp menu.lst ./boot.img:
 
 boot_floppy: boot.img
 
