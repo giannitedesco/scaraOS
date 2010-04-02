@@ -5,6 +5,7 @@
 
 #include <kernel.h>
 #include <task.h>
+#include <vfs.h>
 #include <arch/processor.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
@@ -55,6 +56,7 @@ static struct task *idle_task;
 __init void sched_init(void)
 {
 	idle_task =  __this_task;
+	memset(idle_task, 0, sizeof(*idle_task));
 	idle_task->state = TASK_RUNNING;
 	idle_task->name = "[idle]";
 	idle_task->pid = 0;
@@ -105,7 +107,7 @@ int kernel_thread(const char *proc_name,
 			int (*thread_func)(void *),
 			void *priv)
 {
-	struct task *tsk;
+	struct task *tsk, *current;
 	static pid_t pid = 1;
 	static pid_t ret;
 
@@ -113,10 +115,17 @@ int kernel_thread(const char *proc_name,
 	if ( NULL == tsk )
 		return -1;
 
+	current = __this_task;
+	memset(tsk, 0, sizeof(*tsk));
+
 	ret = pid++;
 	tsk->pid = ret;
 	tsk->name = proc_name;
 	tsk->ctx = get_kthread_ctx();
+	if ( current->root )
+		tsk->root = iref(current->root);
+	if ( current->cwd )
+		tsk->cwd = iref(current->cwd);
 	task_init_kthread(tsk, thread_func, priv);
 
 	task_to_runq(tsk);
