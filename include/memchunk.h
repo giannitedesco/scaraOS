@@ -7,7 +7,6 @@
 #define _FIRESTORM_MEMCHUNK_HEADER_INCLUDED_
 
 #define OBJCACHE_DEBUG_FREE 1
-#define OBJCACHE_POISON 1
 #define OBJCACHE_POISON_PATTERN 0xa5
 
 struct _objcache {

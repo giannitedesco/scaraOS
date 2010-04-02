@@ -96,6 +96,8 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 	if ( ino ) {
 		vma->vma_ino = ino;
 		vma->vma_off = off - (va - vma->vma_begin);
+		/* FIXME: allow non-page-aligned offsets somehow */
+		BUG_ON(vma->vma_off & PAGE_MASK);
 	}
 
 	printk("setup_vma: 0x%.8lx - 0x%.8lx (off=0x%lx)\n",

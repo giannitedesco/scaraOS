@@ -281,7 +281,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 	tbls = bootmem_alloc(nr_pgtbls);
 	BUG_ON(NULL == tbls);
 	map_ram(&__init_pgd, tbls);
-	printk("Kernel page tables = %lu pages @ %p\n", nr_pgtbls, tbls);
+	dprintk("Kernel page tables = %lu pages @ %p\n", nr_pgtbls, tbls);
 	write_protect(tbls, &__begin, &__rodata_end - &__begin);
 
 	buddy_init();
@@ -291,7 +291,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 
 	pfa = bootmem_alloc(pfa_size >> PAGE_SHIFT);
 	BUG_ON(NULL == pfa);
-	printk("Page frame array: %lu pages @ %p, struct page=%u bytes\n",
+	dprintk("Page frame array: %lu pages @ %p, struct page=%u bytes\n",
 		pfa_size >> PAGE_SHIFT, pfa, sizeof(struct page));
 
 	reserve_from_e820(e820_map, e820_len);

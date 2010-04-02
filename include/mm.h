@@ -82,12 +82,17 @@ struct slab_hdr {
 	};
 };
 
+struct pagecache_hdr {
+	struct rb_node	pc_rbt;
+	off_t 		pc_off;
+};
+
 /* There is one of these structures for every page
  * frame in the system. */
 struct page {
 	union {
 		struct list_head list;
-		struct rb_node pagecache;
+		struct pagecache_hdr pagecache;
 		struct slab_hdr slab_hdr;
 	}u;
 	unsigned count;
@@ -124,7 +129,6 @@ extern char *cmdline;
 #define alloc_page() alloc_pages(1)
 #define free_page(x) free_pages(x,1)
 
-#define PAGE_POISON 1
 #define PAGE_POISON_PATTERN 0x5a
 void buddy_init(void);
 void *alloc_pages(unsigned int order);

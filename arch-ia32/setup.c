@@ -114,14 +114,17 @@ static void do_initcalls(void)
 
 }
 
-#if 1
+#if MULTI_TASKING_DEMO
 static int dumb_task(void *priv)
 {
-	for(;;) {
+	unsigned int i;
+
+	for(i = 0; i < 100; i++) {
 		mdelay(100);
-		printk((char *)priv);
+		printk("%s", (char *)priv);
 	}
-	return -1;
+
+	return 123;
 }
 #endif
 
@@ -145,8 +148,10 @@ static int init_task(void *priv)
 	}
 
 	/* pre-emptive multi-tasking demo */
+#if MULTI_TASKING_DEMO
 	kernel_thread("[cpuhog-A]", dumb_task, "A");
 	kernel_thread("[cpuhog-B]", dumb_task, "B");
+#endif
 
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/bash");
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
