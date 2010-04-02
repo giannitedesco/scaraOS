@@ -85,6 +85,7 @@ static int do_exec(const char *path)
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
 	task_init_exec(tsk, hdr.e_entry);
+	set_context(tsk);
 	return 0;
 
 err_free_ctx:
