@@ -43,6 +43,10 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 
 	memset(ptr, 0, PAGE_SIZE);
 	if ( vma->vma_ino ) {
+		/* FIXME: read correct page for starters but in future,
+		 * use the page cache
+		 */
+		printk("Faulted in page at 0x%.8lx\n", va);
 		vma->vma_ino->i_iop->pread(vma->vma_ino,
 						ptr,
 						PAGE_SIZE,
