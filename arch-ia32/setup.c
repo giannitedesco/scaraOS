@@ -114,6 +114,17 @@ static void do_initcalls(void)
 
 }
 
+#if 1
+static int dumb_task(void *priv)
+{
+	for(;;) {
+		mdelay(100);
+		printk((char *)priv);
+	}
+	return -1;
+}
+#endif
+
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
@@ -133,29 +144,16 @@ static int init_task(void *priv)
 		panic("Unable to mount root filesystem\n");
 	}
 
-	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/bash");
-	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/flaps");
+	/* pre-emptive multi-tasking demo */
+	kernel_thread("[cpuhog-A]", dumb_task, "A");
+	kernel_thread("[cpuhog-B]", dumb_task, "B");
 
+	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/bash");
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
 
-	for(;;) {
-		mdelay(100);
-		printk("A");
-	}
 	return ret;
 }
-
-#if 1
-static int task2(void *priv)
-{
-	for(;;) {
-		mdelay(100);
-		printk("B");
-	}
-	return -1;
-}
-#endif
 
 /* Entry point in to the kernel proper */
 _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
@@ -191,9 +189,6 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* Setup the init task */
 	kernel_thread("[init]", init_task, NULL);
-
-	/* pre-emptive multi-tasking demo */
-	kernel_thread("[cpuhog]", task2, NULL);
 
 	/* start jiffie counter */
 	pit_start_timer1();

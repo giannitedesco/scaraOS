@@ -77,7 +77,7 @@ static int do_exec(const char *path)
 		if ( setup_vma(ctx, phdr->p_vaddr, phdr->p_memsz,
 				PROT_READ|PROT_EXEC, inode, phdr->p_offset) )
 			goto err_free_ctx;
-		printk("LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
+		printk("elf: PT_LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
 	}
 	kfree(phbuf);
