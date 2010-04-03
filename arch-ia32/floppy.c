@@ -16,6 +16,7 @@
 #include <scaraOS/kernel.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/task.h>
+#include <scaraOS/semaphore.h>
 #include <arch/8259a.h>
 #include <arch/dma.h>
 #include <arch/idt.h>
@@ -25,7 +26,8 @@
 
 
 /* Floppy interrupt wait queue */
-static struct waitq floppyq = INIT_WAITQ(floppyq);
+static struct waitq floppyq = WAITQ_INIT(floppyq);
+static struct semaphore floppysem = SEMAPHORE_INIT(floppysem, 1);
 
 /* Result status registers */
 static uint8_t status[7], slen;
@@ -143,9 +145,11 @@ static int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
 		return -1;
 	}
 
+	sem_P(&floppysem);
 try_again:
 	if ( inb(dprts->dir) & DIR_CHAN ) {
 		printk("floppy: disk change on read\n");
+		sem_V(&floppysem);
 		return -1;
 	}
 
@@ -177,6 +181,7 @@ try_again:
 			buf+=512;
 			goto try_again;
 		}
+		sem_V(&floppysem);
 		return 0;
 	}
 
@@ -185,6 +190,7 @@ try_again:
 		floppy_recal(dprts);
 		goto try_again;
 	}
+	sem_V(&floppysem);
 	return -1;
 }
 
@@ -245,6 +251,7 @@ static void __init floppy_init(void)
 	set_irq_handler(6, floppy_isr);
 	irq_on(6);
 
+	sem_P(&floppysem);
 	printk("floppy: resetting floppy controllers\n");
 	floppy_reset(dprts);
 
@@ -258,6 +265,7 @@ static void __init floppy_init(void)
 
 	/* Reset disk-change flag */
 	inb(dprts->dir);
+	sem_V(&floppysem);
 }
 
 driver_init(floppy_init);

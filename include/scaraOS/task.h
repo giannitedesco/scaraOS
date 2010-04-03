@@ -9,7 +9,8 @@
 #define TASK_SLEEPING	2 
 #define TASK_ZOMBIE	3
 
-#define INIT_WAITQ(name) { .list = LIST_HEAD_INIT(name.list) }
+#define WAITQ_INIT(name) { .list = LIST_HEAD_INIT(name.list) }
+#define INIT_WAITQ(name) INIT_LIST_HEAD(&((name)->list))
 struct waitq {
 	struct list_head	list;
 };
@@ -35,6 +36,7 @@ void task_set_context(struct task *, struct mem_ctx *);
 /* Wait-queue manipulation */
 void sleep_on(struct waitq *);
 void wake_up(struct waitq *);
+void wake_one(struct waitq *);
 
 /* Run-queue manupulation */
 void task_to_runq(struct task *);

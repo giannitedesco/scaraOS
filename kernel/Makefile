@@ -4,6 +4,7 @@ KERNEL_C_SOURCES = \
 	$(KERNEL_DIR)/blkdev.c \
 	$(KERNEL_DIR)/buddy.c \
 	$(KERNEL_DIR)/pagecache.c \
+	$(KERNEL_DIR)/semaphore.c \
 	$(KERNEL_DIR)/ctype.c \
 	$(KERNEL_DIR)/memchunk.c \
 	$(KERNEL_DIR)/kmalloc.c \

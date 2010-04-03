@@ -47,6 +47,23 @@ void wake_up(struct waitq *q)
 	unlock_irq(flags);
 }
 
+void wake_one(struct waitq *q)
+{
+	struct task *tsk;
+	long flags;
+
+	if ( list_empty(&q->list) )
+		return;
+
+	lock_irq(flags);
+
+	/* Add all waiting tasks to runq */
+	tsk = list_entry(q->list.next, struct task, list);
+	list_del(&tsk->list);
+	task_to_runq(tsk);
+
+	unlock_irq(flags);
+}
 /* The task that becomes the idle task needs to call this function - interrupts
  * should be disabled by the caller */
 static struct task *idle_task;
