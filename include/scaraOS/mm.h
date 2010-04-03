@@ -1,6 +1,8 @@
 #ifndef __MM_HEADER_INCLUDED__
 #define __MM_HEADER_INCLUDED__
 
+#include <arch/page.h>
+
 /* Full chunks: nowhere, c_o poulated c_o.list is in objcache->o_full */
 /* Partial chunks: c_o populated and c_o.list is in objcache->o_partials */
 /* Free chunks: in page allocator system, see: kernel/buddy.c */
@@ -51,8 +53,6 @@ struct page {
 #define virt_to_page(vaddr) (pfa + (__pa(vaddr) >> PAGE_SHIFT))
 #define phys_to_page(paddr) (pfa + (paddr >> PAGE_SHIFT))
 
-#include <arch/mm.h>
-
 /*
  * struct page
  */
@@ -90,9 +90,17 @@ struct mem_ctx {
 	struct arch_ctx		arch;
 	unsigned int		count;
 };
+/* Kernel memory context API */
 struct mem_ctx *mem_ctx_new(void);
 void mem_ctx_free(struct mem_ctx *ctx);
 struct mem_ctx *get_kthread_ctx(void);
+
+/* Arch-specific stubs */
+void setup_kthread_ctx(struct arch_ctx *ctx);
+int setup_new_ctx(struct arch_ctx *ctx);
+void destroy_ctx(struct arch_ctx *ctx);
+int map_page_to_ctx(struct arch_ctx *tsk, struct page *page,
+			vaddr_t addr, unsigned prot);
 
 /* Manipulating a tasks memory mappings */
 int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len,

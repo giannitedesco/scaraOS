@@ -6,6 +6,7 @@
 #include <arch/descriptor.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
+#include <arch/gdt.h>
 #include <arch/regs.h>
 #include <scaraOS/task.h>
 #include <scaraOS/mm.h>

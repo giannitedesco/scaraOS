@@ -1,5 +1,6 @@
 #include <arch/multiboot.h>
-#include <arch/mm.h>
+#include <arch/gdt.h>
+#include <arch/page.h>
 .section .text.init
 .text
 

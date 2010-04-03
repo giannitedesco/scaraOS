@@ -1,36 +1,16 @@
 #ifndef __ARCH_IA32_MM__
 #define __ARCH_IA32_MM__
 
-#include <arch/kimage.h>
-
 /* Characteristics of the IA32 architecture */
 #define NR_PDE 		1024
 #define NR_PTE 		1024
-#define PAGE_SHIFT	12
 #define PDE_SHIFT	(10 + PAGE_SHIFT)
-
-/* Load the kernel in at 3GB */
-#define PAGE_OFFSET	0xc0000000
-
-/* mm_get_page() returns code */
-#define MGP_INVALID	0xFFFFFFFF
-
-/* Segment selectors (see GDT in arch-ia32/setup.c) */
-#define __KERNEL_CS	0x08
-#define __KERNEL_DS	0x10
-#define __USER_CS	0x18
-#define __USER_DS	0x20
 
 /* C Specific */
 #ifndef __ASM__
 
 typedef vaddr_t *pgd_t;
 typedef vaddr_t *pgt_t;
-
-/* per memory context state */
-struct arch_ctx {
-	pgd_t pgd;
-};
 
 #define load_pdbr(pgdir) \
 	asm volatile("movl %0,%%cr3": :"r" (pgdir));
@@ -100,12 +80,6 @@ struct arch_ctx {
 /* #PF handler */
 void ia32_mm_init(void *ptr, size_t len);
 void ia32_setup_initmem(void);
-
-void setup_kthread_ctx(struct arch_ctx *ctx);
-int setup_new_ctx(struct arch_ctx *ctx);
-void destroy_ctx(struct arch_ctx *ctx);
-int map_page_to_ctx(struct arch_ctx *tsk, struct page *page,
-			vaddr_t addr, unsigned prot);
 
 #endif /* __ASM__ */
 #endif /* __ARCH_IA32_MM__ */

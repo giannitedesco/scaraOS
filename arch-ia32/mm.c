@@ -3,8 +3,11 @@
  * spawns the init task and then becomes the idle task
 */
 #include <scaraOS/kernel.h>
+#include <arch/mm.h>
 #include <scaraOS/mm.h>
+
 #include <arch/multiboot.h>
+#include <arch/kimage.h>
 
 /* For bootmem allocator */
 static void *bootmem_begin;
@@ -318,7 +321,7 @@ void ia32_mm_init(void *e820_map, size_t e820_len)
 
 void setup_kthread_ctx(struct arch_ctx *ctx)
 {
-	ctx->pgd = &__init_pgd_pa;
+	ctx->pgd = (paddr_t)&__init_pgd_pa;
 }
 
 int setup_new_ctx(struct arch_ctx *ctx)
@@ -334,7 +337,7 @@ int setup_new_ctx(struct arch_ctx *ctx)
 	for (i = 0; i < NR_PDE; i++)
 		pgd[i] = kpgd[i];
 
-	ctx->pgd = (pgd_t)__pa(pgd);
+	ctx->pgd = __pa(pgd);
 	return 0;
 }
 
@@ -374,7 +377,7 @@ int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
 
 	/* FFS: use INVLPG */
 	__flush_tlb();
-	printk("ctx %p: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
+	printk("ctx %.8lx: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
 		ctx->pgd, addr, dir(addr), tbl(addr), pa);
 	return 0;
 }

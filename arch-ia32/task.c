@@ -57,8 +57,8 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	BUG_ON(tsk->t.regs == NULL);
 
 	//tsk->t.regs->eip = ip;
-	tss.ss = tss.ds = tss.es = tss.gs = tss.fs = __USER_DS | 0x3;
-	tss.cs = __USER_CS | 0x3;
+	tss.ss = tss.ds = tss.es = tss.gs = tss.fs = __USER_DS | __CPL3;
+	tss.cs = __USER_CS | __CPL3;
 	tss.eip = ip;
 	tss.esp = sp;
 	tss.ss0 = __KERNEL_DS;
@@ -67,17 +67,17 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 
 	/* make sure userspace always executed with IRQs enabled */
 	tss.flags = get_eflags() | (1 << 9);
-	GDT[5].desc = stnd_desc(((vaddr_t)(&tss)), (sizeof(tss) - 1),
+	GDT[USER_TSS].desc = stnd_desc(((vaddr_t)(&tss)), (sizeof(tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
-	asm volatile("ljmp $0x28, $0");
+	asm volatile("ljmp %0, $0": : "i"(__USER_TSS));
 }
 
 #define load_tr(tr) asm volatile("ltr %w0"::"q" (tr));
 void ia32_gdt_finalize(void)
 {
-	GDT[6].desc = stnd_desc(((vaddr_t)(&ktss)), (sizeof(ktss) - 1),
+	GDT[KERNEL_TSS].desc = stnd_desc(((vaddr_t)(&ktss)), (sizeof(ktss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
-	load_tr(0x30);
+	load_tr(__KERNEL_TSS);
 }
 
 int task_stack_overflowed(struct task *tsk)

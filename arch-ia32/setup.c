@@ -9,6 +9,7 @@
 #include <scaraOS/mm.h>
 
 #include <arch/processor.h>
+#include <arch/mm.h>
 #include <arch/vga.h>
 #include <arch/timer.h>
 #include <arch/8259a.h>
@@ -18,6 +19,7 @@
 #include <arch/multiboot.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
+#include <arch/kimage.h>
 
 /* Bootup CPU info */
 struct cpu_info cpu_bsp;
