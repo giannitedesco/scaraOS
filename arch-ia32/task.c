@@ -70,6 +70,8 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	GDT[USER_TSS].desc = stnd_desc(((vaddr_t)(&tss)), (sizeof(tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
 	asm volatile("ljmp %0, $0": : "i"(__USER_TSS));
+	cli();
+	idle_task_func();
 }
 
 #define load_tr(tr) asm volatile("ltr %w0"::"q" (tr));

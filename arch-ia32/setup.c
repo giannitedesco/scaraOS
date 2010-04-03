@@ -133,8 +133,8 @@ static int init_task(void *priv)
 
 	/* pre-emptive multi-tasking demo */
 #if MULTI_TASKING_DEMO
-	//kernel_thread("[cpuhog-A]", dumb_task, "/bin/cpuhog-a");
-	//kernel_thread("[cpuhog-B]", dumb_task, "/bin/cpuhog-b");
+	kernel_thread("[cpuhog-A]", dumb_task, "/bin/cpuhog-a");
+	kernel_thread("[cpuhog-B]", dumb_task, "/bin/cpuhog-b");
 #endif
 
 	ret = _kernel_exec("/bin/bash");
@@ -160,28 +160,31 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 	}
 	printk("\n");
 
+	/* Identify CPU features, also needs to be early because
+	 * mm init may need to know which paging features are
+	 * available 
+	 */
+	cpuid_init();
+
 	/* Fire up the kernel memory allocators */
 	BUG_ON((mbi->flags & MBF_MMAP) == 0);
 	ia32_mm_init(__va(mbi->mmap), mbi->mmap_length);
-
-	/* Prints out CPU MHz */
-	calibrate_delay_loop();
-
-	/* Identify CPU features */
-	cpuid_init();
-
-	/* enable hardware interrupts */
-	pic_init();
 
 	/* setup the idle task */
 	sched_init();
 	ia32_gdt_finalize();
 
-	/* Setup the init task */
-	kernel_thread("[init]", init_task, NULL);
+	/* Prints out CPU MHz */
+	calibrate_delay_loop();
+
+	/* enable hardware interrupts */
+	pic_init();
 
 	/* start jiffie counter */
 	pit_start_timer1();
+
+	/* Setup the init task */
+	kernel_thread("[init]", init_task, NULL);
 
 	/* Finally, enable interupts and let it rip */
 	sti();
