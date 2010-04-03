@@ -1,6 +1,3 @@
 #include "scaraOS.h"
 
-int _exit(int code)
-{
-	return -1;
-}
+_SYSCALL1(_SYS_exit, int, _exit, unsigned int, code);

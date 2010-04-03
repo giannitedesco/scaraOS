@@ -1,4 +1,4 @@
-#include <arch/syscalls.h>
+#include <scaraOS/syscall.h>
 
 .globl _start
 _start:
