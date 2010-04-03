@@ -21,8 +21,8 @@ int _exit(unsigned int code);
 int _exec(const char *path);
 int _open(const char *fn, unsigned int mode);
 int _close(int fd);
-int _read(int fd, void *ptr, size_t count);
-int _write(int fd, const void *ptr, size_t count);
+ssize_t _read(int fd, void *ptr, size_t count);
+ssize_t _write(int fd, const void *ptr, size_t count);
 
 /* string */
 void itoa(char *buf, int base, int d);
