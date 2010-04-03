@@ -48,7 +48,7 @@ void idt_user_interrupt(void *handler, uint8_t intr)
 	IDT[intr].gate.selector		= __KERNEL_CS;
 	IDT[intr].gate.offset_low	= (uint32_t)handler & 0xffff;
 	IDT[intr].gate.offset_high 	= (uint32_t)handler >> 16;
-	IDT[intr].gate.access		= D_PRESENT | D_INT | D_DPL3;
+	IDT[intr].gate.access		= D_PRESENT | D_TRAP | D_DPL3;
 	unlock_irq(flags);
 }
 
