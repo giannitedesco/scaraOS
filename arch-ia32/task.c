@@ -61,7 +61,9 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	tss.ss0 = __KERNEL_DS;
 	tss.sp0 = (vaddr_t)((uint8_t *)__this_task + PAGE_SIZE);
 	tss.cr3 = (vaddr_t)tsk->ctx->arch.pgd;
-	tss.flags = get_eflags();
+
+	/* make sure userspace always executed with IRQs enabled */
+	tss.flags = get_eflags() | (1 << 9);
 	GDT[5].desc = stnd_desc(((vaddr_t)(&tss)), (sizeof(tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
 	asm volatile("ljmp $0x28, $0");
@@ -78,14 +80,6 @@ void ia32_gdt_finalize(void)
 int task_stack_overflowed(struct task *tsk)
 {
 	return (struct task *)tsk->t.esp <= tsk + 2;
-}
-
-void set_context(struct task *tsk)
-{
-	BUG_ON(NULL == tsk->ctx);
-	BUG_ON(NULL == tsk);
-	dprintk("Context switch to %p\n", tsk->ctx->arch.pgd);
-	load_pdbr(tsk->ctx->arch.pgd);
 }
 
 void idle_task_func(void)

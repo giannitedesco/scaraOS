@@ -188,8 +188,6 @@ void sched(void)
 
 	dprintk("sched: switch from %s to %s\n", current->name, next->name);
 	BUG_ON(task_stack_overflowed(next));
-	if ( current->ctx != next->ctx )
-		set_context(next);
 	if ( likely(current->state == TASK_RUNNING) )
 		current->state = TASK_READY;
 	next->state = TASK_RUNNING;
