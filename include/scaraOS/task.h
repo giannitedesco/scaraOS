@@ -1,6 +1,8 @@
 #ifndef __TASK_HEADER_INCLUDED__
 #define __TASK_HEADER_INCLUDED__
 
+struct task;
+
 #include <arch/task.h>
 #include <scaraOS/mm.h>
 
