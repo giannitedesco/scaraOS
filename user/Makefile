@@ -34,26 +34,28 @@ CFLAGS  := -pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 
 C_RUNTIME := crt0.a
 CRT_ASM_SOURCES := _crt0.S
-CRT_OBJ :=  $(patsubst %.S, %.o, $(CRT_ASM_SOURCES))
+CRT_C_SOURCES := _exit.c
+CRT_OBJ :=  $(patsubst %.S, %.o, $(CRT_ASM_SOURCES)) \
+		$(patsubst %.c, %.o, $(CRT_C_SOURCES))
 $(C_RUNTIME): $(CRT_OBJ)
 
 INIT_C_SOURCES := init.c
 INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))
-init: $(C_RUNTIME) $(INIT_OBJ)
+init: $(INIT_OBJ) $(C_RUNTIME)
 	@echo " [LINK] $@"
-	@$(LD) $(LDFLAGS) -o $@ --whole-archive $^
+	@$(LD) $(LDFLAGS) -o $@ $^
 
 ALL_TARGETS := $(C_RUNTIME) init
 
 ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ)
 ALL_ASM := $(CRT_ASM_SOURCES)
-ALL_C   := $(INIT_C_SOURCES)
+ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES)
 
 ALL_DEP :=  $(patsubst %.S, %.d, $(ALL_ASM)) \
 		$(patsubst %.c, %.d, $(ALL_C) )
 
 ifneq ($(MAKECMDGOALS),clean)
-include $(ALL_DEPS)
+include $(ALL_DEP)
 endif
 
 all: Makefile $(ALL_TARGETS)
