@@ -31,6 +31,7 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 	struct vma *vma;
 	off_t off;
 
+	printk("faulting in 0x%.8lx\n", va);
 	vma = lookup_vma(tsk->ctx, va);
 	if ( NULL == vma )
 		return -1;
@@ -42,12 +43,14 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 	va &= ~PAGE_MASK;
 
 	if ( vma->vma_ino ) {
+		printk("...from pagecache\n");
 		page = vma->vma_ino->i_iop->readpage(vma->vma_ino, off);
 		if ( NULL == page )
 			return -1;
 	}else{
 		void *ptr;
 
+		printk("...anon map\n");
 		ptr = alloc_page();
 		if ( NULL == ptr )
 			return -1;
@@ -104,7 +107,8 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 		vma->vma_off = off - (va - vma->vma_begin);
 		/* FIXME: allow non-page-aligned offsets somehow */
 		BUG_ON(vma->vma_off & PAGE_MASK);
-	}
+	}else
+		vma->vma_ino = NULL;
 
 	dprintk("setup_vma: 0x%.8lx - 0x%.8lx (off=0x%lx)\n",
 		vma->vma_begin, vma->vma_end, vma->vma_off);
