@@ -174,6 +174,7 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 			printk(" LDT");
 			break;
 		}
+		printk(" selector=0x%.lx", ctx.err_code & 0xfff8);
 	}
 	printk("\n");
 	ctx_dump((struct intr_ctx *)&ctx);
