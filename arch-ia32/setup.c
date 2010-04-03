@@ -8,7 +8,6 @@
 #include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
 
-#include <arch/descriptor.h>
 #include <arch/vga.h>
 #include <arch/io.h>
 #include <arch/pc_keyb.h>

@@ -1,11 +1,12 @@
 #include <scaraOS/kernel.h>
 #include <arch/regs.h>
-#include <arch/syscalls.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/vfs.h>
 #include <scaraOS/elf.h>
+#include <scaraOS/exec.h>
 
-static int do_exec(const char *path)
+int _sys_exec(const char *path)
 {
 	struct mem_ctx *ctx;
 	struct inode *inode;
@@ -97,9 +98,4 @@ err_free_ctx:
 err_free:
 	kfree(phbuf);
 	return -1;
-}
-
-uint32_t syscall_exec(uint32_t path)
-{
-	return do_exec((char *)path);
 }

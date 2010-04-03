@@ -8,7 +8,6 @@
 #include <scaraOS/vfs.h>
 #include <arch/processor.h>
 #include <arch/regs.h>
-#include <arch/syscalls.h>
 
 static LIST_HEAD(runq);
 static LIST_HEAD(delq);
@@ -90,7 +89,7 @@ _noreturn static void do_exit(uint32_t code)
 	panic("A BIT OF FUCKING PRECISION!\n");
 }
 
-_noreturn uint32_t syscall_exit(uint32_t code)
+_noreturn void _sys_exit(uint32_t code)
 {
 	do_exit(code);
 }
@@ -132,7 +131,7 @@ int kernel_thread(const char *proc_name,
 	return tsk->pid;
 }
 
-uint32_t syscall_fork(uint32_t flags)
+int _sys_fork(uint32_t flags)
 {
 	return -1;
 }

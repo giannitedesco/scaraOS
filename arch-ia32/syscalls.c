@@ -3,6 +3,8 @@
 #include <arch/syscalls.h>
 #include <scaraOS/task.h>
 
+#include <scaraOS/exec.h>
+
 struct syscall_desc {
 	unsigned int type;
 	union {
@@ -13,10 +15,13 @@ struct syscall_desc {
 	}u;
 };
 
+_noreturn void _sys_exit(uint32_t code);
+int _sys_fork(uint32_t flags);
+
 static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
-	[_SYS_exit] {.type = _SYS_ARG1, .u.arg1 = syscall_exit },
-	[_SYS_fork] {.type = _SYS_ARG1, .u.arg1 = syscall_fork },
-	[_SYS_exec] {.type = _SYS_ARG1, .u.arg1 = syscall_exec },
+	[_SYS_exit] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_exit },
+	[_SYS_fork] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_fork },
+	[_SYS_exec] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_exec },
 };
 
 void syscall_exc(volatile struct intr_ctx ctx)
