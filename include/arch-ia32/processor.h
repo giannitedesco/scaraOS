@@ -39,7 +39,7 @@ enum cpu_feature_e {
 };
 
 struct cpu_info {
-	int features;
+	uint32_t features;
 	uint32_t loops_ms;
 };
 
@@ -66,10 +66,6 @@ static inline void cpuid(int op, int *eax, int *ebx, int *ecx, int *edx)
 		  "=d" (*edx)
 		: "0" (op));
 }
-
-/* UP / IRQ locking primitive */
-#define lock_irq(x) asm volatile("pushfl; popl %0; cli":"=g" (x): : "memory")
-#define unlock_irq(x) asm volatile("pushl %0; popfl": :"g" (x): "memory", "cc")
 
 /* CPU information */
 extern struct cpu_info cpu_bsp;

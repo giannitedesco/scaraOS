@@ -13,7 +13,7 @@
 #include <scaraOS/rbtree.h>
 
 #include <arch/types.h>
-#include <arch/processor.h>
+#include <arch/irq.h>
 #include <arch/io.h>
 
 #include <stdarg.h>

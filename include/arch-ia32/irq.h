@@ -2,6 +2,11 @@
 #define __IRQ_TABLE_INCLUDED__
 
 #ifndef __ASM__
+
+/* UP / IRQ locking primitive */
+#define lock_irq(x) asm volatile("pushfl; popl %0; cli":"=g" (x): : "memory")
+#define unlock_irq(x) asm volatile("pushl %0; popfl": :"g" (x): "memory", "cc")
+
 typedef void (*irqfn)(int irq);
 void set_irq_handler(int, irqfn);
 

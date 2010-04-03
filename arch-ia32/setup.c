@@ -8,9 +8,8 @@
 #include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
 
+#include <arch/processor.h>
 #include <arch/vga.h>
-#include <arch/io.h>
-#include <arch/pc_keyb.h>
 #include <arch/timer.h>
 #include <arch/8259a.h>
 #include <arch/idt.h>

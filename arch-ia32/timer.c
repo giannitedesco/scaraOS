@@ -5,6 +5,7 @@
 */
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
+#include <arch/processor.h>
 #include <arch/timer.h>
 #include <arch/8259a.h>
 #include <arch/irq.h>

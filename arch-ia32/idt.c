@@ -2,6 +2,7 @@
  * This code handles the interrupt descriptor tables.
 */
 #include <scaraOS/kernel.h>
+#include <arch/processor.h>
 #include <arch/descriptor.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
