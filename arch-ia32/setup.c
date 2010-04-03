@@ -7,6 +7,7 @@
 #include <scaraOS/vfs.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
+#include <scaraOS/syscall.h>
 
 #include <arch/processor.h>
 #include <arch/mm.h>
@@ -101,6 +102,8 @@ static void do_initcalls(void)
 
 }
 
+static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
+
 #if MULTI_TASKING_DEMO
 static int dumb_task(void *priv)
 {
@@ -111,7 +114,7 @@ static int dumb_task(void *priv)
 		printk("%s", (char *)priv);
 	}
 
-	syscall1(_SYS_exec, (uint32_t)"/sbin/init");
+	_kernel_exec("/sbin/init");
 	return 123;
 }
 #endif
@@ -141,9 +144,8 @@ static int init_task(void *priv)
 	kernel_thread("[cpuhog-B]", dumb_task, "B");
 #endif
 
-
-	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/bash");
-	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
+	ret = _kernel_exec("/bin/bash");
+	ret = _kernel_exec("/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
 
 	return ret;

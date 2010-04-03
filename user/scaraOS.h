@@ -5,20 +5,34 @@
 #include <arch/types.h>
 #include <scaraOS/syscall.h>
 
-#define _SYSCALL1(nr, ret_type, name, type1, name1) \
-	ret_type name(type1 name1) 					\
-	{								\
-		ret_type ret;						\
-		asm volatile ("movl %1,%%eax\n"				\
-				"movl %2, %%ebx\n"			\
-				"int $0xff\n"				\
-				"movl %%eax, %0\n"			\
-				: "=r" (ret) : "r" (nr), "r" (name1)	\
-				: "%eax", "%ebx");			\
-		return ret;						\
-	}
-
+/* CRT */
 int main(int argc, char **argv);
+
+/* stdlib */
+#define NULL 		((void *)0)
+#define EXIT_SUCCESS 	0
+#define EXIT_FAILURE 	1
+#define STDIN_FILENO	0
+#define STDOUT_FILENO	1
+#define STDERR_FILENO	2
+
+/* syscalls */
 int _exit(unsigned int code);
+int _exec(const char *path);
+int _open(const char *fn, unsigned int mode);
+int _close(int fd);
+int _read(int fd, void *ptr, size_t count);
+int _write(int fd, const void *ptr, size_t count);
+
+/* string */
+void itoa(char *buf, int base, int d);
+int strcmp(const char * cs,const char * ct);
+size_t strnlen(const char * s, size_t count);
+size_t strlen(const char *s);
+int strcmp(const char *cs, const char *ct);
+int memcmp(const void *s1, const void *s2, size_t n);
+void memcpy(void *dst, const void *src, size_t n);
+char *strchr(const char *str, int c);
+void memset(void *dst, int c, size_t n);
 
 #endif /* _SCARAOS_H */

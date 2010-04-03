@@ -34,7 +34,7 @@ CFLAGS  := -pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 
 C_RUNTIME := crt0.a
 CRT_ASM_SOURCES := _crt0.S
-CRT_C_SOURCES := _exit.c
+CRT_C_SOURCES := _exit.c _exec.c _open.c _close.c _read.c _write.c string.c
 CRT_OBJ :=  $(patsubst %.S, %.o, $(CRT_ASM_SOURCES)) \
 		$(patsubst %.c, %.o, $(CRT_C_SOURCES))
 $(C_RUNTIME): $(CRT_OBJ)
