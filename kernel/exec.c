@@ -82,10 +82,15 @@ static int do_exec(const char *path)
 	}
 	kfree(phbuf);
 
+	/* setup usermode stack */
+	if ( setup_vma(ctx, 0x80000000 - PAGE_SIZE, PAGE_SIZE,
+		PROT_READ|PROT_WRITE|PROT_EXEC, NULL, 0) )
+		goto err_free_ctx;
+
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
-	task_init_exec(tsk, hdr.e_entry);
 	set_context(tsk);
+	task_init_exec(tsk, hdr.e_entry, 0x80000000);
 	return 0;
 
 err_free_ctx:

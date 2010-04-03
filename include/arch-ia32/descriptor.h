@@ -74,17 +74,53 @@ typedef union dt_entry {
 
 /* Macro to easily create descriptors */
 #define stnd_desc(base, limit, control) \
-	{desc: \
-		{(limit & 0xffff), \
-		(base & 0xffff), \
-		((base >> 16) & 0xff), \
-		((control|D_PRESENT) >> 8), \
-		(limit >> 16),\
-		((control & 0xff) >> 4), \
-		(base >> 24)} \
+	(struct ia32_desc){\
+		.limit_low	= (limit & 0xffff), \
+		.base_low	= (base & 0xffff), \
+		.base_med	= ((base >> 16) & 0xff), \
+		.access		= ((control | D_PRESENT) >> 8), \
+		.limit_high	= (limit >> 16),\
+		.granularity 	= ((control & 0xff) >> 4), \
+		.base_high	= (base >> 24) \
 	}
 	
-#define gate_desc(offset, selector, control) {gate: {(offset & 0xffff), \
-	selector, (control+D_PRESENT), (offset >> 16) }}
+#define gate_desc(offset, selector, control) \
+	{ \
+		.offset_low = (offset & 0xffff), \
+		.selector = selector, (control | D_PRESENT), \
+		.access = (offset >> 16) \
+		.offset_high = ((offset >> 16) & 0xffff),\
+	}
+
+struct ia32_tss {
+	unsigned short		back_link, __blh;
+	unsigned long		sp0;
+	unsigned short		ss0, __ss0h;
+	unsigned long		sp1;
+	/* ss1 caches MSR_IA32_SYSENTER_CS: */
+	unsigned short		ss1, __ss1h;
+	unsigned long		sp2;
+	unsigned short		ss2, __ss2h;
+	unsigned long		cr3;
+	unsigned long		eip;
+	unsigned long		flags;
+	unsigned long		eax;
+	unsigned long		ecx;
+	unsigned long		edx;
+	unsigned long		ebx;
+	unsigned long		esp;
+	unsigned long		ebp;
+	unsigned long		esi;
+	unsigned long		edi;
+	unsigned short		es, __esh;
+	unsigned short		cs, __csh;
+	unsigned short		ss, __ssh;
+	unsigned short		ds, __dsh;
+	unsigned short		fs, __fsh;
+	unsigned short		gs, __gsh;
+	unsigned short		ldt, __ldth;
+	unsigned short		trace;
+	unsigned short		io_bitmap_base;
+} __attribute__((packed));
 
 #endif /* __DESCRIPTOR_TABLE_INCLUDED__ */

@@ -3,7 +3,7 @@ ARCH=ia32
 EXTRA_DEFS=-DKDEBUG=1
 EXTRA_DEFS+=-DPAGE_POISON=1
 EXTRA_DEFS+=-DOBJCACHE_POISON=1
-EXTRA_DEFS+=-DMULTI_TASKING_DEMO=1
+EXTRA_DEFS+=-DMULTI_TASKING_DEMO=0
 
 TOPDIR :=  .
 #$(shell /bin/pwd)
@@ -41,6 +41,10 @@ CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wmissing-format-attribute -m32 \
 	-I$(TOPDIR)/include $(EXTRA_DEFS)
 
+./include/arch:
+	@echo " [SYMLINK] ./include/arch -> arch-$(ARCH)"
+	@$(LN) -sf arch-$(ARCH) ./include/arch
+
 # templates
 %.o: %.c ./include/arch Makefile
 	@echo " [C] $@"
@@ -58,10 +62,6 @@ CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 %.d: %.S ./include/arch Makefile
 #	@echo " [DEP:ASM] $@"
 	@$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
-
-./include/arch:
-	@echo " [SYMLINK] ./include/arch -> arch-$(ARCH)"
-	@$(LN) -sf arch-$(ARCH) ./include/arch
 
 include arch-$(ARCH)/Makefile
 include kernel/Makefile

@@ -20,20 +20,6 @@
 #include <arch/regs.h>
 #include <arch/syscalls.h>
 
-/* Global descriptor table */
-static const dt_entry_t __desc_aligned GDT[] = {
-	{dummy:0},
-
-	/* Kernel space */
-	stnd_desc(0, 0xFFFFF, (D_CODE | D_READ  | D_BIG | D_BIG_LIM)),
-	stnd_desc(0, 0xFFFFF, (D_DATA | D_WRITE | D_BIG | D_BIG_LIM)),
-
-	/* User space */
-	stnd_desc(0, 0xFFFFF, (D_CODE | D_READ  | D_BIG | D_BIG_LIM | D_DPL3)),
-	stnd_desc(0, 0xFFFFF, (D_DATA | D_WRITE | D_BIG | D_BIG_LIM | D_DPL3)),
-};
-const struct gdtr loadgdt = { sizeof(GDT)-1, (uint32_t)GDT};
-
 /* Bootup CPU info */
 struct cpu_info cpu_bsp;
 
@@ -154,6 +140,7 @@ static int init_task(void *priv)
 	kernel_thread("[cpuhog-B]", dumb_task, "B");
 #endif
 
+
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/bash");
 	ret = syscall1(_SYS_exec, (uint32_t)"/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
@@ -166,6 +153,9 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 {
 	vga_preinit();
 
+	/* Need this mmediately to catch exceptions */
+	idt_init();
+
 	/* print a pretty message */
 	printk("ScaraOS v0.0.5 for IA-32");
 	if ( mbi->flags & MBF_CMDLINE ) {
@@ -173,9 +163,6 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 		printk(": %s", cmdline);
 	}
 	printk("\n");
-
-	/* Need this quite quickly */
-	idt_init();
 
 	/* Fire up the kernel memory allocators */
 	BUG_ON((mbi->flags & MBF_MMAP) == 0);
@@ -192,6 +179,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* setup the idle task */
 	sched_init();
+	ia32_gdt_finalize();
 
 	/* Setup the init task */
 	kernel_thread("[init]", init_task, NULL);

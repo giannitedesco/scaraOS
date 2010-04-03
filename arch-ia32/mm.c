@@ -38,13 +38,13 @@ void ia32_setup_initmem(void)
 		dir[i] = 0;
 
 	for (i = 0; i < NR_PTE; i++)
-		tbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW;
+		tbl[i] = (i << PAGE_SHIFT) | PTE_PRESENT | PTE_RW | PTE_USER;
 
 	/* 0-4MB identity mapped */
 	dir[0] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
 
 	/* PAGE_OFFSET + 4MB mapped */
-	dir[dir(PAGE_OFFSET)] = (uint32_t)tbl | PDE_PRESENT | PDE_RW;
+	dir[dir(PAGE_OFFSET)] = (uint32_t)tbl | PDE_PRESENT | PDE_RW | PDE_USER;
 
 	/* Load CR3 */
 	load_pdbr(dir);
@@ -374,7 +374,7 @@ int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
 
 	/* FFS: use INVLPG */
 	__flush_tlb();
-	dprintk("ctx %p: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
+	printk("ctx %p: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
 		ctx->pgd, addr, dir(addr), tbl(addr), pa);
 	return 0;
 }
