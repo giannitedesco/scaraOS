@@ -5,6 +5,7 @@
 
 #include <arch/processor.h>
 #include <arch/descriptor.h>
+#include <arch/gdt.h>
 #include <arch/regs.h>
 
 volatile static struct ia32_tss tss;

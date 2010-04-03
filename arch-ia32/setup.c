@@ -13,6 +13,7 @@
 #include <arch/timer.h>
 #include <arch/8259a.h>
 #include <arch/idt.h>
+#include <arch/gdt.h>
 #include <arch/pci.h>
 #include <arch/multiboot.h>
 #include <arch/regs.h>

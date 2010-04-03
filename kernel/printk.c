@@ -5,7 +5,6 @@
  * print using generic output device functions
  */
 #include <scaraOS/kernel.h>
-#include <arch/processor.h>
 #include <stdarg.h>
 
 signed short xpos, ypos;

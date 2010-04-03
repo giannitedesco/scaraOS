@@ -6,8 +6,6 @@
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
-#include <arch/processor.h>
-#include <arch/regs.h>
 
 static LIST_HEAD(runq);
 static LIST_HEAD(delq);

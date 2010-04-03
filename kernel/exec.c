@@ -1,5 +1,4 @@
 #include <scaraOS/kernel.h>
-#include <arch/regs.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
 #include <scaraOS/vfs.h>

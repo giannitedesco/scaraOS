@@ -35,8 +35,6 @@ static inline struct task *this_task(void)
 }
 #endif
 
-void ia32_gdt_finalize(void);
-
 void task_init_kthread(struct task *tsk, 
 			int (*thread_func)(void *),
 			void *priv);
