@@ -3,9 +3,9 @@
  * wait queues and eventually semaphores...
 */
 
-#include <kernel.h>
-#include <task.h>
-#include <vfs.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/task.h>
+#include <scaraOS/vfs.h>
 #include <arch/processor.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>

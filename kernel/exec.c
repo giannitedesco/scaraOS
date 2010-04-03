@@ -1,9 +1,9 @@
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
-#include <task.h>
-#include <vfs.h>
-#include <elf.h>
+#include <scaraOS/task.h>
+#include <scaraOS/vfs.h>
+#include <scaraOS/elf.h>
 
 static int do_exec(const char *path)
 {

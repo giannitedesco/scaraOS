@@ -17,7 +17,7 @@
 /* Fri Oct 18 2002 Gianni Tedesco <gianni@scaramanga.co.uk>
  * - stole from linux added strlen */
 
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/io.h>
 #include <arch/div64.h>
 

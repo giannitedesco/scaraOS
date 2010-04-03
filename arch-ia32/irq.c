@@ -1,8 +1,8 @@
 /*
  * Dispatch IRQs to the relevent handler
 */
-#include <kernel.h>
-#include <task.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/task.h>
 
 #include <arch/8259a.h>
 #include <arch/irq.h>

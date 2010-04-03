@@ -2,8 +2,7 @@
 #define __TASK_HEADER_INCLUDED__
 
 #include <arch/task.h>
-#include <mm.h>
-#include <list.h>
+#include <scaraOS/mm.h>
 
 #define TASK_RUNNING	0
 #define TASK_READY	1

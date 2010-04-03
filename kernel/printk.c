@@ -4,7 +4,7 @@
  * are primitive. Eventually this will use the vsnprintf code and
  * print using generic output device functions
  */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/processor.h>
 #include <stdarg.h>
 

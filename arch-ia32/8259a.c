@@ -3,7 +3,7 @@
  * intel 8259A programmable interrupt controller, of which, in
  * a PC there are two.
 */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/8259a.h>
 #include <arch/io.h>
 

@@ -1,7 +1,7 @@
 /*
  * Simple DMA controller code
 */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/dma.h>
 
 struct dma{

@@ -24,8 +24,8 @@
 /* C Specific */
 #ifndef __ASM__
 
-typedef uint32_t *pgd_t;
-typedef uint32_t *pgt_t;
+typedef vaddr_t *pgd_t;
+typedef vaddr_t *pgt_t;
 
 /* per memory context state */
 struct arch_ctx {

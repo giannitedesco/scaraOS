@@ -1,13 +1,13 @@
 /*
  * This code handles the interrupt descriptor tables.
 */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/descriptor.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
 #include <arch/regs.h>
-#include <task.h>
-#include <mm.h>
+#include <scaraOS/task.h>
+#include <scaraOS/mm.h>
 
 #define load_idt(idtr) \
 	asm volatile("lidt (%0)": :"r" (idtr));

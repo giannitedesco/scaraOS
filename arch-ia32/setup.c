@@ -2,11 +2,11 @@
  * x86 specific setup code. This file bootstraps the kernel,
  * spawns the init task and then becomes the idle task
 */
-#include <kernel.h>
-#include <task.h>
-#include <vfs.h>
-#include <blk.h>
-#include <mm.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/task.h>
+#include <scaraOS/vfs.h>
+#include <scaraOS/blk.h>
+#include <scaraOS/mm.h>
 
 #include <arch/descriptor.h>
 #include <arch/vga.h>

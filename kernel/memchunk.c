@@ -14,9 +14,9 @@
  *  o Analysis printout with fragmentation stats
 */
 
-#include <kernel.h>
-#include <mm.h>
-#include <memchunk.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
+#include <scaraOS/memchunk.h>
 
 #if OBJCACHE_POISON
 #define O_POISON(ptr, len) memset(ptr, OBJCACHE_POISON_PATTERN, len)

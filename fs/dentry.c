@@ -9,11 +9,11 @@
  *  o Actually cache items
  *  o Implement cache shrinkage routines
 */
-#include <kernel.h>
-#include <blk.h>
-#include <vfs.h>
-#include <mm.h>
-#include <task.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/blk.h>
+#include <scaraOS/vfs.h>
+#include <scaraOS/mm.h>
+#include <scaraOS/task.h>
 
 void _dentry_cache_init(void)
 {

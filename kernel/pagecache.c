@@ -1,6 +1,6 @@
-#include <kernel.h>
-#include <vfs.h>
-#include <mm.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/vfs.h>
+#include <scaraOS/mm.h>
 
 struct page *pagecache_file_readpage(struct inode *in, off_t off)
 {

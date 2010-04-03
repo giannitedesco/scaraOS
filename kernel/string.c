@@ -2,7 +2,7 @@
  * String library - mainly copied directly from linux, no reason really
  * just that I have the code handy etc...
 */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 
 /* Convert the integer D to a string and save the string in BUF. If
    BASE is equal to 'd', interpret that D is decimal, and if BASE is

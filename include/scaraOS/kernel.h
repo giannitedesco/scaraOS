@@ -7,17 +7,17 @@
 #define UINT_MAX	(~0U)
 #define NULL 		((void *)0)
 
-#include <compiler.h>
-#include <endian.h>
-#include <list.h>
-#include <rbtree.h>
+#include <scaraOS/compiler.h>
+#include <scaraOS/endian.h>
+#include <scaraOS/list.h>
+#include <scaraOS/rbtree.h>
 
 #include <arch/types.h>
 #include <arch/processor.h>
 #include <arch/io.h>
 
 #include <stdarg.h>
-#include <ctype.h>
+#include <scaraOS/ctype.h>
 
 /* GCC extensions */
 #define __init		_section(".text.init")

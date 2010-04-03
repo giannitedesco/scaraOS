@@ -3,8 +3,8 @@
  * only allows 0 order allocations. That is to say, there
  * is no coalscing and not even any bitmaps in place
 */
-#include <kernel.h>
-#include <mm.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
 
 #if PAGE_POISON
 #define P_POISON(ptr, len) memset(ptr, PAGE_POISON_PATTERN, len)

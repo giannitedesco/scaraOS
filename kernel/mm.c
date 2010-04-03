@@ -1,7 +1,7 @@
-#include <kernel.h>
-#include <mm.h>
-#include <task.h>
-#include <vfs.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
+#include <scaraOS/task.h>
+#include <scaraOS/vfs.h>
 
 static objcache_t memctx;
 static objcache_t vmas;

@@ -4,7 +4,7 @@
  *  Copyright (C) 1991, 1992  Linus Torvalds
  */
 
-#include <ctype.h>
+#include <scaraOS/ctype.h>
 
 unsigned char _ctype[] = {
 _C,_C,_C,_C,_C,_C,_C,_C,			/* 0-7 */

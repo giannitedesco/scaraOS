@@ -1,8 +1,8 @@
-#include <kernel.h>
-#include <mm.h>
-#include <blk.h>
-#include <vfs.h>
-#include <ext2.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
+#include <scaraOS/blk.h>
+#include <scaraOS/vfs.h>
+#include <scaraOS/ext2.h>
 
 static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 {

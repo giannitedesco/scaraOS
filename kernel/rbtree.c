@@ -20,7 +20,7 @@
   linux/lib/rbtree.c
 */
 
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 
 static void __rb_rotate(struct rb_node *node, struct rb_root *root,
 				unsigned int side)

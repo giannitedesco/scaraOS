@@ -2,8 +2,8 @@
  * x86 specific setup code. This file bootstraps the kernel,
  * spawns the init task and then becomes the idle task
 */
-#include <kernel.h>
-#include <mm.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
 #include <arch/multiboot.h>
 
 /* For bootmem allocator */

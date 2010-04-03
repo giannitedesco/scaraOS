@@ -2,7 +2,7 @@
  * Really primitive text mode VGA driver. Could be implemented as a real
  * driver at some point I guess...
 */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/vga.h>
 #include <arch/io.h>
 

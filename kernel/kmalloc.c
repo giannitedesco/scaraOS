@@ -1,5 +1,5 @@
-#include <kernel.h>
-#include <mm.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
 
 /* exclude 1 and 2 byte allocations */
 #define NR_CACHE (PAGE_SHIFT - 1)

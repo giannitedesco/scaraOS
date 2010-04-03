@@ -6,9 +6,9 @@
  *   o Asynchronous API
 */
 
-#include <kernel.h>
-#include <mm.h>
-#include <blk.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/mm.h>
+#include <scaraOS/blk.h>
 
 static objcache_t bh_cache;
 

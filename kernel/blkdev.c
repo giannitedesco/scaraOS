@@ -1,5 +1,5 @@
-#include <kernel.h>
-#include <blk.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/blk.h>
 
 static struct blkdev *bdevs;
 

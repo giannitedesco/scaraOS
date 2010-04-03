@@ -13,9 +13,9 @@
  *  o Support more than one controller
  *  o Performance optimisations
 */
-#include <kernel.h>
-#include <blk.h>
-#include <task.h>
+#include <scaraOS/kernel.h>
+#include <scaraOS/blk.h>
+#include <scaraOS/task.h>
 #include <arch/8259a.h>
 #include <arch/dma.h>
 #include <arch/idt.h>

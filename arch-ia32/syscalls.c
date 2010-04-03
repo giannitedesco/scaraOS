@@ -1,7 +1,7 @@
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
-#include <task.h>
+#include <scaraOS/task.h>
 
 struct syscall_desc {
 	unsigned int type;

@@ -1,8 +1,8 @@
 /* Will eventually contain 386 specific task swiching code I guess */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/regs.h>
-#include <task.h>
-#include <mm.h>
+#include <scaraOS/task.h>
+#include <scaraOS/mm.h>
 #include <arch/descriptor.h>
 
 volatile static struct ia32_tss tss;

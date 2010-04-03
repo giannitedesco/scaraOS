@@ -2,7 +2,7 @@
  * Primitive PC keyboard drivers. I suppose there will be an input
  * device layer at some point which we will hook in to
 */
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/8259a.h>
 #include <arch/idt.h>
 #include <arch/irq.h>

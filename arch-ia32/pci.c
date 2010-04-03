@@ -1,4 +1,4 @@
-#include <kernel.h>
+#include <scaraOS/kernel.h>
 #include <arch/pci.h>
 
 #define PCICMD(bus, dev, fn)	(0x80000000 | (bus << 16) | (dev << 11) | (fn << 3))
