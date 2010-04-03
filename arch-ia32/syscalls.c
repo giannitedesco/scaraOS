@@ -40,6 +40,11 @@ static int _sys_read(int fd, void *buf, size_t count)
 
 static int _sys_write(int fd, void *buf, size_t count)
 {
+	if ( fd == 1 ) {
+		printk("%.*s", (int)count, (char *)buf);
+		return count;
+	}
+
 	printk("sys_write: fd=%i len=%lu unimplemented\n", fd, count);
 	return -1;
 }

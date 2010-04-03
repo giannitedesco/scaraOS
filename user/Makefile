@@ -39,17 +39,27 @@ CRT_OBJ :=  $(patsubst %.S, %.o, $(CRT_ASM_SOURCES)) \
 		$(patsubst %.c, %.o, $(CRT_C_SOURCES))
 $(C_RUNTIME): $(CRT_OBJ)
 
-INIT_C_SOURCES := init.c
-INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))
-init: $(INIT_OBJ) $(C_RUNTIME)
+%: %.o $(C_RUNTIME)
 	@echo " [LINK] $@"
 	@$(LD) $(LDFLAGS) -o $@ $^
 
-ALL_TARGETS := $(C_RUNTIME) init
+INIT_C_SOURCES := init.c
+INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))
+init: $(INIT_OBJ)
 
-ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ)
+CPUHOGA_C_SOURCES := cpuhog-a.c
+CPUHOGA_OBJ := $(patsubst %.c, %.o, $(CPUHOGA_C_SOURCES))
+cpuhog-a: $(CPUHOGA_OBJ)
+
+CPUHOGB_C_SOURCES := cpuhog-b.c
+CPUHOGB_OBJ := $(patsubst %.c, %.o, $(CPUHOGB_C_SOURCES))
+cpuhog-b: $(CPUHOGB_OBJ)
+
+ALL_TARGETS := $(C_RUNTIME) init cpuhog-a cpuhog-b
+
+ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ) $(CPUHOGA_OBJ) $(CPUHOGB_OBJ)
 ALL_ASM := $(CRT_ASM_SOURCES)
-ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES)
+ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES) $(CPUHOG_A_SOURCES) $(CPUHOGB_SOURCES)
 
 ALL_DEP :=  $(patsubst %.S, %.d, $(ALL_ASM)) \
 		$(patsubst %.c, %.d, $(ALL_C) )
