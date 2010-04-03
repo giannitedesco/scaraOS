@@ -8,8 +8,8 @@ TOPDIR :=  .
 .PHONY: all clean boot_floppy
 TARGET: all
 
-LDFLAGS = -melf_i386 -nostdlib -N --strip-all
-CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
+LDFLAGS := -melf_i386 -nostdlib -N --strip-all
+CFLAGS  := -pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \

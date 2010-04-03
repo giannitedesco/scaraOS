@@ -1,5 +1,5 @@
 ## Architecture
-ARCH=ia32
+ARCH := ia32
 EXTRA_DEFS=-DKDEBUG=1
 EXTRA_DEFS+=-DPAGE_POISON=1
 EXTRA_DEFS+=-DOBJCACHE_POISON=1
@@ -7,9 +7,9 @@ EXTRA_DEFS+=-DMULTI_TASKING_DEMO=0
 
 TOPDIR :=  .
 #$(shell /bin/pwd)
-KERNEL_DIR = $(TOPDIR)/kernel
-ARCH_DIR = $(TOPDIR)/arch-$(ARCH)
-FS_DIR = $(TOPDIR)/fs
+KERNEL_DIR := $(TOPDIR)/kernel
+ARCH_DIR := $(TOPDIR)/arch-$(ARCH)
+FS_DIR := $(TOPDIR)/fs
 
 .PHONY: all clean squeaky boot_floppy
 
@@ -17,24 +17,24 @@ FS_DIR = $(TOPDIR)/fs
 CROSS_COMPILE=
 
 ## command locations
-SH=/bin/sh
-RM=rm
-MAKE=make
-LN=ln
-CP=cp
+SH := /bin/sh
+RM := rm
+MAKE := make
+LN := ln
+CP := cp
 
-GCC=$(CROSS_COMPILE)gcc
-CC=$(CROSS_COMPILE)gcc
-LD=$(CROSS_COMPILE)ld
-AR=$(CROSS_COMPILE)ar
-STRIP=$(CROSS_COMPILE)strip
+GCC := $(CROSS_COMPILE)gcc
+CC  := $(CROSS_COMPILE)gcc
+LD  := $(CROSS_COMPILE)ld
+AR  := $(CROSS_COMPILE)ar
+STRIP := $(CROSS_COMPILE)strip
 
 # Default target
 TARGET: all
 
 # Compiler flags
-LDFLAGS = -melf_i386 -nostdlib -N
-CFLAGS=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
+LDFLAGS := -melf_i386 -nostdlib -N
+CFLAGS  :=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
@@ -111,7 +111,7 @@ kernel.elf.gz: kernel.elf.stripped
 	@echo " [COMPRESS] $@"
 	@gzip -c < $< > $@
 
-all: kernel.elf.gz
+all: Makefile kernel.elf.gz
 
 boot.img: kernel.elf.gz menu.lst
 	@echo " [BOOTFLOPPY] $@"
