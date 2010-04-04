@@ -25,7 +25,9 @@ SECTIONS {
 	/* Read only data (strings etc..) */
 	.rodata : AT (ADDR(.rodata) - vaddr){
 		*(.rodata)
-		*(.rodata.*) 
+	__rodata_pagefault = .;
+		*(.rodata.pagefault) 
+	__rodata_pagefault_end = .;
 	}
 	. = ALIGN(4096);
 	__rodata_end = .;

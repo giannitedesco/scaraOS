@@ -3,12 +3,19 @@
 
 #ifndef __ASM__
 
+struct pagefault_fixup {
+	vaddr_t fault_addr;
+	vaddr_t fixup_addr;
+};
+
 extern uint8_t __begin;
 
 extern uint8_t __text;
 extern uint8_t __text_end;
 
 extern uint8_t __rodata;
+extern struct pagefault_fixup __rodata_pagefault;
+extern struct pagefault_fixup __rodata_pagefault_end;
 extern uint8_t __rodata_end;
 
 extern uint8_t __data;

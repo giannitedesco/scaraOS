@@ -14,4 +14,5 @@ ARCH_C_SOURCES = $(ARCH_DIR)/8259a.c \
 
 ARCH_ASM_SOURCES = $(ARCH_DIR)/entry.S \
 			$(ARCH_DIR)/intr.S \
-			$(ARCH_DIR)/io.S
+			$(ARCH_DIR)/io.S \
+			$(ARCH_DIR)/user.S

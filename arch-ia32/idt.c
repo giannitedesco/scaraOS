@@ -2,14 +2,16 @@
  * This code handles the interrupt descriptor tables.
 */
 #include <scaraOS/kernel.h>
+#include <scaraOS/task.h>
+#include <scaraOS/mm.h>
+
 #include <arch/processor.h>
 #include <arch/descriptor.h>
+#include <arch/kimage.h>
 #include <arch/irq.h>
 #include <arch/idt.h>
 #include <arch/gdt.h>
 #include <arch/regs.h>
-#include <scaraOS/task.h>
-#include <scaraOS/mm.h>
 
 #define load_idt(idtr) \
 	asm volatile("lidt (%0)": :"r" (idtr));
@@ -102,6 +104,17 @@ static void page_fault(struct intr_ctx *ctx)
 
 	if ( ctx->err_code & PAGEFAULT_USER )
 		_sys_exit(~0);
+	else{
+		struct pagefault_fixup *fix;
+		for(fix = &__rodata_pagefault;
+				fix < &__rodata_pagefault_end; fix++) {
+			if ( fix->fault_addr == ctx->eip ) {
+				ctx->eip = fix->fixup_addr;
+				return;
+			}
+		}
+	}
+
 	cli();
 	printk("Unhandled #PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
 		(ctx->err_code & PAGEFAULT_USER) ?

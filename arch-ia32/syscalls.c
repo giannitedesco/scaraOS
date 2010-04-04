@@ -41,7 +41,20 @@ static int _sys_read(int fd, void *buf, size_t count)
 static int _sys_write(int fd, void *buf, size_t count)
 {
 	if ( fd == 1 ) {
-		printk("%.*s", (int)count, (char *)buf);
+		char *kbuf;
+		int sz;
+
+		kbuf = kmalloc(count);
+		if ( NULL == kbuf )
+			return -1;
+
+		sz = copy_from_user(kbuf, buf, count);
+		if ( sz < 0 )
+			return -1;
+
+		printk("%.*s", sz, kbuf);
+		kfree(kbuf);
+
 		return count;
 	}
 

@@ -85,4 +85,9 @@ void memcpy(void *dst, const void *src, size_t n);
 char *strchr(const char *str, int c);
 void memset(void *dst, int c, size_t n);
 
+/* Userspace access */
+int strlen_from_user(const char *);
+int copy_from_user(char *, const char *, size_t);
+int copy_to_user(char *, const char *, size_t);
+
 #endif /* __KERNEL_HEADER_INCLUDED__ */
