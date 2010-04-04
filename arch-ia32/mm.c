@@ -355,6 +355,8 @@ int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
 	uint32_t pa;
 	uint32_t tblent;
 
+	BUG_ON(addr >= PAGE_OFFSET);
+
 	pd = __va(ctx->pgd);
 
 	if ( !(pd[dir(addr)] & PDE_PRESENT) ) {
