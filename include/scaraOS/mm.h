@@ -44,8 +44,16 @@ struct page {
 #define PG_pagecache	(1<<2)
 
 /* Page reference counts */
-#define get_page(p) ((p)->count++)
-#define put_page(p) ((p)->count--)
+static inline struct page *get_page(struct page *page)
+{
+	page->count++;
+	return page;
+}
+static inline void put_page(struct page *page)
+{
+	BUG_ON(page->count == 0);
+	page->count--;
+}
 
 /* Getting at struct page's */
 #define page_address(page) __va( ((page) - pfa) << PAGE_SHIFT )
