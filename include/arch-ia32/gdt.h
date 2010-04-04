@@ -5,16 +5,16 @@
 #define KERNEL_DS	2
 #define USER_CS		3
 #define USER_DS		4
-#define KERNEL_TSS	5
-#define USER_TSS	6
+#define TSS0		5
+#define TSS1		6
 
 /* Segment selectors (see GDT in arch-ia32/setup.c) */
 #define __KERNEL_CS	(KERNEL_CS << 3)
 #define __KERNEL_DS	(KERNEL_DS << 3)
 #define __USER_CS	(USER_CS << 3)
 #define __USER_DS	(USER_DS << 3)
-#define __KERNEL_TSS	(KERNEL_TSS << 3)
-#define __USER_TSS	(USER_TSS << 3)
+#define __TSS0		(TSS0 << 3)
+#define __TSS1		(TSS1 << 3)
 
 #define __CPL0		0x0
 #define __CPL1		0x1

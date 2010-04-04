@@ -78,7 +78,7 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 
 	store_tr(tr);
 	tr >>= 3;
-	scratch_tr = (tr == KERNEL_TSS) ? USER_TSS : KERNEL_TSS;
+	scratch_tr = (tr == TSS0) ? TSS1 : TSS0;
 
 	GDT[scratch_tr].desc = stnd_desc(((vaddr_t)(&scratch)),
 			(sizeof(*tss) - 1),
@@ -86,10 +86,10 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	GDT[tr].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
 	load_tr(scratch_tr << 3);
-	if ( tr == USER_TSS )
-		asm volatile("ljmp %0, $0": : "i"(__USER_TSS));
+	if ( tr == TSS1 )
+		asm volatile("ljmp %0, $0": : "i"(__TSS1));
 	else
-		asm volatile("ljmp %0, $0": : "i"(__KERNEL_TSS));
+		asm volatile("ljmp %0, $0": : "i"(__TSS0));
 }
 
 void switch_task(struct task *prev, struct task *next)
@@ -100,15 +100,15 @@ void switch_task(struct task *prev, struct task *next)
 	store_tr(tr);
 
 	tr >>= 3;
-	tr = (tr == KERNEL_TSS) ? USER_TSS : KERNEL_TSS;
+	tr = (tr == TSS0) ? TSS1 : TSS0;
 
 	tss = &next->t.tss;
 	GDT[tr].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
-	if ( tr == USER_TSS )
-		asm volatile("ljmp %0, $0": : "i"(__USER_TSS));
+	if ( tr == TSS1 )
+		asm volatile("ljmp %0, $0": : "i"(__TSS1));
 	else
-		asm volatile("ljmp %0, $0": : "i"(__KERNEL_TSS));
+		asm volatile("ljmp %0, $0": : "i"(__TSS0));
 }
 
 void ia32_gdt_finalize(void)
@@ -118,9 +118,9 @@ void ia32_gdt_finalize(void)
 
 	tss = &tsk->t.tss;
 
-	GDT[KERNEL_TSS].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
+	GDT[TSS0].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
-	load_tr(__KERNEL_TSS);
+	load_tr(__TSS0);
 }
 
 int task_stack_overflowed(struct task *tsk)
