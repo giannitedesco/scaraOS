@@ -35,6 +35,7 @@ const struct gdtr loadgdt = { sizeof(GDT) - 1, (uint32_t)GDT};
 static void task_push_word(struct task *tsk, vaddr_t word)
 {
 	tsk->t.tss.esp -= sizeof(word);
+	tsk->t.tss.sp0 -= sizeof(word);
 	*(vaddr_t *)tsk->t.tss.esp = word;
 }
 
@@ -48,9 +49,11 @@ void task_init_kthread(struct task *tsk,
 
 	tss = &tsk->t.tss;
 	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __KERNEL_DS;
+	tss->ss0 = tss->ss;
 	tss->cs = __KERNEL_CS;
 	tss->eip = (vaddr_t)kthread_init;
 	tss->esp = (vaddr_t)tsk + PAGE_SIZE;
+	tss->sp0 = tss->esp;
 	tss->flags = get_eflags() | (1 << 9);
 	tss->cr3 = (vaddr_t)tsk->ctx->arch.pgd;
 
@@ -64,7 +67,7 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 {
 	unsigned short tr, scratch_tr;
 	struct ia32_tss *tss;
-	struct ia32_tss scratch;
+	static struct ia32_tss scratch;
 
 	tss = &tsk->t.tss;
 	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __USER_DS | __CPL3;
