@@ -7,6 +7,7 @@
 */
 
 #include <scaraOS/kernel.h>
+#include <scaraOS/semaphore.h>
 #include <scaraOS/mm.h>
 #include <scaraOS/blk.h>
 
@@ -37,12 +38,16 @@ struct buffer *blk_read(struct blkdev *dev, int logical)
 	}
 
 	/* Synchronously read from the device */
-	if ( dev->ll_rw_blk(0, logical * dev->count, bh->b_buf, dev->count) ) {
+	sem_P(&dev->blksem);
+	if ( dev->ll_rw_blk(dev, 0, logical * dev->count,
+				bh->b_buf, dev->count) ) {
+		sem_V(&dev->blksem);
 		kfree(bh->b_buf);
 		objcache_free2(bh_cache, bh);
 		return NULL;
 	}
 
+	sem_V(&dev->blksem);
 	return bh;
 }
 

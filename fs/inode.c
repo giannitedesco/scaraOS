@@ -7,8 +7,8 @@
  * cache exists to speed up this lookup.
 */
 #include <scaraOS/kernel.h>
-#include <scaraOS/blk.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
 
 struct inode *nul_inode_lookup(struct inode *i, const char *name, size_t nlen)

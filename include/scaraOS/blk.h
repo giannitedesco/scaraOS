@@ -15,10 +15,13 @@ struct blkdev {
 	/* Hardcoded by driver */
 	const char *name;
 	unsigned int sectsize;
-	int (*ll_rw_blk)(int, block_t, char *, size_t);
+	int (*ll_rw_blk)(struct blkdev *, int, block_t, char *, size_t);
 
 	/* Can be frobbed with */
 	size_t count;
+
+	/* Held by block subsystem on ll_rw_blk calls */
+	struct semaphore blksem;
 };
 
 /* Block and buffer cache */

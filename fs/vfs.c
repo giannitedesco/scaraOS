@@ -5,8 +5,8 @@
 */
 #include <scaraOS/kernel.h>
 #include <scaraOS/mm.h>
-#include <scaraOS/blk.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/blk.h>
 #include <scaraOS/task.h>
 
 static struct vfs_fstype *fs_types;

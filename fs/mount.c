@@ -4,6 +4,7 @@
  *  o Proper mount/umount
 */
 #include <scaraOS/kernel.h>
+#include <scaraOS/semaphore.h>
 #include <scaraOS/mm.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/vfs.h>

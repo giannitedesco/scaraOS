@@ -14,9 +14,9 @@
  *  o Performance optimisations
 */
 #include <scaraOS/kernel.h>
+#include <scaraOS/semaphore.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/task.h>
-#include <scaraOS/semaphore.h>
 #include <arch/8259a.h>
 #include <arch/dma.h>
 #include <arch/idt.h>
@@ -27,7 +27,6 @@
 
 /* Floppy interrupt wait queue */
 static struct waitq floppyq = WAITQ_INIT(floppyq);
-static struct semaphore floppysem = SEMAPHORE_INIT(floppysem, 1);
 
 /* Result status registers */
 static uint8_t status[7], slen;
@@ -134,7 +133,8 @@ static void floppy_recal(const struct floppy_ports *p)
 }
 
 /* Low-level block device routine */
-static int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
+static int floppy_rw_blk(struct blkdev *bdev, int write,
+				block_t blk, char *buf, size_t len)
 {
 	int head, track, sector;
 	int tries = 3;
@@ -145,11 +145,9 @@ static int floppy_rw_blk(int write, block_t blk, char *buf, size_t len)
 		return -1;
 	}
 
-	sem_P(&floppysem);
 try_again:
 	if ( inb(dprts->dir) & DIR_CHAN ) {
 		printk("floppy: disk change on read\n");
-		sem_V(&floppysem);
 		return -1;
 	}
 
@@ -181,7 +179,6 @@ try_again:
 			buf+=512;
 			goto try_again;
 		}
-		sem_V(&floppysem);
 		return 0;
 	}
 
@@ -190,7 +187,6 @@ try_again:
 		floppy_recal(dprts);
 		goto try_again;
 	}
-	sem_V(&floppysem);
 	return -1;
 }
 
@@ -235,7 +231,7 @@ static void floppy_isr(int irq)
 	wake_up(&floppyq);
 }
 
-static struct blkdev blk_floppy={
+static struct blkdev floppy0 = {
 	.name = "floppy0",
 	.sectsize = 512,
 	.ll_rw_blk = floppy_rw_blk
@@ -245,13 +241,13 @@ static void __init floppy_init(void)
 {
 	uint8_t v;
 
-	blkdev_add(&blk_floppy);
+	blkdev_add(&floppy0);
 
 	/* Install handler for IRQ6 */
 	set_irq_handler(6, floppy_isr);
 	irq_on(6);
 
-	sem_P(&floppysem);
+	sem_P(&floppy0.blksem);
 	printk("floppy: resetting floppy controllers\n");
 	floppy_reset(dprts);
 
@@ -265,7 +261,7 @@ static void __init floppy_init(void)
 
 	/* Reset disk-change flag */
 	inb(dprts->dir);
-	sem_V(&floppysem);
+	sem_V(&floppy0.blksem);
 }
 
 driver_init(floppy_init);
