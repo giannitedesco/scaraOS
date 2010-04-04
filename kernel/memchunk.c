@@ -254,20 +254,31 @@ static struct slab_hdr *first_partial(struct _objcache *o)
 static void *do_alloc(struct _objcache *o)
 {
 	struct slab_hdr *c;
+	long flags;
+	void *ret;
 
 	if ( NULL == o )
 		return NULL;
 
+	lock_irq(flags);
+
 	/* First check free list */
-	if ( (c = first_partial(o)) && c->c_o.free_list )
-		return alloc_from_partial(o, c);
+	if ( (c = first_partial(o)) && c->c_o.free_list ) {
+		ret = alloc_from_partial(o, c);
+		goto out;
+	}
 
 	/* Then check ptr/ptr_end */
-	if ( likely(o->o_ptr + o->o_sz <= o->o_ptr_end) )
-		return alloc_fast(o);
+	if ( likely(o->o_ptr + o->o_sz <= o->o_ptr_end) ) {
+		ret = alloc_fast(o);
+		goto out;
+	}
 
 	/* Finall resort to slow path */
-	return alloc_slow(o);
+	ret = alloc_slow(o);
+out:
+	unlock_irq(flags);
+	return ret;
 }
 
 void *objcache_alloc(objcache_t o)
@@ -288,8 +299,14 @@ void *objcache_alloc0(objcache_t o)
 
 static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 {
+	long flags;
 #if OBJCACHE_DEBUG_FREE
 	uint8_t **tmp;
+#endif
+
+	lock_irq(flags);
+
+#if OBJCACHE_DEBUG_FREE
 	BUG_ON((uint8_t *)obj >= o->o_ptr && (uint8_t *)obj <= o->o_ptr_end);
 	for(tmp = (uint8_t **)c->c_o.free_list; tmp; tmp = (uint8_t **)*tmp)
 		BUG_ON(tmp == obj);
@@ -319,6 +336,7 @@ static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 		}
 		memchunk_put(o->o_pool, c);
 	}
+	unlock_irq(flags);
 }
 
 void objcache_free(void *obj)
