@@ -90,6 +90,7 @@ static void memchunk_put(mempool_t p, struct slab_hdr *hdr)
 	free_page(page_address(page));
 }
 
+#if 0
 mempool_t mempool_new(const char *label, size_t numchunks)
 {
 	struct _mempool *p;
@@ -137,6 +138,7 @@ void mempool_free(mempool_t p)
 	list_del(&p->p_list);
 	objcache_free2(&mc.m_pool_cache, p);
 }
+#endif
 
 objcache_t objcache_init(mempool_t pool, const char *label, size_t obj_sz)
 {
@@ -160,6 +162,7 @@ objcache_t objcache_init(mempool_t pool, const char *label, size_t obj_sz)
 	return o;
 }
 
+#if 0
 void objcache_fini(objcache_t o)
 {
 	struct slab_hdr *c, *tmp;
@@ -198,6 +201,7 @@ void objcache_fini(objcache_t o)
 	objcache_free2(&mc.m_self_cache, o);
 
 }
+#endif
 
 static void *alloc_from_partial(struct _objcache *o, struct slab_hdr *c)
 {
@@ -306,11 +310,11 @@ static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 
 	BUG_ON(0 == c->c_o.inuse);
 	BUG_ON(c->c_o.inuse > o->o_num);
+	BUG_ON((uint8_t *)obj >= o->o_ptr && (uint8_t *)obj <= o->o_ptr_end);
 
 	sem_P(&memsem);
 
 #if OBJCACHE_DEBUG_FREE
-	BUG_ON((uint8_t *)obj >= o->o_ptr && (uint8_t *)obj <= o->o_ptr_end);
 	for(tmp = (uint8_t **)c->c_o.free_list; tmp; tmp = (uint8_t **)*tmp)
 		BUG_ON(tmp == obj);
 #endif
@@ -338,6 +342,19 @@ static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 	}
 	sem_V(&memsem);
 }
+#if OBJCACHE_DEBUG_FREE
+static int slab_is_on(struct slab_hdr *hdr, struct list_head *list)
+{
+	struct slab_hdr *chk;
+
+	list_for_each_entry(chk, list, c_o.list) {
+		if ( hdr == chk )
+			return 1;
+	}
+
+	return 0;
+}
+#endif
 
 void objcache_free(void *obj)
 {
@@ -352,6 +369,12 @@ void objcache_free(void *obj)
 
 	BUG_ON(page->flags != PG_slab);
 	BUG_ON(page->count != 1);
+
+#if OBJCACHE_DEBUG_FREE
+	BUG_ON(c != c->c_o.cache->o_cur &&
+		!slab_is_on(c, &c->c_o.cache->o_partials) &&
+		!slab_is_on(c, &c->c_o.cache->o_full) );
+#endif
 
 	do_cache_free(c->c_o.cache, c, obj);
 }
@@ -371,5 +394,10 @@ void objcache_free2(objcache_t o, void *obj)
 	BUG_ON(page->count != 1);
 	BUG_ON(c->c_o.cache != o);
 
+#if OBJCACHE_DEBUG_FREE
+	BUG_ON(c != c->c_o.cache->o_cur &&
+		!slab_is_on(c, &c->c_o.cache->o_partials) &&
+		!slab_is_on(c, &c->c_o.cache->o_full) );
+#endif
 	do_cache_free(c->c_o.cache, c, obj);
 }
