@@ -72,7 +72,7 @@ static struct slab_hdr *memchunk_get(mempool_t p)
 	page = virt_to_page(pptr);
 	BUG_ON(page->count != 1);
 	c = &page->u.slab_hdr;
-	page->flags |= PG_slab;
+	page->flags = PG_slab;
 
 	c->c_r.ptr = pptr;
 
@@ -304,6 +304,9 @@ static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 	uint8_t **tmp;
 #endif
 
+	BUG_ON(0 == c->c_o.inuse);
+	BUG_ON(c->c_o.inuse > o->o_num);
+
 	sem_P(&memsem);
 
 #if OBJCACHE_DEBUG_FREE
@@ -311,9 +314,6 @@ static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 	for(tmp = (uint8_t **)c->c_o.free_list; tmp; tmp = (uint8_t **)*tmp)
 		BUG_ON(tmp == obj);
 #endif
-
-	BUG_ON(0 == c->c_o.inuse);
-	BUG_ON(c->c_o.inuse > o->o_num);
 
 	/* First add to partials if this is first free from chunk */
 	if ( NULL == c->c_o.free_list ) {
@@ -349,6 +349,9 @@ void objcache_free(void *obj)
 
 	page = virt_to_page(obj);
 	c = &page->u.slab_hdr;
+
+	BUG_ON(page->flags != PG_slab);
+	BUG_ON(page->count != 1);
 
 	do_cache_free(c->c_o.cache, c, obj);
 }
