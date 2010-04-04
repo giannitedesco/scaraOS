@@ -3,6 +3,11 @@
 
 #ifndef __ASM__
 
+#define PAGEFAULT_PROTECTION		(1<<0)
+#define PAGEFAULT_WRITE			(1<<1)
+#define PAGEFAULT_USER			(1<<2)
+#define PAGEFAULT_RESERVED_BIT		(1<<3)
+
 void idt_init(void);
 
 /* Used to modify the interrupt table */

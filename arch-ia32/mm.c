@@ -377,7 +377,7 @@ int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
 
 	/* FFS: use INVLPG */
 	__flush_tlb();
-	printk("ctx %.8lx: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
+	dprintk("ctx %.8lx: 0x%.8lx:page table %lu / %lu = 0x%.8lx\n",
 		ctx->pgd, addr, dir(addr), tbl(addr), pa);
 	return 0;
 }

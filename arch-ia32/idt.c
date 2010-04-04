@@ -89,9 +89,10 @@ void ctx_dump(struct intr_ctx *ctx)
 
 static void page_fault(struct intr_ctx *ctx)
 {
-	if ( !(ctx->err_code & 0x1) ) {
+	if ( (ctx->err_code & (PAGEFAULT_PROTECTION|PAGEFAULT_USER))
+			== PAGEFAULT_USER ) {
 		unsigned prot;
-		if ( (ctx->err_code & 0x2) )
+		if ( (ctx->err_code & PAGEFAULT_WRITE) )
 			prot = PROT_WRITE;
 		else
 			prot = PROT_READ;
@@ -99,13 +100,19 @@ static void page_fault(struct intr_ctx *ctx)
 			return;
 	}
 
+	if ( ctx->err_code & PAGEFAULT_USER )
+		_sys_exit(~0);
 	cli();
 	printk("Unhandled #PF in %s mode: %s fault_addr=0x%.8lx/%s%s\n",
-		(ctx->err_code & 0x4) ? "user" : "supervisor",
-		(ctx->err_code & 0x1) ? "PROTECTION_VIOLATION" : "NONPRESENT",
+		(ctx->err_code & PAGEFAULT_USER) ?
+			"user" : "supervisor",
+		(ctx->err_code & PAGEFAULT_PROTECTION) ?
+			"PROTECTION_VIOLATION" : "NONPRESENT",
 		pf_address(),
-		(ctx->err_code & 0x2) ? "WRITE" : "READ",
-		(ctx->err_code & 0x8) ? " RSVD_BIT_SET" : "");
+		(ctx->err_code & PAGEFAULT_WRITE) ?
+			"WRITE" : "READ",
+		(ctx->err_code & PAGEFAULT_RESERVED_BIT) ?
+			" RESERVED_BIT" : "");
 	ctx_dump(ctx);
 	idle_task_func();
 }
@@ -157,6 +164,10 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 	if ( exc[exc_num].handler ) {
 		(*exc[exc_num].handler)((struct intr_ctx *)&ctx);
 		return;
+	}
+
+	if ( (ctx.cs & __CPL3) == __CPL3 ) {
+		_sys_exit(~0);
 	}
 
 	cli();

@@ -31,7 +31,7 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 	struct vma *vma;
 	off_t off;
 
-	printk("faulting in 0x%.8lx\n", va);
+	dprintk("faulting in 0x%.8lx\n", va);
 	vma = lookup_vma(tsk->ctx, va);
 	if ( NULL == vma )
 		return -1;
@@ -43,14 +43,14 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 	va &= ~PAGE_MASK;
 
 	if ( vma->vma_ino ) {
-		printk("...from pagecache\n");
+		dprintk("...from pagecache\n");
 		page = vma->vma_ino->i_iop->readpage(vma->vma_ino, off);
 		if ( NULL == page )
 			return -1;
 	}else{
 		void *ptr;
 
-		printk("...anon map\n");
+		dprintk("...anon map\n");
 		ptr = alloc_page();
 		if ( NULL == ptr )
 			return -1;
