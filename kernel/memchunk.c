@@ -15,6 +15,7 @@
 */
 
 #include <scaraOS/kernel.h>
+#include <scaraOS/semaphore.h>
 #include <scaraOS/mm.h>
 #include <scaraOS/memchunk.h>
 
@@ -25,6 +26,7 @@
 #endif
 
 static struct _memchunk mc;
+static struct semaphore memsem = SEMAPHORE_INIT(memsem, 1);
 
 static void do_cache_init(struct _mempool *p, struct _objcache *o,
 				const char *label, size_t obj_sz)
@@ -254,13 +256,12 @@ static struct slab_hdr *first_partial(struct _objcache *o)
 static void *do_alloc(struct _objcache *o)
 {
 	struct slab_hdr *c;
-	long flags;
 	void *ret;
 
 	if ( NULL == o )
 		return NULL;
 
-	lock_irq(flags);
+	sem_P(&memsem);
 
 	/* First check free list */
 	if ( (c = first_partial(o)) && c->c_o.free_list ) {
@@ -277,7 +278,7 @@ static void *do_alloc(struct _objcache *o)
 	/* Finall resort to slow path */
 	ret = alloc_slow(o);
 out:
-	unlock_irq(flags);
+	sem_V(&memsem);
 	return ret;
 }
 
@@ -299,12 +300,11 @@ void *objcache_alloc0(objcache_t o)
 
 static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 {
-	long flags;
 #if OBJCACHE_DEBUG_FREE
 	uint8_t **tmp;
 #endif
 
-	lock_irq(flags);
+	sem_P(&memsem);
 
 #if OBJCACHE_DEBUG_FREE
 	BUG_ON((uint8_t *)obj >= o->o_ptr && (uint8_t *)obj <= o->o_ptr_end);
@@ -336,7 +336,7 @@ static void do_cache_free(struct _objcache *o, struct slab_hdr *c, void *obj)
 		}
 		memchunk_put(o->o_pool, c);
 	}
-	unlock_irq(flags);
+	sem_V(&memsem);
 }
 
 void objcache_free(void *obj)

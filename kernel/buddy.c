@@ -4,6 +4,7 @@
  * is no coalscing and not even any bitmaps in place
 */
 #include <scaraOS/kernel.h>
+#include <scaraOS/semaphore.h>
 #include <scaraOS/mm.h>
 
 #if PAGE_POISON
@@ -18,7 +19,8 @@ struct page *pfa;
 unsigned long nr_physpages;
 unsigned long nr_freepages;
 
-struct list_head free_list[MAX_ORDER];
+static struct list_head free_list[MAX_ORDER];
+static struct semaphore pagesem = SEMAPHORE_INIT(pagesem, 1);
 
 void __init buddy_init(void)
 {
@@ -46,7 +48,9 @@ void free_pages(void *ptr, unsigned int order)
 
 	/* Stitch in to free area list */
 	BUG_ON(page->count != 0);
+	sem_P(&pagesem);
 	list_add_tail(&page->u.list, &free_list[order]);
+	sem_V(&pagesem);
 	nr_freepages++;
 }
 
@@ -56,23 +60,22 @@ void *alloc_pages(unsigned int order)
 	struct page *page;
 
 	BUG_ON(order != 1);
+	sem_P(&pagesem);
+
+	/* TODO: split larger block */
 	if ( list_empty(&free_list[order]) )
 		goto fail;
 
 	page = list_entry(free_list[order].next, struct page, u.list);
-
-	/* TODO: Split larger block */
-	if ( page == NULL )
-		goto fail;
-
 	BUG_ON(page->count != 0);
-	/* Remove from list */
 	list_del(&page->u.list);
+	sem_V(&pagesem);
 
 	nr_freepages--;
 	get_page(page);
 	return page_address(page);
 fail:
+	sem_V(&pagesem);
 	printk("%i order allocation failed\n", order);
 	return NULL;
 }
