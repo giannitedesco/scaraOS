@@ -41,7 +41,7 @@ void *kmalloc0(size_t alloc_sz)
 	size_t sz;
 
 	for(sz = (1 << 2), i = 0; i < NR_CACHE; i++, sz <<= 1) {
-		if ( alloc_sz < sz )
+		if ( alloc_sz <= sz )
 			return objcache_alloc0(general_cache[i]);
 	}
 
