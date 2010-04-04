@@ -93,6 +93,7 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 		asm volatile("ljmp %0, $0": : "i"(__TSS1));
 	else
 		asm volatile("ljmp %0, $0": : "i"(__TSS0));
+	panic("danger will robinson\n");
 }
 
 void switch_task(struct task *prev, struct task *next)
@@ -128,8 +129,13 @@ void ia32_gdt_finalize(void)
 
 int task_stack_overflowed(struct task *tsk)
 {
-	//return (struct task *)tsk->t.tss.esp <= tsk + 2;
-	return 0;
+	struct ia32_tss *tss = &tsk->t.tss;
+
+	if ( (tss->cs & __CPL3) == __CPL3 )
+		return 0;
+	BUG_ON(tss->esp < PAGE_OFFSET);
+
+	return (struct task *)tss->esp <= tsk + 2;
 }
 
 void idle_task_func(void)
