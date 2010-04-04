@@ -10,6 +10,7 @@
  *  o Implement cache shrinkage routines
 */
 #include <scaraOS/kernel.h>
+#include <scaraOS/semaphore.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/vfs.h>
 #include <scaraOS/mm.h>
@@ -36,11 +37,6 @@ struct inode *namei(const char *name)
 		i = iref(__this_task->cwd);
 	}
 
-	/* Check for some bogus bugs */
-	BUG_ON(NULL == i);
-	BUG_ON(NULL == i->i_iop);
-	BUG_ON(NULL == i->i_iop->lookup);
-
 	/* Iterate the components of the filename
 	 * looking up each one as we go */
 	for(n = name, state = 1, end = 0; ;n++) {
@@ -54,14 +50,12 @@ struct inode *namei(const char *name)
 				state = 1;
 				itmp = i;
 				dprintk("Parsing name: %.*s\n", n - name, name);
-				if ( NULL == i->i_iop->lookup )
-					return NULL; /* ENOTDIR */
 				i = i->i_iop->lookup(itmp, name, n - name);
 				if ( NULL == i )
 					return NULL; /* ENOENT */
+				iput(itmp);
 				if ( end )
 					break;
-				iput(itmp);
 				continue;
 			default:
 				continue;
