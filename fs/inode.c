@@ -45,6 +45,8 @@ struct inode *iget(struct super *sb, ino_t ino)
 	struct rb_node *parent;
 	struct inode *new;
 
+	sem_P(&sb->s_sem);
+
 	for(p = &sb->s_inode_cache.rb_node, parent = NULL; *p; ) {
 		struct inode *in;
 
@@ -56,26 +58,31 @@ struct inode *iget(struct super *sb, ino_t ino)
 			p = &(*p)->rb_child[RB_RIGHT];
 		else {
 			in->i_count++;
+			sem_V(&sb->s_sem);
 			return in;
 		}
 	}
 
 	new = objcache_alloc0(inodes);
 	if ( NULL == new )
-		return NULL;
+		goto out_unlock;
 
 	/* Fill in the stuff read_inode needs */
 	new->i_ino = ino;
 	new->i_sb = sb;
+	INIT_SEMAPHORE(&new->i_sem, 1);
 
 	if ( sb->s_ops->read_inode(new) ) {
 		objcache_free2(inodes, new);
-		return NULL;
+		new = NULL;
+		goto out_unlock;
 	}
 
 	new->i_count = 1;
 	rb_link_node(&new->i_cache, parent, p);
 	rb_insert_color(&new->i_cache, &sb->s_inode_cache);
+out_unlock:
+	sem_V(&sb->s_sem);
 	return new;
 }
 
@@ -84,8 +91,12 @@ static void __inode_free(struct inode *i)
 {
 	if ( NULL == i )
 		return;
+	
+	sem_P(&i->i_sb->s_sem);
 	rb_erase(&i->i_cache, &i->i_sb->s_inode_cache);
 	list_del(&i->i_list);
+	sem_V(&i->i_sb->s_sem);
+
 	objcache_free2(inodes, i);
 }
 

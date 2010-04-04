@@ -29,6 +29,7 @@ struct super *super_get(struct vfs_fstype *type, struct blkdev *blkdev)
 	sb->s_type = type;
 	sb->s_dev = blkdev;
 	sb->s_inode_cache.rb_node = NULL;
+	INIT_SEMAPHORE(&sb->s_sem, 1);
 	if ( sb->s_type->read_super(sb) ) {
 		printk("vfs: error mounting root filesystem\n");
 		objcache_free2(supers, sb);

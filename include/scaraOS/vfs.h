@@ -1,6 +1,7 @@
 #ifndef __VFS_HEADER_INCLUDED__
 #define __VFS_HEADER_INCLUDED__
 
+#include <scaraOS/semaphore.h>
 #include <scaraOS/stat.h>
 #include <scaraOS/ext2_sb.h>
 
@@ -13,6 +14,9 @@ struct inode {
 	struct super		*i_sb;
 	uint32_t		i_count;
 	struct rb_root		i_pagecache;
+
+	/* protectes page cache */
+	struct semaphore	i_sem;
 
 	/* Filled in by super->read_inode */
 	const struct inode_ops	*i_iop;
@@ -47,6 +51,9 @@ struct super {
 	struct blkdev 		*s_dev;
 	struct vfs_fstype 	*s_type;
 	struct rb_root 		s_inode_cache;
+
+	/* protects inode cache */
+	struct semaphore	s_sem;
 
 	/* Here is what get_super must fill in */
 	unsigned int 		s_blocksize;
