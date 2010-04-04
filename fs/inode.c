@@ -5,10 +5,6 @@
  * filesystem given its inode number. The inode contains all file 
  * related meta-data and is needed for nearly all VFS operations. The
  * cache exists to speed up this lookup.
- *
- * TODO
- *  o Actually cache items
- *  o Implement cache shrinkage routines
 */
 #include <scaraOS/kernel.h>
 #include <scaraOS/blk.h>
@@ -32,6 +28,8 @@ struct page *nul_inode_readpage(struct inode *in, off_t off)
 
 static objcache_t inodes;
 static LIST_HEAD(slack_inodes);
+static struct semaphore slacksem = SEMAPHORE_INIT(slacksem, 1);
+
 void _inode_cache_init(void)
 {
 	inodes = objcache_init(NULL, "inode", sizeof(struct inode));
@@ -45,6 +43,7 @@ struct inode *iget(struct super *sb, ino_t ino)
 	struct rb_node *parent;
 	struct inode *new;
 
+	sem_P(&slacksem);
 	sem_P(&sb->s_sem);
 
 	for(p = &sb->s_inode_cache.rb_node, parent = NULL; *p; ) {
@@ -58,6 +57,8 @@ struct inode *iget(struct super *sb, ino_t ino)
 			p = &(*p)->rb_child[RB_RIGHT];
 		else {
 			in->i_count++;
+			list_del(&in->i_list);
+			sem_V(&slacksem);
 			sem_V(&sb->s_sem);
 			return in;
 		}
@@ -71,6 +72,7 @@ struct inode *iget(struct super *sb, ino_t ino)
 	new->i_ino = ino;
 	new->i_sb = sb;
 	INIT_SEMAPHORE(&new->i_sem, 1);
+	INIT_LIST_HEAD(&new->i_list);
 
 	if ( sb->s_ops->read_inode(new) ) {
 		objcache_free2(inodes, new);
@@ -82,6 +84,7 @@ struct inode *iget(struct super *sb, ino_t ino)
 	rb_link_node(&new->i_cache, parent, p);
 	rb_insert_color(&new->i_cache, &sb->s_inode_cache);
 out_unlock:
+	sem_V(&slacksem);
 	sem_V(&sb->s_sem);
 	return new;
 }
@@ -104,10 +107,12 @@ void _squeeze_inode_cache(void)
 {
 	struct inode *in, *tmp;
 
+	sem_P(&slacksem);
 	list_for_each_entry_safe(in, tmp, &slack_inodes, i_list) {
 		printk("inode_cache: Killing slack inode %lu\n", in->i_ino);
 		__inode_free(in);
 	}
+	sem_V(&slacksem);
 }
 
 /* Release an inode so that it can be freed under memory pressure */
@@ -115,5 +120,7 @@ void inode_free(struct inode *i)
 {
 	printk("inode %lu ref dropped to 0\n", i->i_ino);
 	BUG_ON(i->i_count);
+	sem_P(&slacksem);
 	list_add_tail(&i->i_list, &slack_inodes);
+	sem_V(&slacksem);
 }
