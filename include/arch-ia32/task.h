@@ -35,7 +35,6 @@ struct ia32_tss {
 
 /* per-thread state */
 struct thread {
-	struct intr_ctx *regs;
 	struct ia32_tss tss;
 };
 

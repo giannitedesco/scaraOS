@@ -75,15 +75,12 @@ static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
 void syscall_exc(volatile struct intr_ctx ctx)
 {
 	const struct syscall_desc *sys;
-	struct task *tsk = __this_task;
 	uint32_t ret;
 
 	if ( ctx.eax >= _SYS_NR_SYSCALLS ) {
 		printk("Unknown syscall %lu\n", ctx.eax);
 		return;
 	}
-
-	tsk->t.regs = (struct intr_ctx *)&ctx;
 
 	sys = &syscall_tbl[ctx.eax];
 	switch( sys->type ) {
@@ -110,5 +107,4 @@ void syscall_exc(volatile struct intr_ctx ctx)
 	}
 
 	ctx.eax = ret;
-	tsk->t.regs = NULL;
 }

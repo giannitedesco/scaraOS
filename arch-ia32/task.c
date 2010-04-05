@@ -6,7 +6,6 @@
 #include <arch/processor.h>
 #include <arch/descriptor.h>
 #include <arch/gdt.h>
-#include <arch/regs.h>
 
 #define load_tr(tr) asm volatile("ltr %w0"::"q" (tr));
 #define store_tr(tr) asm volatile("str %w0":"=q" (tr));
@@ -45,8 +44,6 @@ void task_init_kthread(struct task *tsk,
 {
 	struct ia32_tss *tss;
 
-	tsk->t.regs = NULL;
-
 	tss = &tsk->t.tss;
 	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __KERNEL_DS;
 	tss->ss0 = tss->ss;
@@ -54,8 +51,9 @@ void task_init_kthread(struct task *tsk,
 	tss->eip = (vaddr_t)kthread_init;
 	tss->esp = (vaddr_t)tsk + PAGE_SIZE;
 	tss->sp0 = tss->esp;
-	tss->flags = get_eflags() | (1 << 9);
+	tss->flags = (1 << 9);
 	tss->cr3 = (vaddr_t)tsk->ctx->arch.pgd;
+	tss->io_bitmap_base = 0x8000;
 
 	/* push arguments to kthread init */
 	task_push_word(tsk, (vaddr_t)priv);
@@ -69,15 +67,9 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	struct ia32_tss *tss;
 	static struct ia32_tss scratch;
 
+	cli();
+
 	tss = &tsk->t.tss;
-	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __USER_DS | __CPL3;
-	tss->cs = __USER_CS | __CPL3;
-	tss->eip = ip;
-	tss->esp = sp;
-	tss->ss0 = __KERNEL_DS;
-	tss->sp0 = (vaddr_t)((uint8_t *)__this_task + PAGE_SIZE);
-	tss->cr3 = (vaddr_t)tsk->ctx->arch.pgd;
-	tss->flags = get_eflags() | (1 << 9);
 
 	store_tr(tr);
 	tr >>= 3;
@@ -89,6 +81,17 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	GDT[tr].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
 	load_tr(scratch_tr << 3);
+
+	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __USER_DS | __CPL3;
+	tss->cs = __USER_CS | __CPL3;
+	tss->eip = ip;
+	tss->esp = sp;
+	tss->ss0 = __KERNEL_DS;
+	tss->sp0 = (vaddr_t)((uint8_t *)__this_task + PAGE_SIZE);
+	tss->cr3 = (vaddr_t)tsk->ctx->arch.pgd;
+	tss->flags = (1 << 9);
+	tss->io_bitmap_base = 0x8000;
+
 	if ( tr == TSS1 )
 		asm volatile("ljmp %0, $0": : "i"(__TSS1));
 	else
@@ -141,5 +144,5 @@ int task_stack_overflowed(struct task *tsk)
 void idle_task_func(void)
 {
 	for(;;)
-		asm volatile("rep; nop\n""hlt;\n");
+		asm volatile("rep; nop; hlt;");
 }
