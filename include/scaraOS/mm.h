@@ -100,6 +100,7 @@ struct mem_ctx {
 };
 /* Kernel memory context API */
 struct mem_ctx *mem_ctx_new(void);
+void mem_use_ctx(struct mem_ctx *ctx);
 void mem_ctx_free(struct mem_ctx *ctx);
 struct mem_ctx *get_kthread_ctx(void);
 
@@ -107,6 +108,7 @@ struct mem_ctx *get_kthread_ctx(void);
 void setup_kthread_ctx(struct arch_ctx *ctx);
 int setup_new_ctx(struct arch_ctx *ctx);
 void destroy_ctx(struct arch_ctx *ctx);
+void use_ctx(struct arch_ctx *ctx);
 int map_page_to_ctx(struct arch_ctx *tsk, struct page *page,
 			vaddr_t addr, unsigned prot);
 

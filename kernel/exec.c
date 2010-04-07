@@ -2,6 +2,7 @@
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
 #include <scaraOS/vfs.h>
+#include <arch/mm.h>
 #include <scaraOS/elf.h>
 #include <scaraOS/exec.h>
 
@@ -96,6 +97,9 @@ int _sys_exec(const char *path)
 
 	kfree(phbuf);
 
+	/* commit to the exec, all the way now */
+	cli();
+	mem_use_ctx(ctx);
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
 	task_init_exec(tsk, hdr.e_entry, 0x80000000);

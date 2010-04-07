@@ -142,6 +142,11 @@ struct mem_ctx *mem_ctx_new(void)
 	return ctx;
 }
 
+void mem_use_ctx(struct mem_ctx *ctx)
+{
+	use_ctx(&ctx->arch);
+}
+
 void mem_ctx_free(struct mem_ctx *ctx)
 {
 	destroy_ctx(&ctx->arch);

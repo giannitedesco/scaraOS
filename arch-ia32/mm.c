@@ -347,6 +347,11 @@ void destroy_ctx(struct arch_ctx *ctx)
 	free_page(__va(ctx->pgd));
 }
 
+void use_ctx(struct arch_ctx *ctx)
+{
+	load_pdbr(ctx->pgd);
+}
+
 int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
 			vaddr_t addr, unsigned prot)
 {
