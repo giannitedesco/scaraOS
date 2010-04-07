@@ -28,19 +28,17 @@ copy_to_user:
 	movl 0x10(%esp), %esi
 	movl 0x14(%esp), %ecx
 	movl %ecx, %eax
-	incl %ecx
 __copy_user_pagefault:
-	rep movsd
+	rep movsb
 	popl %edi
 	popl %esi
 	ret
 
 __pop_edi_esi_fixup:
+	movl $0xffffffff, %eax
 	popl %edi
 	popl %esi
-	movl $0xffffffff, %eax
 	ret
-
 .data
 .section .rodata.pagefault
 	.long __strlen_pagefault
