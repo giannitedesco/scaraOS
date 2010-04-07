@@ -48,7 +48,6 @@ void task_init_kthread(struct task *tsk,
 	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __KERNEL_DS;
 	tss->ss0 = tss->ss;
 	tss->cs = __KERNEL_CS;
-	tss->eip = (vaddr_t)kthread_init;
 	tss->esp = (vaddr_t)tsk + PAGE_SIZE;
 	tss->sp0 = tss->esp;
 	tss->flags = (1 << 9);
@@ -56,9 +55,12 @@ void task_init_kthread(struct task *tsk,
 	tss->io_bitmap_base = 0x8000;
 
 	/* push arguments to kthread init */
-	task_push_word(tsk, (vaddr_t)priv);
-	task_push_word(tsk, (vaddr_t)thread_func);
-	task_push_word(tsk, 0x13371337); /* return address */
+	if ( thread_func ) {
+		tss->eip = (vaddr_t)kthread_init;
+		task_push_word(tsk, (vaddr_t)priv);
+		task_push_word(tsk, (vaddr_t)thread_func);
+		task_push_word(tsk, 0x13371337); /* return address */
+	}
 }
 
 void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
@@ -73,12 +75,11 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 
 	store_tr(tr);
 	tr >>= 3;
+	BUG_ON(tr != TSS0 && tr != TSS1);
 	scratch_tr = (tr == TSS0) ? TSS1 : TSS0;
 
 	GDT[scratch_tr].desc = stnd_desc(((vaddr_t)(&scratch)),
 			(sizeof(*tss) - 1),
-			(D_TSS | D_BIG | D_BIG_LIM));
-	GDT[tr].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
 	load_tr(scratch_tr << 3);
 
@@ -91,6 +92,8 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 	tss->cr3 = (vaddr_t)tsk->ctx->arch.pgd;
 	tss->flags = (1 << 9);
 	tss->io_bitmap_base = 0x8000;
+	GDT[tr].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
+			(D_TSS | D_BIG | D_BIG_LIM));
 
 	if ( tr == TSS1 )
 		asm volatile("ljmp %0, $0": : "i"(__TSS1));
@@ -107,6 +110,7 @@ void switch_task(struct task *prev, struct task *next)
 	store_tr(tr);
 
 	tr >>= 3;
+	BUG_ON(tr != TSS0 && tr != TSS1);
 	tr = (tr == TSS0) ? TSS1 : TSS0;
 
 	tss = &next->t.tss;
@@ -118,7 +122,7 @@ void switch_task(struct task *prev, struct task *next)
 		asm volatile("ljmp %0, $0": : "i"(__TSS0));
 }
 
-void ia32_gdt_finalize(void)
+__init void ia32_gdt_finalize(void)
 {
 	struct task *tsk = __this_task;
 	struct ia32_tss *tss;

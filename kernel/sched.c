@@ -75,6 +75,7 @@ __init void sched_init(void)
 	idle_task->name = "[idle]";
 	idle_task->pid = 0;
 	idle_task->ctx = get_kthread_ctx();
+	task_init_kthread(idle_task, NULL, NULL);
 }
 
 /* Put a task on the runq */
