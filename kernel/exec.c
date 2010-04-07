@@ -14,21 +14,29 @@ int _sys_exec(const char *path)
 	unsigned int i;
 	Elf32_Ehdr hdr;
 	size_t phbufsz;
+	char *kpath;
 	ssize_t ret;
 
-	inode = namei(path);
+	kpath = strdup_from_user(path);
+	if ( NULL == kpath )
+		return -1; /* EFAULT or ENOMEM */
+
+	inode = namei(kpath);
 	if ( NULL == inode ) {
-		printk("exec: %s: ENOENT or ENOTDIR\n", path);
+		printk("exec: %s: ENOENT or ENOTDIR\n", kpath);
+		kfree(kpath);
 		return -1;
 	}
 
 	printk("exec: %s: mode 0%lo, %lu bytes in %lu blocks\n",
-		path, inode->i_mode, inode->i_size, inode->i_blocks);
-	
+		kpath, inode->i_mode, inode->i_size, inode->i_blocks);
+
+	kfree(kpath);
+
 	ret = inode->i_iop->pread(inode, &hdr, sizeof(hdr), 0);
 	if ( ret <= 0 || (size_t)ret != sizeof(hdr) ) {
 		printk("exec: unable to read ELF header\n");
-		return ret;
+		return -1;
 	}
 
 	if ( !memcmp(hdr.e_ident, ELFMAG, sizeof(hdr.e_ident)) ) {
@@ -38,17 +46,17 @@ int _sys_exec(const char *path)
 
 	if ( hdr.e_type != ET_EXEC ) {
 		printk("exec: not an ELF executable\n");
-		return -1;
+		return -1; /* ENOEXEC */
 	}
 
 	if ( hdr.e_machine != EM_386 ) {
 		printk("exec: not an IA-32 executable\n");
-		return -1;
+		return -1; /* ENOEXEC */
 	}
 
 	if ( hdr.e_phentsize < sizeof(Elf32_Phdr) ) {
 		printk("exec: Unexpectedly short program header entry size\n");
-		return -1;
+		return -1; /* ENOEXEC */
 	}
 
 	dprintk("exec: Program header contains %u entries\n", hdr.e_phnum);
@@ -80,12 +88,13 @@ int _sys_exec(const char *path)
 		printk("elf: PT_LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
 	}
-	kfree(phbuf);
 
 	/* setup usermode stack */
 	if ( setup_vma(ctx, 0x80000000 - PAGE_SIZE, PAGE_SIZE,
-		PROT_READ|PROT_WRITE|PROT_EXEC, NULL, 0) )
+			PROT_READ|PROT_WRITE, NULL, 0) )
 		goto err_free_ctx;
+
+	kfree(phbuf);
 
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
