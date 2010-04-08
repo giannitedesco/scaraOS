@@ -146,6 +146,9 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 	}
 	printk("\n");
 
+	/* Prints out CPU MHz */
+	calibrate_delay_loop();
+
 	/* Identify CPU features, also needs to be early because
 	 * mm init may need to know which paging features are
 	 * available 
@@ -159,9 +162,6 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 	/* setup the idle task */
 	sched_init();
 	ia32_gdt_finalize();
-
-	/* Prints out CPU MHz */
-	calibrate_delay_loop();
 
 	/* enable hardware interrupts */
 	pic_init();
