@@ -15,7 +15,6 @@
 #include <arch/types.h>
 #include <arch/user.h>
 #include <arch/irq.h>
-#include <arch/io.h>
 
 #include <stdarg.h>
 #include <scaraOS/ctype.h>

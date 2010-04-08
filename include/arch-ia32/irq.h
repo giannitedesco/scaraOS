@@ -3,6 +3,9 @@
 
 #ifndef __ASM__
 
+#define cli() asm volatile("cli")
+#define sti() asm volatile("sti")
+
 /* UP / IRQ locking primitive */
 #define lock_irq(x) asm volatile("pushfl; popl %0; cli":"=g" (x): : "memory")
 #define unlock_irq(x) asm volatile("pushl %0; popfl": :"g" (x): "memory", "cc")

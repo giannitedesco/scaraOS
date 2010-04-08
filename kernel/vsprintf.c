@@ -18,7 +18,6 @@
  * - stole from linux added strlen */
 
 #include <scaraOS/kernel.h>
-#include <arch/io.h>
 #include <arch/div64.h>
 
 #if 0

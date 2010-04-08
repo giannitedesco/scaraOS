@@ -3,9 +3,6 @@
 
 #ifndef __ASM__
 
-#define cli() asm volatile("cli")
-#define sti() asm volatile("sti")
-
 /* INPUT: Non-pausing */
 uint8_t inb (uint32_t port);
 uint16_t inw (uint32_t port);
