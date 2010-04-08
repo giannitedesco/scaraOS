@@ -30,7 +30,7 @@ int _sys_open(const char *fn, unsigned int mode)
 
 	kfree(kfn);
 
-	buf = kmalloc(len);
+	buf = kmalloc(len + 1);
 	if ( NULL == buf )
 		return -1; /* ENOMEM */
 
