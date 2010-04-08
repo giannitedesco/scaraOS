@@ -2,6 +2,7 @@ KERNEL_C_SOURCES = \
 	$(KERNEL_DIR)/mm.c \
 	$(KERNEL_DIR)/blk.c \
 	$(KERNEL_DIR)/blkdev.c \
+	$(KERNEL_DIR)/init.c \
 	$(KERNEL_DIR)/buddy.c \
 	$(KERNEL_DIR)/fork.c \
 	$(KERNEL_DIR)/pagecache.c \

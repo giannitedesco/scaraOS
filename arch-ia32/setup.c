@@ -16,7 +16,6 @@
 #include <arch/8259a.h>
 #include <arch/idt.h>
 #include <arch/gdt.h>
-#include <arch/pci.h>
 #include <arch/multiboot.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
@@ -89,7 +88,7 @@ int _asmlinkage multiboot_check(uint32_t magic, multiboot_info_t *mbi)
 	return 0;
 }
 
-static void do_initcalls(void)
+void do_initcalls(void)
 {
 	initcall_t *fptr;
 
@@ -100,34 +99,6 @@ static void do_initcalls(void)
 		fn();
 	}
 
-}
-
-static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
-
-/* Init task - the job of this task is to initialise all
- * installed drivers, mount the root filesystem and
- * bootstrap the system */
-static int init_task(void *priv)
-{
-	uint32_t ret;
-
-	/* Initialise kernel subsystems */
-	blk_init();
-	vfs_init();
-	pci_init();
-
-	do_initcalls();
-
-	/* Mount the root filesystem etc.. */
-	if ( vfs_mount_root("ext2", "floppy0") ) {
-		panic("Unable to mount root filesystem\n");
-	}
-
-	ret = _kernel_exec("/bin/bash");
-	ret = _kernel_exec("/sbin/init");
-	printk("exec: /sbin/init: %i\n", (int)ret);
-
-	return ret;
 }
 
 /* Entry point in to the kernel proper */

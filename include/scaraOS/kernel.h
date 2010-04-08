@@ -47,6 +47,8 @@ _printf(1, 2) _noreturn void panic(const char *, ...);
 #define driver_init(fn) __initcall(fn)
 typedef void (*initcall_t)(void);
 #define __initcall(fn) __init_call initcall_t __initcall_##fn = fn
+void do_initcalls(void);
+int init_task(void *priv);
 
 /* vsprintf */
 unsigned long simple_strtoul(const char *,char **,unsigned int);
