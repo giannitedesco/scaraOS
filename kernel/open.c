@@ -7,10 +7,8 @@
 int _sys_open(const char *fn, unsigned int mode)
 {
 	struct inode *inode;
+	struct fdt_entry *fd;
 	char *kfn;
-	char *buf;
-	size_t len;
-	ssize_t ret;
 
 	kfn = strdup_from_user(fn, UACCESS_KERNEL_OK);
 	if ( NULL == kfn )
@@ -22,32 +20,9 @@ int _sys_open(const char *fn, unsigned int mode)
 		kfree(kfn);
 		return -1;
 	}
-
-	len = inode->i_size;
-
-	printk("open: %s: mode 0%lo, %lu bytes in %lu blocks\n",
-		kfn, inode->i_mode, len, inode->i_blocks);
-
+  
+	fd = fdt_entry_add(inode, mode);
 	kfree(kfn);
 
-	buf = kmalloc(len + 1);
-	if ( NULL == buf )
-		return -1; /* ENOMEM */
-
-	memset(buf, '\0', len);
-
-	ret = inode->i_iop->pread(inode, buf, len, 0);
-	if ( ret <= 0 || (size_t)ret != len ) {
-		printk("open: unable to read: expected %lu, got %lu.\n",
-			len, (size_t)ret);
-		kfree(buf);
-		return -1;
-	}
-
-	if ( buf[len] != '\0' )
-		buf[len] = '\0';
-
-	printk("open: data: %s.\n", buf);
-	kfree(buf);
-	return 0;
+	return fd->handle;
 }

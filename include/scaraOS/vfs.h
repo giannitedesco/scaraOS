@@ -95,6 +95,7 @@ void vfs_init(void);
 void _inode_cache_init(void);
 void _dentry_cache_init(void);
 void _mounts_init(void);
+void _fd_table_init(void);
 
 /* MM balancing */
 void vfs_squeeze(void);
@@ -124,5 +125,17 @@ static inline void iput(struct inode *i)
 
 /* Dentry cache interface */
 struct inode *namei(const char *);
+
+/* File descriptor table */
+struct fdt_entry {
+	struct list_head fdt_list;
+	unsigned int handle;
+	struct inode *inode;
+	unsigned int mode;
+};
+
+struct fdt_entry *fdt_entry_add(struct inode *inode, unsigned int mode);
+struct fdt_entry *fdt_entry_retr(unsigned int handle);
+void fdt_entry_del(unsigned int handle);
 
 #endif /* __VFS_HEADER_INCLUDED__ */

@@ -8,7 +8,7 @@ TOPDIR :=  .
 .PHONY: all clean boot_floppy
 TARGET: all
 
-LDFLAGS := -melf_i386 -nostdlib -N --strip-all
+LDFLAGS := -melf_i386 -nostdlib -N --strip-all -e_start
 CFLAGS  := -pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
@@ -43,7 +43,7 @@ $(C_RUNTIME): $(CRT_OBJ)
 
 %: %.o $(C_RUNTIME)
 	@echo " [LINK] $@"
-	@$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) -o $@ $^
 
 INIT_C_SOURCES := init.c
 INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))
