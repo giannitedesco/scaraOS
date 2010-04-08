@@ -13,13 +13,17 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 	if ( off + len > i->i_size )
 		len = i->i_size - off;
 
-	first_block = off & ~(i->i_sb->s_blocksize - 1);
-	last_block = (off + len) & ~(i->i_sb->s_blocksize - 1);
+	first_block = off / i->i_sb->s_blocksize;
+	last_block = (off + len) / i->i_sb->s_blocksize;
 	num_blk = last_block - first_block;
 	dprintk("EXT2: pread %lu @ %lu: blocks %lu - %lu\n",
 		len, off, first_block, last_block);
 
-	BUG_ON(last_block >= EXT2_NDIR_BLOCKS);
+	//BUG_ON(last_block >= EXT2_NDIR_BLOCKS);
+	if ( last_block >= EXT2_NDIR_BLOCKS ) {
+		printk("%u >= %u\n", last_block, EXT2_NDIR_BLOCKS);
+		return -1;
+	}
 
 	for(copied = 0, x = first_block; x <= last_block; x++) {
 		size_t clen, coff;
