@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	_write(STDOUT_FILENO, (void *)0xdeadbeef, 20);
 
-	switch(fork()) {
+	switch(vfork()) {
 	case -1:
 		_write(STDOUT_FILENO, "Fork failed!\n", 13);
 		break;

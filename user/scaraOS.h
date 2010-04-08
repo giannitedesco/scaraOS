@@ -36,6 +36,7 @@ static inline int _fork(unsigned int flags, void (*fn)(void *),
 
 /* POSIX */
 pid_t fork(void);
+pid_t vfork(void);
 
 /* string */
 void itoa(char *buf, int base, int d);
