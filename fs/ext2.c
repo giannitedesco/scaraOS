@@ -19,11 +19,7 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 	dprintk("EXT2: pread %lu @ %lu: blocks %lu - %lu\n",
 		len, off, first_block, last_block);
 
-	//BUG_ON(last_block >= EXT2_NDIR_BLOCKS);
-	if ( last_block >= EXT2_NDIR_BLOCKS ) {
-		printk("%u >= %u\n", last_block, EXT2_NDIR_BLOCKS);
-		return -1;
-	}
+	BUG_ON(last_block >= EXT2_NDIR_BLOCKS);
 
 	for(copied = 0, x = first_block; x <= last_block; x++) {
 		size_t clen, coff;
