@@ -104,14 +104,6 @@ static void do_initcalls(void)
 
 static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
 
-#if MULTI_TASKING_DEMO
-static int dumb_task(void *priv)
-{
-	_kernel_exec((char *)priv);
-	return 123;
-}
-#endif
-
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
  * bootstrap the system */
@@ -130,12 +122,6 @@ static int init_task(void *priv)
 	if ( vfs_mount_root("ext2", "floppy0") ) {
 		panic("Unable to mount root filesystem\n");
 	}
-
-	/* pre-emptive multi-tasking demo */
-#if MULTI_TASKING_DEMO
-	kernel_thread("[cpuhog-A]", dumb_task, "/bin/cpuhog-a");
-	kernel_thread("[cpuhog-B]", dumb_task, "/bin/cpuhog-b");
-#endif
 
 	ret = _kernel_exec("/bin/bash");
 	ret = _kernel_exec("/sbin/init");

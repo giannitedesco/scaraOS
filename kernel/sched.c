@@ -147,11 +147,6 @@ int kernel_thread(const char *proc_name,
 	return tsk->pid;
 }
 
-int _sys_fork(uint32_t flags)
-{
-	return -1;
-}
-
 /* Crappy round-robin type scheduler, just picks the
  * next task on the run queue
  */

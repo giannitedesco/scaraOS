@@ -2,13 +2,16 @@
 #define _SCARAOS_H
 
 #include <scaraOS/compiler.h>
-#include <arch/types.h>
+#include <scaraOS/types.h>
 #include <scaraOS/syscall.h>
 
 /* CRT */
 int main(int argc, char **argv);
 
 /* stdlib */
+#define INT_MAX		((int)(~0U>>1))
+#define INT_MIN		(-INT_MAX - 1)
+#define UINT_MAX	(~0U)
 #define NULL 		((void *)0)
 #define EXIT_SUCCESS 	0
 #define EXIT_FAILURE 	1
@@ -18,11 +21,21 @@ int main(int argc, char **argv);
 
 /* syscalls */
 int _exit(unsigned int code);
+int __fork(unsigned int flags, void *, void *priv, void *stack);
 int _exec(const char *path);
 int _open(const char *fn, unsigned int mode);
 int _close(int fd);
 ssize_t _read(int fd, void *ptr, size_t count);
 ssize_t _write(int fd, const void *ptr, size_t count);
+
+static inline int _fork(unsigned int flags, void (*fn)(void *),
+			void *priv, void *stack)
+{
+	return __fork(flags, (void *)fn, priv, stack);
+}
+
+/* POSIX */
+pid_t fork(void);
 
 /* string */
 void itoa(char *buf, int base, int d);

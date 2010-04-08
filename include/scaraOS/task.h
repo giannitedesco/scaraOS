@@ -58,6 +58,5 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot);
 
 /* System calls */
 _noreturn void _sys_exit(uint32_t code);
-int _sys_fork(uint32_t flags);
 
 #endif /* __TASK_HEADER_INCLUDED__ */

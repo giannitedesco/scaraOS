@@ -19,7 +19,8 @@
 		asm volatile ("xchgl %%edi,%%ebx\n"			\
 				"int $0xff\n"				\
 				"xchgl %%ebx,%%edi\n"			\
-				: "=a" (ret) : "0" (nr), "D" (arg1));	\
+				: "=a" (ret) : "0" (nr), 		\
+				"D" (arg1));				\
 		return ret;						\
 	}
 
@@ -30,7 +31,8 @@
 		asm volatile ("xchgl %%edi,%%ebx\n"			\
 				"int $0xff\n"				\
 				"xchgl %%edi,%%ebx\n"			\
-				: "=a" (ret) : "0" (nr), "D" (arg1),	\
+				: "=a" (ret) : "0" (nr), 		\
+					"D" (arg1),			\
 					"c" (arg2));			\
 		return ret;						\
 	}
@@ -42,8 +44,10 @@
 		asm volatile ("xchgl %%edi,%%ebx\n"			\
 				"int $0xff\n"				\
 				"xchgl %%edi,%%ebx\n"			\
-				: "=a" (ret) : "0" (nr), "D" (arg1),	\
-					"c" (arg2), "d" (arg3));	\
+				: "=a" (ret) : "0" (nr), 		\
+					"D" (arg1),			\
+					"c" (arg2), 			\
+					"d" (arg3));			\
 		return ret;						\
 	}
 
@@ -55,8 +59,11 @@
 				"int $0xff\n"				\
 				"xchgl %%edi,%%ebx\n"			\
 				: "=a" (ret) : 				\
-				"0" (nr), "D" (arg1),			\
-				"c" (arg2), "d" (arg3), "S" (arg4));	\
+				"0" (nr), 				\
+				"D" (arg1),				\
+				"c" (arg2), 				\
+				"d" (arg3), 				\
+				"S" (arg4));				\
 		return ret;						\
 	}
 
@@ -69,9 +76,12 @@
 				"int $0xff\n"				\
 				"movl %7, %%ebx\n"			\
 				: "=a" (ret) : 				\
-				"0" (nr), "rm" (arg1),			\
-				"c" (arg2), "d" (arg3), 		\
-				"S" (arg4), "D" (arg5));		\
+				"0" (nr), 				\
+				"rm" (arg1),				\
+				"c" (arg2), 				\
+				"d" (arg3), 				\
+				"S" (arg4), 				\
+				"D" (arg5));				\
 		return ret;						\
 	}
 #endif /* __ASM__ */

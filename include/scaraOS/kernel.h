@@ -8,11 +8,11 @@
 #define NULL 		((void *)0)
 
 #include <scaraOS/compiler.h>
+#include <scaraOS/types.h>
 #include <scaraOS/endian.h>
 #include <scaraOS/list.h>
 #include <scaraOS/rbtree.h>
 
-#include <arch/types.h>
 #include <arch/user.h>
 #include <arch/irq.h>
 
@@ -23,17 +23,6 @@
 #define __init		_section(".text.init")
 #define __initdata	_section(".data.init")
 #define __init_call	_section(".initcall.init")
-
-/* Kernel types */
-typedef uint32_t pid_t;
-typedef uint32_t block_t;
-typedef uint32_t ino_t;
-typedef uint32_t uid_t;
-typedef uint32_t gid_t;
-typedef uint32_t nlink_t;
-typedef uint32_t loff_t;
-typedef uint32_t off_t;
-typedef uint32_t umode_t;
 
 /* Common kernel API stuff */
 #if DEBUG_MODULE

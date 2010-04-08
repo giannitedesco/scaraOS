@@ -2,6 +2,7 @@
 #include <arch/regs.h>
 #include <arch/syscalls.h>
 #include <scaraOS/task.h>
+#include <scaraOS/fork.h>
 
 #include <scaraOS/exec.h>
 
@@ -18,7 +19,6 @@ struct syscall_desc {
 };
 
 _noreturn void _sys_exit(uint32_t code);
-int _sys_fork(uint32_t flags);
 
 static int _sys_open(const char *fn, unsigned int flags)
 {
@@ -64,7 +64,7 @@ static int _sys_write(int fd, void *buf, size_t count)
 
 static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
 	[_SYS_exit] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_exit },
-	[_SYS_fork] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_fork },
+	[_SYS_fork] {.type = _SYS_ARG4, .u.arg4 = (sys4_t)_sys_fork },
 	[_SYS_exec] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_exec },
 	[_SYS_open] {.type = _SYS_ARG2, .u.arg2 = (sys2_t)_sys_open },
 	[_SYS_close] {.type = _SYS_ARG1, .u.arg1 = (sys1_t)_sys_close },
@@ -79,6 +79,7 @@ void syscall_exc(volatile struct intr_ctx ctx)
 
 	if ( ctx.eax >= _SYS_NR_SYSCALLS ) {
 		printk("Unknown syscall %lu\n", ctx.eax);
+		ctx.eax = -1;
 		return;
 	}
 
