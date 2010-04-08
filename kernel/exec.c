@@ -2,7 +2,6 @@
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
 #include <scaraOS/vfs.h>
-#include <arch/mm.h>
 #include <scaraOS/elf.h>
 #include <scaraOS/exec.h>
 

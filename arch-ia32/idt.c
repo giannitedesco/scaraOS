@@ -92,8 +92,7 @@ void ctx_dump(struct intr_ctx *ctx)
 
 static void page_fault(struct intr_ctx *ctx)
 {
-	if ( (ctx->err_code & (PAGEFAULT_PROTECTION|PAGEFAULT_USER))
-			== PAGEFAULT_USER ) {
+	if ( 0 == (ctx->err_code & (PAGEFAULT_PROTECTION)) ) {
 		unsigned prot;
 		if ( (ctx->err_code & PAGEFAULT_WRITE) )
 			prot = PROT_WRITE;
