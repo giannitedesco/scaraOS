@@ -97,7 +97,7 @@ $(KERNEL_DIR)/kernel.a: $(KERNEL_OBJ)
 $(ARCH_DIR)/arch.a: $(ARCH_OBJ)
 $(FS_DIR)/fs.a: $(FS_OBJ)
 
-kernel.elf: $(ALL_DEPS) $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
+kernel.elf: Makefile $(ALL_DEPS) $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	@echo " [LINK] $@"
 	@$(LD) $(LDFLAGS) -T $(ARCH_DIR)/kernel.lnk -o $@ \
 		--whole-archive $(IMAGE_OBJ)
@@ -111,7 +111,7 @@ kernel.elf.gz: kernel.elf.stripped
 	@echo " [COMPRESS] $@"
 	@gzip -c < $< > $@
 
-all: Makefile kernel.elf.gz
+all: kernel.elf.gz
 
 boot.img: kernel.elf.gz menu.lst
 	@echo " [BOOTFLOPPY] $@"
