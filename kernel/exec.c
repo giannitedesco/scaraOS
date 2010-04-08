@@ -17,7 +17,7 @@ int _sys_exec(const char *path)
 	char *kpath;
 	ssize_t ret;
 
-	kpath = strdup_from_user(path);
+	kpath = strdup_from_user(path, UACCESS_KERNEL_OK);
 	if ( NULL == kpath )
 		return -1; /* EFAULT or ENOMEM */
 

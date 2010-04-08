@@ -86,24 +86,28 @@ void memcpy(void *dst, const void *src, size_t n);
 char *strchr(const char *str, int c);
 void memset(void *dst, int c, size_t n);
 
+#define UACCESS_KERNEL_OK (1 << 0)
+
 /* Userspace access */
-static inline int strlen_from_user(const char *d)
+static inline int strlen_from_user(const char *d, unsigned flags)
 {
 	size_t max;
 
-	//max = uaddr_maxstr((vaddr_t)d);
-	//if ( 0 == max )
-	//	return -1;
-	max = ~0;
+	if ( flags & UACCESS_KERNEL_OK ) {
+		max = ~0;
+	}else{
+		max = uaddr_maxstr((vaddr_t)d);
+		if ( 0 == max )
+			return -1;
+	}
 
 	return __strnlen_from_user(d, max);
 }
 
 static inline int copy_from_user(char *d, const char *s, size_t c)
 {
-	/* how to allow kernel init task to exec? */
-	//if ( !uaddr_ok((vaddr_t)s, c) )
-	//	return -1;
+	if ( !uaddr_ok((vaddr_t)s, c) )
+		return -1;
 	return __copy_from_user(d, s, c);
 }
 
@@ -118,12 +122,12 @@ _malloc void *kmalloc(size_t sz);
 _malloc void *kmalloc0(size_t sz);
 void kfree(void *);
 
-static inline char *strdup_from_user(const char *uptr)
+static inline char *strdup_from_user(const char *uptr, unsigned flags)
 {
 	char *ret;
 	int sz, ssz;
 
-	sz = strlen_from_user(uptr);
+	sz = strlen_from_user(uptr, flags);
 	if ( sz <= 0 )
 		return NULL;
 
@@ -133,7 +137,10 @@ static inline char *strdup_from_user(const char *uptr)
 	if ( NULL == ret )
 		return NULL;
 
-	ssz = copy_from_user(ret, uptr, sz);
+	if ( flags & UACCESS_KERNEL_OK )
+		ssz = __copy_from_user(ret, uptr, sz);
+	else
+		ssz = copy_from_user(ret, uptr, sz);
 	if ( ssz != sz || ret[sz - 1] != '\0' ) {
 		kfree(ret);
 		return NULL;
