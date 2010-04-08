@@ -57,11 +57,15 @@ CPUHOGB_C_SOURCES := cpuhog-b.c
 CPUHOGB_OBJ := $(patsubst %.c, %.o, $(CPUHOGB_C_SOURCES))
 cpuhog-b: $(CPUHOGB_OBJ)
 
-ALL_TARGETS := $(C_RUNTIME) init cpuhog-a cpuhog-b
+CAT_C_SOURCES := cat.c
+CAT_OBJ := $(patsubst %.c, %.o, $(CAT_C_SOURCES))
+cat: $(CAT_OBJ)
 
-ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ) $(CPUHOGA_OBJ) $(CPUHOGB_OBJ)
+ALL_TARGETS := $(C_RUNTIME) init cpuhog-a cpuhog-b cat
+
+ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ) $(CPUHOGA_OBJ) $(CPUHOGB_OBJ) $(CAT_OBJ)
 ALL_ASM := $(CRT_ASM_SOURCES)
-ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES) $(CPUHOG_A_SOURCES) $(CPUHOGB_SOURCES)
+ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES) $(CPUHOGA_C_SOURCES) $(CPUHOGB_C_SOURCES) $(CAT_C_SOURCES)
 
 ALL_DEP :=  $(patsubst %.S, %.d, $(ALL_ASM)) \
 		$(patsubst %.c, %.d, $(ALL_C) )
