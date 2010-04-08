@@ -53,7 +53,7 @@ struct fdt_entry *fdt_entry_retr(unsigned int handle)
 
 void fdt_entry_del(unsigned int handle)
 {
-	struct fdt_entry *fdt, *tmp, *dead;
+	struct fdt_entry *fdt, *tmp;
 
 	if ( list_empty(&file_descriptors) )
 		return;
@@ -62,8 +62,7 @@ void fdt_entry_del(unsigned int handle)
 		fdt = list_entry(tmp->fdt_list.next, struct fdt_entry,
 				fdt_list);
 		if ( fdt->handle == handle ) {
-			dead = list_del(&fdt->list);
-			objcache_free(dead);
+			list_del(&fdt->fdt_list);
 			return;
 		}
 	}

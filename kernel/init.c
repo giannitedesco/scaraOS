@@ -36,7 +36,7 @@ int init_task(void *priv)
 	if ( fd < 3 ) {
 		printk("init_task: open failed, returned %u\n", fd);
 	} else {
-		_kernel_read(fd, *buf, 16);
+		_kernel_read(fd, buf, 16);
 		printk("read: %s\n", buf);
 		_kernel_close(fd);
 	}

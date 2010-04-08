@@ -12,7 +12,7 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 
 	fd = fdt_entry_retr(handle);
 	if ( NULL == fd )
-		return NULL;
+		return -1; /* EMAXFILE */
 
 	kbuf = kmalloc(size + 1);
 	if ( NULL == kbuf )
@@ -25,7 +25,7 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 
 	ret = fd->inode->i_iop->pread(fd->inode, kbuf, size, 0);
 	if ( ret <= 0 || (size_t)ret != size ) {
-		printk("read: bad return, %d instead of %d.\n", ret, size);
+		printk("read: bad return, %d instead of %d.\n", ret, (int)size);
 		kfree(kbuf);
 		return -1;
 	}
@@ -33,6 +33,7 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 	if ( kbuf[size] != '\0' )
 		kbuf[size] = '\0';
 
+	printk("read: %s.\n", kbuf);
 	copy_to_user(buf, kbuf, size);
 
 	kfree(kbuf);

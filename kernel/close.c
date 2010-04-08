@@ -2,7 +2,7 @@
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
 #include <arch/mm.h>
-#include <scaraOS/open.h>
+#include <scaraOS/close.h>
 
 int _sys_close(unsigned int handle)
 {
