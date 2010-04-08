@@ -1,4 +1,5 @@
 #include <scaraOS/kernel.h>
+#include <arch/gdt.h>
 #include <arch/regs.h>
 #include <arch/syscalls.h>
 #include <scaraOS/task.h>
@@ -72,7 +73,7 @@ static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
 	[_SYS_write] {.type = _SYS_ARG3, .u.arg3 = (sys3_t)_sys_write },
 };
 
-void syscall_exc(volatile struct intr_ctx ctx)
+unsigned syscall_exc(volatile struct intr_ctx ctx)
 {
 	const struct syscall_desc *sys;
 	uint32_t ret;
@@ -80,7 +81,7 @@ void syscall_exc(volatile struct intr_ctx ctx)
 	if ( ctx.eax >= _SYS_NR_SYSCALLS ) {
 		printk("Unknown syscall %lu\n", ctx.eax);
 		ctx.eax = -1;
-		return;
+		return return_from_intr(&ctx);
 	}
 
 	sys = &syscall_tbl[ctx.eax];
@@ -108,4 +109,5 @@ void syscall_exc(volatile struct intr_ctx ctx)
 	}
 
 	ctx.eax = ret;
+	return return_from_intr(&ctx);
 }

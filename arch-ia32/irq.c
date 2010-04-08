@@ -6,6 +6,8 @@
 
 #include <arch/8259a.h>
 #include <arch/irq.h>
+#include <arch/gdt.h>
+#include <arch/regs.h>
 
 static void irq_null(int irq)
 {
@@ -25,7 +27,7 @@ void set_irq_handler(int irq, irqfn h)
 		irq_fns[irq] = h;
 }
 
-void irq_handler(int irq)
+unsigned irq_handler(uint32_t irq, volatile struct intr_ctx ctx)
 {
 	if ( irq >= 0 && irq < 16 )
 		irq_fns[irq](irq);
@@ -33,4 +35,5 @@ void irq_handler(int irq)
 	irq_eoi(irq);
 
 	sched();
+	return return_from_intr(&ctx);
 }

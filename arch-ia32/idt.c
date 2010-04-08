@@ -165,7 +165,7 @@ static const struct {
 	{EXC_TYPE_FAULT, 0, "SIMD Exception"},
 };
 
-void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
+unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 {
 	static const char * const tname[] = {
 		"UNKNOWN",
@@ -176,7 +176,7 @@ void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 
 	if ( exc[exc_num].handler ) {
 		(*exc[exc_num].handler)((struct intr_ctx *)&ctx);
-		return;
+		return return_from_intr(&ctx);
 	}
 
 	if ( (ctx.cs & __CPL3) == __CPL3 ) {

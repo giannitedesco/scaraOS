@@ -116,6 +116,7 @@ void switch_task(struct task *prev, struct task *next)
 	tss = &next->t.tss;
 	GDT[tr].desc = stnd_desc(((vaddr_t)(tss)), (sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
+
 	if ( tr == TSS1 )
 		asm volatile("ljmp %0, $0": : "i"(__TSS1));
 	else

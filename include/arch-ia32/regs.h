@@ -18,10 +18,23 @@ struct intr_ctx {
 	uint32_t eflags;
 };
 
-_asmlinkage void exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx);
-_asmlinkage void syscall_exc(volatile struct intr_ctx ctx);
+_asmlinkage unsigned irq_handler(uint32_t irq, volatile struct intr_ctx ctx);
+_asmlinkage unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx);
+_asmlinkage unsigned syscall_exc(volatile struct intr_ctx ctx);
 _asmlinkage _noreturn void panic_exc(volatile struct intr_ctx ctx);
 void ctx_dump(struct intr_ctx *ctx);
+
+static inline unsigned return_from_intr(volatile struct intr_ctx *ctx)
+{
+	uint32_t rpl;
+
+	rpl = ctx->cs & __CPL3;
+	if ( 0 == rpl )
+		return __KERNEL_DS;
+
+	BUG_ON(rpl != __CPL3);
+	return __USER_DS | rpl;
+}
 
 #endif
 

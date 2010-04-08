@@ -1,4 +1,5 @@
 #include <arch/idt.h>
+#include <arch/gdt.h>
 
 .globl int_null
 int_null: iret
@@ -8,7 +9,12 @@ int_null: iret
 name:			\
 	pushl $0 ;	\
 	pusha;		\
+	movl $__KERNEL_DS, %eax; \
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	call c_call;	\
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	popa;		\
 	addl $4,%esp ;	\
 	iret;
@@ -19,7 +25,12 @@ _exc##nr:\
 	pushl $0 ;\
 	pusha ;\
 	pushl $##nr ;\
+	movl $__KERNEL_DS, %eax; \
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	call exc_handler ;\
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	addl $4,%esp ;\
 	popa ;\
 	addl $4,%esp ;\
@@ -30,7 +41,12 @@ _exc##nr:\
 _exc##nr:\
 	pusha ;\
 	pushl $##nr ;\
+	movl $__KERNEL_DS, %eax; \
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	call exc_handler ;\
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	addl $4,%esp ;\
 	popa ;\
 	addl $4,%esp ;\
@@ -39,11 +55,18 @@ _exc##nr:\
 #define DO_irq(nr) \
 .globl _irq##nr;\
 _irq##nr:\
+	pushl $0 ;\
 	pusha ;\
 	pushl $##nr;\
+	movl $__KERNEL_DS, %eax; \
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	call irq_handler;\
+	movl %eax, %ds;	\
+	movl %eax, %es;	\
 	addl $4,%esp ;\
 	popa ;\
+	addl $4,%esp ;\
 	iret
 
 DO_intr(_syscall, syscall_exc)
