@@ -1,27 +1,28 @@
 .section .text
 .text
 
-.globl strlen_from_user
-strlen_from_user:
+.globl __strnlen_from_user
+__strnlen_from_user:
 	pushl %esi
 	pushl %edi
 	movl 0xc(%esp), %edi
 	cld
-	movl $0xffffffff, %ecx
-	xor %eax,%eax
+	movl 0x10(%esp), %ecx
+	movl %ecx, %edx
+	xor %eax, %eax
 __strlen_pagefault:
 	repnz scas %es:(%edi),%al
-	not %ecx
-	dec %ecx
-	movl %ecx, %eax
+	incl %ecx
+	subl %ecx, %edx
+	movl %edx, %eax
 	popl %edi
 	popl %esi
 	ret
 
-.globl copy_from_user
-.globl copy_to_user
-copy_from_user:
-copy_to_user:
+.globl __copy_from_user
+.globl __copy_to_user
+__copy_from_user:
+__copy_to_user:
 	pushl %esi
 	pushl %edi
 	movl 0xc(%esp), %edi

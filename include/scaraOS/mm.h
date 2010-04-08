@@ -173,32 +173,4 @@ _malloc void *objcache_alloc0(objcache_t o);
 void objcache_free(void *obj);
 void objcache_free2(objcache_t o, void *obj);
 
-_malloc void *kmalloc(size_t sz);
-_malloc void *kmalloc0(size_t sz);
-void kfree(void *);
-
-static inline char *strdup_from_user(const char *uptr)
-{
-	char *ret;
-	int sz, ssz;
-
-	sz = strlen_from_user(uptr);
-	if ( sz <= 0 )
-		return NULL;
-
-	sz++;
-
-	ret = kmalloc(sz);
-	if ( NULL == ret )
-		return NULL;
-
-	ssz = copy_from_user(ret, uptr, sz);
-	if ( ssz != sz || ret[sz - 1] != '\0' ) {
-		kfree(ret);
-		return NULL;
-	}
-
-	return ret;
-}
-
 #endif /* __MM_HEADER_INCLUDED__ */

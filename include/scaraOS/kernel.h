@@ -13,6 +13,7 @@
 #include <scaraOS/rbtree.h>
 
 #include <arch/types.h>
+#include <arch/user.h>
 #include <arch/irq.h>
 #include <arch/io.h>
 
@@ -86,8 +87,59 @@ char *strchr(const char *str, int c);
 void memset(void *dst, int c, size_t n);
 
 /* Userspace access */
-int strlen_from_user(const char *);
-int copy_from_user(char *, const char *, size_t);
-int copy_to_user(char *, const char *, size_t);
+static inline int strlen_from_user(const char *d)
+{
+	size_t max;
+
+	//max = uaddr_maxstr((vaddr_t)d);
+	//if ( 0 == max )
+	//	return -1;
+	max = ~0;
+
+	return __strnlen_from_user(d, max);
+}
+
+static inline int copy_from_user(char *d, const char *s, size_t c)
+{
+	/* how to allow kernel init task to exec? */
+	//if ( !uaddr_ok((vaddr_t)s, c) )
+	//	return -1;
+	return __copy_from_user(d, s, c);
+}
+
+static inline int copy_to_user(char *d, const char *s, size_t c)
+{
+	if ( !uaddr_ok((vaddr_t)d, c) )
+		return -1;
+	return __copy_to_user(d, s, c);
+}
+
+_malloc void *kmalloc(size_t sz);
+_malloc void *kmalloc0(size_t sz);
+void kfree(void *);
+
+static inline char *strdup_from_user(const char *uptr)
+{
+	char *ret;
+	int sz, ssz;
+
+	sz = strlen_from_user(uptr);
+	if ( sz <= 0 )
+		return NULL;
+
+	sz++;
+
+	ret = kmalloc(sz);
+	if ( NULL == ret )
+		return NULL;
+
+	ssz = copy_from_user(ret, uptr, sz);
+	if ( ssz != sz || ret[sz - 1] != '\0' ) {
+		kfree(ret);
+		return NULL;
+	}
+
+	return ret;
+}
 
 #endif /* __KERNEL_HEADER_INCLUDED__ */
