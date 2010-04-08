@@ -113,7 +113,10 @@ kernel.elf.gz: kernel.elf.stripped
 
 all: kernel.elf.gz
 
-boot.img: kernel.elf.gz menu.lst
+userland:
+	+make -C user boot_floppy BOOT_FLOPPY="../boot.img"
+
+boot.img: userland kernel.elf.gz menu.lst
 	@echo " [BOOTFLOPPY] $@"
 	@e2fsck -y ./boot.img || true
 	@e2cp kernel.elf.gz ./boot.img:kernel
