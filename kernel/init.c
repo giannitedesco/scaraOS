@@ -7,6 +7,7 @@
 #include <arch/pci.h>
 
 static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
+static inline _SYSCALL2(_SYS_open, int, _kernel_open, const char *, unsigned int);
 
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and
@@ -27,6 +28,7 @@ int init_task(void *priv)
 		panic("Unable to mount root filesystem\n");
 	}
 
+	ret = _kernel_open("/test.txt", 0);
 	ret = _kernel_exec("/bin/bash");
 	ret = _kernel_exec("/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
