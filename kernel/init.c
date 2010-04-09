@@ -19,6 +19,7 @@ int init_task(void *priv)
 	uint32_t ret;
 	int fd;
 	char buf[20];
+	int rval;
 
 	/* Initialise kernel subsystems */
 	blk_init();
@@ -36,8 +37,13 @@ int init_task(void *priv)
 	if ( fd < 3 ) {
 		printk("init_task: open failed, returned %u\n", fd);
 	} else {
-		_kernel_read(fd, buf, 16);
-		printk("read: %s\n", buf);
+		rval = _kernel_read(fd, buf, 16);
+		if ( rval <= 0 )
+			printk("read error: %d\n", rval);
+		else {
+			buf[rval] = '\0';
+			printk("read: %s.\n", buf);
+		}
 		_kernel_close(fd);
 	}
 

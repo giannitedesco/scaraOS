@@ -33,8 +33,16 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 	if ( kbuf[size] != '\0' )
 		kbuf[size] = '\0';
 
-	printk("read: %s.\n", kbuf);
-	copy_to_user(buf, kbuf, size);
+	/* This code is required once we're working in userland */
+	/*if ( copy_to_user(buf, kbuf, size) == -1 ) {
+		kfree(kbuf);
+		return -1;
+	}*/
+
+	/* This code is temporary and will cause headaches if not removed
+	 * when the above code is enabled.
+	 */	
+	memcpy(buf, kbuf, size);
 
 	kfree(kbuf);
 	return size;
