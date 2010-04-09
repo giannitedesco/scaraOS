@@ -114,7 +114,7 @@ kernel.elf.gz: kernel.elf.stripped
 all: kernel.elf.gz
 
 userland:
-	+make -C user boot_floppy BOOT_FLOPPY="../boot.img"
+	+$(MAKE) -C user boot_floppy BOOT_FLOPPY="../boot.img"
 
 boot.img: userland kernel.elf.gz menu.lst
 	@echo " [BOOTFLOPPY] $@"
@@ -125,7 +125,7 @@ boot.img: userland kernel.elf.gz menu.lst
 boot_floppy: boot.img
 
 clean:
-	$(RM) -f $(ALL_DEPS) \
+	$(RM) -f $(ALL_DEPS) $(IMAGE_OBJ) \
 		$(KERNEL_OBJ) $(KERNEL_DIR)/kernel.o \
 		$(ARCH_OBJ) $(ARCH_DIR)/arch.o \
 		$(FS_OBJ) $(FS_DIR)/fs.o \
