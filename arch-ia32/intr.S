@@ -9,7 +9,8 @@ int_null: iret
 name:			\
 	pushl $0 ;	\
 	pusha;		\
-	movl $__KERNEL_DS, %eax; \
+	xorl %eax,%eax; \
+	movb $__KERNEL_DS, %al; \
 	movl %eax, %ds;	\
 	movl %eax, %es;	\
 	call c_call;	\
@@ -25,7 +26,8 @@ _exc##nr:\
 	pushl $0 ;\
 	pusha ;\
 	pushl $##nr ;\
-	movl $__KERNEL_DS, %eax; \
+	xorl %eax,%eax; \
+	movb $__KERNEL_DS, %al; \
 	movl %eax, %ds;	\
 	movl %eax, %es;	\
 	call exc_handler ;\
@@ -41,7 +43,8 @@ _exc##nr:\
 _exc##nr:\
 	pusha ;\
 	pushl $##nr ;\
-	movl $__KERNEL_DS, %eax; \
+	xorl %eax,%eax; \
+	movb $__KERNEL_DS, %al; \
 	movl %eax, %ds;	\
 	movl %eax, %es;	\
 	call exc_handler ;\
@@ -58,7 +61,8 @@ _irq##nr:\
 	pushl $0 ;\
 	pusha ;\
 	pushl $##nr;\
-	movl $__KERNEL_DS, %eax; \
+	xorl %eax,%eax; \
+	movb $__KERNEL_DS, %al; \
 	movl %eax, %ds;	\
 	movl %eax, %es;	\
 	call irq_handler;\
