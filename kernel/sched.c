@@ -118,13 +118,21 @@ _noreturn _asmlinkage void kthread_init(int (*thread_func)(void *), void *priv)
 	idle_task_func();
 }
 
+static pid_t next_pid;
+pid_t pid_alloc(void)
+{
+	return ++next_pid;
+}
+
+void pid_release(pid_t pid)
+{
+}
+
 int kernel_thread(const char *proc_name,
 			int (*thread_func)(void *),
 			void *priv)
 {
 	struct task *tsk, *current;
-	static pid_t pid = 1;
-	static pid_t ret;
 
 	tsk = alloc_page();
 	if ( NULL == tsk )
@@ -133,8 +141,7 @@ int kernel_thread(const char *proc_name,
 	current = __this_task;
 	memset(tsk, 0, sizeof(*tsk));
 
-	ret = pid++;
-	tsk->pid = ret;
+	tsk->pid = pid_alloc();
 	tsk->name = proc_name;
 	tsk->ctx = get_kthread_ctx();
 	if ( current->root )

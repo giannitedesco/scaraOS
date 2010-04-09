@@ -33,6 +33,9 @@ struct task {
 	struct inode		*cwd;
 };
 
+pid_t pid_alloc(void);
+void pid_release(pid_t);
+
 void task_set_context(struct task *, struct mem_ctx *);
 
 /* Wait-queue manipulation */
