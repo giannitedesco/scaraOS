@@ -6,9 +6,15 @@
 #include <arch/vga.h>
 #include <arch/io.h>
 
+#define VIDMEM		__va(0xB8000)
+#define MONITOR_NONE    0
+#define MONITOR_COLOUR  1
+#define MONITOR_MONO    2
+#define MONITOR_UNKNOWN 3
+
 static volatile uint8_t *vidmem = (uint8_t *)VIDMEM;
 static uint16_t attrib = 0x0017;
-static signed short xpos, ypos;
+static uint8_t xpos, ypos;
 static unsigned int monitor = MONITOR_NONE;
 
 void vga_preinit(void)
@@ -94,9 +100,14 @@ newline:
 }
 
 /* Set cursor position */
-void vga_curs(uint16_t x, uint16_t y)
+void vga_curs(int x, int y)
 {
 	uint32_t vid_off;
+
+	if ( x < 0 )
+		x = xpos;
+	if ( y < 0 )
+		y = ypos;
 
 	vid_off = (x + y * COLS) * 2;
 	vid_off >>= 1;

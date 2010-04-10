@@ -7,8 +7,7 @@
 #include <scaraOS/kernel.h>
 #include <stdarg.h>
 
-signed short xpos, ypos;
-void vga_curs ( uint16_t x, uint16_t y );
+void vga_curs(int x, int y);
 void vga_put(uint8_t);
 
 static void printkv_unlocked(const char *format, va_list va)
@@ -21,7 +20,7 @@ static void printkv_unlocked(const char *format, va_list va)
 	 * mangling our output */
 	for(i = 0; i < len; i++)
 		vga_put(buf[i]);
-	vga_curs(xpos, ypos);
+	vga_curs(-1, -1);
 }
 
 void printkv(const char *format, va_list va)
