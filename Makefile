@@ -23,7 +23,12 @@ MAKE := make
 LN := ln
 CP := cp
 
+ifdef SPARSE
+GCC := $(CROSS_COMPILE)cgcc
+EXTRA_DEFS+=-Wno-old-initializer
+else
 GCC := $(CROSS_COMPILE)gcc
+endif
 CC  := $(CROSS_COMPILE)gcc
 LD  := $(CROSS_COMPILE)ld
 AR  := $(CROSS_COMPILE)ar
@@ -46,22 +51,19 @@ CFLAGS  :=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	@$(LN) -sf arch-$(ARCH) ./include/arch
 
 # templates
-%.o: %.c ./include/arch Makefile
+%.d %.o: %.c ./include/arch Makefile
 	@echo " [C] $@"
-	@$(GCC) $(CFLAGS) -c -o $@ $<
-%.o: %.S ./include/arch Makefile
+	@$(GCC) $(CFLAGS) \
+		-MMD -MF $(patsubst %.o, %.d, $@) -MT $(patsubst %.d, %.o, $@) \
+		-c -o $(patsubst %.d, %.o, $@) $< 
+%.d %.o: %.S ./include/arch Makefile
 	@echo " [ASM] $@"
-	@$(GCC) $(CFLAGS) -D__ASM__ -c -o $@ $<
+	@$(GCC) $(CFLAGS) -D__ASM__ \
+		-MMD -MF $(patsubst %.o, %.d, $@) -MT $(patsubst %.d, %.o, $@) \
+		-c -o $(patsubst %.d, %.o, $@) $< 
 %.a:
 	@echo " [AR] $@"
 	@$(AR) crs $@ $^
-
-%.d: %.c ./include/arch Makefile
-#	@echo " [DEP:C] $@"
-	@$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
-%.d: %.S ./include/arch Makefile
-#	@echo " [DEP:ASM] $@"
-	@$(GCC) $(CFLAGS) -MM $< -MF $@ -MT $(patsubst %.d, %.o, $@)
 
 include arch-$(ARCH)/Makefile
 include kernel/Makefile
@@ -97,7 +99,7 @@ $(KERNEL_DIR)/kernel.a: $(KERNEL_OBJ)
 $(ARCH_DIR)/arch.a: $(ARCH_OBJ)
 $(FS_DIR)/fs.a: $(FS_OBJ)
 
-kernel.elf: Makefile $(ALL_DEPS) $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
+kernel.elf: Makefile $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	@echo " [LINK] $@"
 	@$(LD) $(LDFLAGS) -T $(ARCH_DIR)/kernel.lnk -o $@ \
 		--whole-archive $(IMAGE_OBJ)
@@ -125,7 +127,7 @@ boot.img: userland kernel.elf.gz menu.lst
 boot_floppy: boot.img
 
 clean:
-	$(RM) -f $(ALL_DEPS) $(IMAGE_OBJ) \
+	$(RM) -f $(IMAGE_OBJ) $(ALL_DEPS) \
 		$(KERNEL_OBJ) $(KERNEL_DIR)/kernel.o \
 		$(ARCH_OBJ) $(ARCH_DIR)/arch.o \
 		$(FS_OBJ) $(FS_DIR)/fs.o \
