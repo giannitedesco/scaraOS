@@ -38,8 +38,10 @@ int init_task(void *priv)
 		printk("init_task: open failed, returned %u\n", fd);
 	} else {
 		rval = _kernel_read(fd, buf, 16);
-		if ( rval <= 0 )
+		if ( rval < 0 )
 			printk("read error: %d\n", rval);
+		else if ( rval == 0 )
+			printk("read returned EOF\n");
 		else {
 			buf[rval] = '\0';
 			printk("read: %s.\n", buf);

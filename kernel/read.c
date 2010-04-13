@@ -27,13 +27,19 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 		size = fd->file->inode->i_size;
 
 	ret = fd->file->inode->i_iop->pread(fd->file->inode, kbuf, size, 0);
-	if ( ret <= 0 || (size_t)ret != size ) {
-		printk("read: bad return, %d instead of %d.\n", ret, (int)size);
+	if ( ret < 0 ) {
+		printk("read: bad return %d.\n", ret);
 		kfree(kbuf);
 		return -1;
 	}
+	if ( ret == 0 ) {
+		kfree(buf);
+		return 0;
+	}
+	if ( ret < (int)size )
+		size = (size_t)ret;
 
-	fd->file->offset = (unsigned int)size;
+	fd->file->offset += (unsigned int)size;
 
 	if ( kbuf[size] != '\0' )
 		kbuf[size] = '\0';
