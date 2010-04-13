@@ -96,15 +96,15 @@ static inline int strlen_from_user(const char *d, unsigned flags)
 
 static inline int copy_from_user(char *d, const char *s, size_t c)
 {
-	if ( !uaddr_ok((vaddr_t)s, c) )
-		return -1;
+/*	if ( !uaddr_ok((vaddr_t)s, c) )
+		return -1; */
 	return __copy_from_user(d, s, c);
 }
 
 static inline int copy_to_user(char *d, const char *s, size_t c)
 {
-	if ( !uaddr_ok((vaddr_t)d, c) )
-		return -1;
+/*	if ( !uaddr_ok((vaddr_t)d, c) )
+		return -1; */
 	return __copy_to_user(d, s, c);
 }
 

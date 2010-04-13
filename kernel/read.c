@@ -6,8 +6,15 @@
 
 int _sys_read(unsigned int handle, char *buf, size_t size)
 {
+	if ( !uaddr_ok((vaddr_t)buf, size) )
+		return -1; /* EINVALID */
+	
+	return kernel_read(handle, buf, size);
+}
+
+int kernel_read(unsigned int handle, char *buf, size_t size)
+{
 	struct fdt_entry *fd;
-	char *kbuf;
 	int ret;
 	struct task *me;
 
@@ -17,44 +24,21 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 	if ( NULL == fd )
 		return -1; /* EMAXFILE */
 
-	kbuf = kmalloc(size + 1);
-	if ( NULL == kbuf )
-		return -1; /* ENOMEM */
-
-	memset(kbuf, '\0', size + 1);
-
 	if ( fd->file->inode->i_size < size )
 		size = fd->file->inode->i_size;
 
-	ret = fd->file->inode->i_iop->pread(fd->file->inode, kbuf, size, 0);
+	ret = fd->file->inode->i_iop->pread(fd->file->inode, buf, size, 0);
 	if ( ret < 0 ) {
 		printk("read: bad return %d.\n", ret);
-		kfree(kbuf);
 		return -1;
 	}
-	if ( ret == 0 ) {
-		kfree(buf);
+	if ( ret == 0 )
 		return 0;
-	}
+
 	if ( ret < (int)size )
 		size = (size_t)ret;
 
 	fd->file->offset += (unsigned int)size;
 
-	if ( kbuf[size] != '\0' )
-		kbuf[size] = '\0';
-
-	/* This code is required once we're working in userland */
-	/*if ( copy_to_user(buf, kbuf, size) == -1 ) {
-		kfree(kbuf);
-		return -1;
-	}*/
-
-	/* This code is temporary and will cause headaches if not removed
-	 * when the above code is enabled.
-	 */	
-	memcpy(buf, kbuf, size);
-
-	kfree(kbuf);
 	return size;
 }
