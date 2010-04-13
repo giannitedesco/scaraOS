@@ -17,7 +17,6 @@ void vfs_init(void)
 	_mounts_init();
 	_inode_cache_init();
 	_dentry_cache_init();
-	_fd_table_init();
 }
 
 /* Add a filesystem type */

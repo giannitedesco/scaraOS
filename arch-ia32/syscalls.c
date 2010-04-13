@@ -6,9 +6,7 @@
 #include <scaraOS/fork.h>
 
 #include <scaraOS/exec.h>
-#include <scaraOS/open.h>
-#include <scaraOS/close.h>
-#include <scaraOS/read.h>
+#include <scaraOS/fcntl.h>
 
 struct syscall_desc {
 	unsigned int type;

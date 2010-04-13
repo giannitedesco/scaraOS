@@ -1,16 +1,19 @@
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/fcntl.h>
 #include <arch/mm.h>
-#include <scaraOS/read.h>
 
 int _sys_read(unsigned int handle, char *buf, size_t size)
 {
 	struct fdt_entry *fd;
 	char *kbuf;
 	int ret;
+	struct task *me;
 
-	fd = fdt_entry_retr(handle);
+	me = __this_task;
+
+	fd = fdt_entry_retr(me->fd_table, handle);
 	if ( NULL == fd )
 		return -1; /* EMAXFILE */
 
@@ -20,10 +23,10 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 
 	memset(kbuf, '\0', size + 1);
 
-	if ( fd->inode->i_size < size )
-		size = fd->inode->i_size;
+	if ( fd->file->inode->i_size < size )
+		size = fd->file->inode->i_size;
 
-	ret = fd->inode->i_iop->pread(fd->inode, kbuf, size, 0);
+	ret = fd->file->inode->i_iop->pread(fd->file->inode, kbuf, size, 0);
 	if ( ret <= 0 || (size_t)ret != size ) {
 		printk("read: bad return, %d instead of %d.\n", ret, (int)size);
 		kfree(kbuf);

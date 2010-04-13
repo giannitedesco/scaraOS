@@ -1,14 +1,17 @@
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/fcntl.h>
 #include <arch/mm.h>
-#include <scaraOS/open.h>
 
 int _sys_open(const char *fn, unsigned int mode)
 {
 	struct inode *inode;
 	struct fdt_entry *fd;
 	char *kfn;
+	struct task *me;
+
+	me = __this_task;
 
 	kfn = strdup_from_user(fn, UACCESS_KERNEL_OK);
 	if ( NULL == kfn )
@@ -21,7 +24,7 @@ int _sys_open(const char *fn, unsigned int mode)
 		return -1;
 	}
   
-	fd = fdt_entry_add(inode, mode);
+	fd = fdt_entry_add(me->fd_table, inode, mode);
 	kfree(kfn);
 
 	return fd->handle;

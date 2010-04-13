@@ -5,6 +5,7 @@
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/fcntl.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
 #include <scaraOS/syscall.h>
@@ -139,6 +140,9 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* start jiffie counter */
 	pit_start_timer1();
+
+	/* initialise fdt logic ready for use */
+	_fdt_init();
 
 	/* Setup the init task */
 	kernel_thread("[init]", init_task, NULL);
