@@ -41,8 +41,9 @@ struct fd_table *fd_table_init (void)
 struct fdt_entry *fdt_entry_add(struct fd_table *fd_table,
 	struct inode *inode, unsigned int mode)
 {
-	struct fdt_entry *fdt_entry;
+	struct fdt_entry *fdt_entry, *fdt, *tmp;
 	struct file *file;
+	unsigned int handle, old_handle;
 
 	fdt_entry = objcache_alloc0(fd_table->fd_alloc);
 	if ( NULL == fdt_entry )
@@ -51,11 +52,27 @@ struct fdt_entry *fdt_entry_add(struct fd_table *fd_table,
 	if ( NULL == file )
 		return NULL;
 
+	if ( list_empty(&fd_table->fds) )
+		handle = 0;
+	else {
+		handle = 0;
+		do {
+			old_handle = handle;
+			list_for_each_entry_safe(fdt, tmp, &fd_table->fds,
+					fdt_list) {
+				fdt = list_entry(tmp->fdt_list.next,
+					struct fdt_entry, fdt_list);
+				if ( fdt->handle == handle )
+					handle++;
+			}
+		} while ( old_handle != handle );
+	}
+
 	file->inode = inode;
 	file->mode = mode;
 	file->offset = 0;
 	file->refcount = 1;
-	fdt_entry->handle = 3; // TODO
+	fdt_entry->handle = handle;
 	fdt_entry->file = file;
 	fdt_entry->refcount = 1;
 	list_add(&fdt_entry->fdt_list, &fd_table->fds);

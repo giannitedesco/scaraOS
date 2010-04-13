@@ -17,7 +17,7 @@ static inline _SYSCALL1(_SYS_close, int, _kernel_close, unsigned int);
 int init_task(void *priv)
 {
 	uint32_t ret;
-	int fd;
+	int fd, prv_fd;
 	char buf[20];
 	int rval;
 
@@ -34,7 +34,7 @@ int init_task(void *priv)
 	}
 
 	fd = _kernel_open("/test.txt", 0);
-	if ( fd < 3 ) {
+	if ( fd < 0 ) {
 		printk("init_task: open failed, returned %u\n", fd);
 	} else {
 		rval = _kernel_read(fd, buf, 16);
@@ -44,6 +44,14 @@ int init_task(void *priv)
 			buf[rval] = '\0';
 			printk("read: %s.\n", buf);
 		}
+		_kernel_close(fd);
+		/* Dirty test to check fd allocation */
+		prv_fd = fd;
+		fd = _kernel_open("/test.txt", 0);
+		if ( fd != prv_fd )
+			printk("init_task: reopen returned different fd!\n");
+		else
+			printk("init_task: reopen returned same fd!\n");
 		_kernel_close(fd);
 	}
 

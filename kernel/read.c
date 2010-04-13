@@ -33,6 +33,8 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 		return -1;
 	}
 
+	fd->file->offset = (unsigned int)size;
+
 	if ( kbuf[size] != '\0' )
 		kbuf[size] = '\0';
 
