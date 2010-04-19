@@ -25,13 +25,18 @@ struct fd_table {
 	objcache_t fd_alloc;
 };
 
+/* Accessors for fd_table and fdt_entry */
 void _fdt_init(void);
 struct fd_table *fd_table_init(void);
-struct fdt_entry *fdt_entry_add(struct fd_table *fd_table,
-	struct inode *inode, unsigned int mode);
+struct fdt_entry *fdt_entry_add(struct fd_table *fd_table, struct file *file);
 struct fdt_entry *fdt_entry_retr(struct fd_table *fd_table,
 	unsigned int handle);
 void fdt_entry_del(struct fd_table *fd_table, unsigned int handle);
+
+/* Accessors for file */
+void _file_init(void);
+struct file *file_new(struct inode *inode, unsigned int mode);
+void file_release(struct file *file);
 
 /* File ops - userspace */
 int _sys_open(const char *fh, unsigned int mode);

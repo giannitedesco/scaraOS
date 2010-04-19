@@ -24,7 +24,7 @@ int _sys_open(const char *fn, unsigned int mode)
 		return -1;
 	}
   
-	fd = fdt_entry_add(me->fd_table, inode, mode);
+	fd = fdt_entry_add(me->fd_table, file_new(inode, mode));
 	kfree(kfn);
 
 	return fd->handle;
