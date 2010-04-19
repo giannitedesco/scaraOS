@@ -28,14 +28,19 @@ struct fd_table {
 /* Accessors for fd_table and fdt_entry */
 void _fdt_init(void);
 struct fd_table *fd_table_init(void);
-struct fdt_entry *fdt_entry_add(struct fd_table *fd_table, struct file *file);
-struct fdt_entry *fdt_entry_retr(struct fd_table *fd_table,
-	unsigned int handle);
+int fdt_entry_add(struct fd_table *fd_table, struct file *file);
+struct file *fdt_entry_retr(struct fd_table *fd_table, unsigned int handle);
 void fdt_entry_del(struct fd_table *fd_table, unsigned int handle);
 
 /* Accessors for file */
 void _file_init(void);
 struct file *file_new(struct inode *inode, unsigned int mode);
+static inline void file_get(struct file *file)
+{
+	if( NULL == file )
+		return;
+	file->refcount++;
+}
 void file_release(struct file *file);
 
 /* File ops - userspace */

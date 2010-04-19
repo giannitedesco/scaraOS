@@ -14,7 +14,7 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 
 int kernel_read(unsigned int handle, char *buf, size_t size)
 {
-	struct fdt_entry *fd;
+	struct file *fd;
 	int ret;
 	struct task *me;
 
@@ -24,10 +24,10 @@ int kernel_read(unsigned int handle, char *buf, size_t size)
 	if ( NULL == fd )
 		return -1; /* EMAXFILE */
 
-	if ( fd->file->inode->i_size < size )
-		size = fd->file->inode->i_size;
+	if ( fd->inode->i_size < size )
+		size = fd->inode->i_size;
 
-	ret = fd->file->inode->i_iop->pread(fd->file->inode, buf, size, 0);
+	ret = fd->inode->i_iop->pread(fd->inode, buf, size, 0);
 	if ( ret < 0 ) {
 		printk("read: bad return %d.\n", ret);
 		return -1;
@@ -38,7 +38,7 @@ int kernel_read(unsigned int handle, char *buf, size_t size)
 	if ( ret < (int)size )
 		size = (size_t)ret;
 
-	fd->file->offset += (unsigned int)size;
+	fd->offset += (unsigned int)size;
 
 	return size;
 }

@@ -7,7 +7,7 @@
 int _sys_open(const char *fn, unsigned int mode)
 {
 	struct inode *inode;
-	struct fdt_entry *fd;
+	int fd;
 	char *kfn;
 	struct task *me;
 
@@ -27,5 +27,5 @@ int _sys_open(const char *fn, unsigned int mode)
 	fd = fdt_entry_add(me->fd_table, file_new(inode, mode));
 	kfree(kfn);
 
-	return fd->handle;
+	return fd;
 }

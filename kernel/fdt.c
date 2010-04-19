@@ -36,14 +36,17 @@ struct fd_table *fd_table_init (void)
 	return fd_table;
 }
 
-struct fdt_entry *fdt_entry_add(struct fd_table *fd_table, struct file *file)
+int fdt_entry_add(struct fd_table *fd_table, struct file *file)
 {
 	struct fdt_entry *fdt_entry, *fdt, *tmp;
 	unsigned int handle, old_handle;
 
+	if ( NULL == file )
+		return -1;
+
 	fdt_entry = objcache_alloc0(fd_table->fd_alloc);
 	if ( NULL == fdt_entry )
-		return NULL;
+		return -1;
 
 	if ( list_empty(&fd_table->fds) )
 		handle = 0;
@@ -65,10 +68,10 @@ struct fdt_entry *fdt_entry_add(struct fd_table *fd_table, struct file *file)
 	fdt_entry->file = file;
 	fdt_entry->refcount = 1;
 	list_add(&fdt_entry->fdt_list, &fd_table->fds);
-	return fdt_entry;
+	return handle;
 }
 
-struct fdt_entry *fdt_entry_retr(struct fd_table *fd_table, unsigned int handle)
+struct file *fdt_entry_retr(struct fd_table *fd_table, unsigned int handle)
 {
 	struct fdt_entry *fdt, *tmp;
 
@@ -79,7 +82,7 @@ struct fdt_entry *fdt_entry_retr(struct fd_table *fd_table, unsigned int handle)
 		fdt = list_entry(tmp->fdt_list.next, struct fdt_entry,
 				fdt_list);
 		if ( fdt->handle == handle )
-			return fdt;
+			return fdt->file;
 	}
 
 	return NULL;
