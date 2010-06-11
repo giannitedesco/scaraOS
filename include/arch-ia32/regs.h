@@ -18,6 +18,8 @@ struct intr_ctx {
 	uint32_t eflags;
 };
 
+_asmlinkage void ret_from_fork_in_child(void);
+
 _asmlinkage unsigned irq_handler(uint32_t irq, volatile struct intr_ctx ctx);
 _asmlinkage unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx);
 _asmlinkage unsigned syscall_exc(volatile struct intr_ctx ctx);

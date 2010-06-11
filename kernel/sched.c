@@ -1,6 +1,6 @@
 /* 
- * Contains scheduling primitives such as the scheduler itself,
- * wait queues and eventually semaphores...
+ * Contains scheduling primitives such as the scheduler itself, access to the
+ * run-queue and wait queues
 */
 
 #include <scaraOS/kernel.h>

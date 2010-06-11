@@ -85,6 +85,7 @@ unsigned syscall_exc(volatile struct intr_ctx ctx)
 	}
 
 	sys = &syscall_tbl[ctx.eax];
+	__this_task->t.intr_ctx = (struct intr_ctx *)&ctx;
 	switch( sys->type ) {
 	case _SYS_ARG0:
 		ret = sys->u.arg0();

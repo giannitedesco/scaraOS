@@ -4,6 +4,14 @@
 .globl int_null
 int_null: iret
 
+.globl ret_from_fork_in_child
+ret_from_fork_in_child:
+	movl %eax, %ds
+	movl %eax, %es
+	popa
+	addl $4,%esp
+	iret
+
 #define DO_intr(name, c_call) \
 .globl name;		\
 name:			\

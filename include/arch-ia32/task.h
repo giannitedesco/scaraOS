@@ -36,6 +36,7 @@ struct ia32_tss {
 /* per-thread state */
 struct thread {
 	struct ia32_tss tss;
+	struct intr_ctx *intr_ctx;
 };
 
 void switch_task(struct task *prev, struct task *next);
@@ -52,6 +53,8 @@ static inline struct task *this_task(void)
 void task_init_kthread(struct task *tsk, 
 			int (*thread_func)(void *),
 			void *priv);
+void task_clone(struct task *parent, struct task *new,
+		vaddr_t ip, vaddr_t sp);
 int task_stack_overflowed(struct task *tsk);
 _noreturn void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp);
 void set_context(struct task *tsk);

@@ -6,6 +6,7 @@
 #include <arch/processor.h>
 #include <arch/descriptor.h>
 #include <arch/gdt.h>
+#include <arch/regs.h>
 
 #define load_tr(tr) asm volatile("ltr %w0"::"q" (tr));
 #define store_tr(tr) asm volatile("str %w0":"=q" (tr));
@@ -60,6 +61,52 @@ void task_init_kthread(struct task *tsk,
 		task_push_word(tsk, (vaddr_t)priv);
 		task_push_word(tsk, (vaddr_t)thread_func);
 		task_push_word(tsk, 0x13371337); /* return address */
+	}
+}
+
+void task_clone(struct task *parent, struct task *new, vaddr_t ip, vaddr_t sp)
+{
+	struct ia32_tss *ptss, *ntss;
+
+	ptss = &parent->t.tss;
+	ntss = &new->t.tss;
+
+	memset(ntss, 0, sizeof(*ntss));
+
+	ntss->cr3 = (vaddr_t)new->ctx->arch.pgd;
+	ntss->fs = ptss->fs;
+	ntss->gs = ptss->gs;
+	ntss->io_bitmap_base = 0x8000;
+
+	ntss->sp0 = (vaddr_t)((uint8_t *)new + PAGE_SIZE);
+	ntss->ss0 = __KERNEL_DS;
+	ntss->flags = (1 << 9);
+
+	if ( sp == MAP_INVALID ) {
+		uint8_t *stack_top;
+		struct intr_ctx *regs;
+
+		ntss->ss = ntss->ds = ntss->es = __KERNEL_DS;
+		ntss->cs = __KERNEL_CS;
+
+		regs = parent->t.intr_ctx;
+
+		stack_top = (uint8_t *)new + PAGE_SIZE;
+		memcpy(stack_top - sizeof(*regs), regs, sizeof(*regs));
+		regs = (struct intr_ctx *)(stack_top - sizeof(*regs));
+		regs->eax = 0;
+
+		ntss->esp = (vaddr_t)regs;
+		ntss->eax = return_from_intr(regs);
+		ntss->eip = (vaddr_t)ret_from_fork_in_child;
+	}else{
+		/* blank kernel stack and prepare to switch straight
+		 * to userspace when new task is scheduled */
+		BUG_ON(ip >= PAGE_OFFSET);
+		ntss->eip = ip;
+		ntss->ss = ntss->ds = ntss->es = __USER_DS | __CPL3;
+		ntss->cs = __USER_CS | __CPL3;
+		ntss->esp = sp;
 	}
 }
 
