@@ -5,7 +5,7 @@
 #include <arch/io.h>
 #include <arch/dma.h>
 
-struct dma{
+static struct dma{
 	uint8_t page;
 	uint8_t addr;
 	uint8_t count;
