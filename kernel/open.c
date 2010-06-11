@@ -29,3 +29,16 @@ int _sys_open(const char *fn, unsigned int mode)
 
 	return fd;
 }
+
+struct file *kernel_open(const char *fn, unsigned int mode)
+{
+	struct inode *inode;
+	
+	inode = namei(fn);
+	if ( NULL == inode ) {
+		printk("open: %s: ENOENT or ENOTDIR\n", fn);
+		return NULL;
+	}
+
+	return file_new(inode, mode);
+}

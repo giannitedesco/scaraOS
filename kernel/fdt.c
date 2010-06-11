@@ -8,7 +8,7 @@
 
 static objcache_t fd_table_alloc;
 
-void _fdt_init (void)
+void _fdt_init(void)
 {
 	fd_table_alloc = objcache_init(NULL, "fd_table_alloc",
 		sizeof(struct fd_table));
@@ -16,7 +16,7 @@ void _fdt_init (void)
 	_file_init();
 }
 
-struct fd_table *fd_table_init (void)
+struct fd_table *fd_table_init(void)
 {
 	struct fd_table *fd_table;
 

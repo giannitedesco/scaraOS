@@ -49,6 +49,8 @@ int _sys_read(unsigned int fd, char * buf, size_t size);
 int _sys_close(unsigned int fd);
 
 /* File ops - kernelspace */
-int kernel_read(unsigned int fd, char * buf, size_t size);
+int kernel_read(struct file *file, char * buf, size_t size);
+struct file *kernel_open(const char *fh, unsigned int mode);
+void kernel_close(struct file *file);
 
 #endif /* _SCARAOS_FCNTL_H */

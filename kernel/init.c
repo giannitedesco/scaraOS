@@ -8,7 +8,7 @@
 
 static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
 static inline _SYSCALL2(_SYS_open, int, _kernel_open, const char *, unsigned int);
-static inline _SYSCALL3(_SYS_read, int, _kernel_read, unsigned int, char *, size_t);
+static inline _SYSCALL3(_SYS_read, int, _kernel_read, struct file *, char *, size_t);
 static inline _SYSCALL1(_SYS_close, int, _kernel_close, unsigned int);
 
 /* Init task - the job of this task is to initialise all
@@ -17,7 +17,7 @@ static inline _SYSCALL1(_SYS_close, int, _kernel_close, unsigned int);
 int init_task(void *priv)
 {
 	uint32_t ret;
-	int fd, prv_fd;
+	struct file *file;
 	char buf[20];
 	int rval;
 
@@ -33,11 +33,11 @@ int init_task(void *priv)
 		panic("Unable to mount root filesystem\n");
 	}
 
-	fd = _kernel_open("/test.txt", 0);
-	if ( fd < 0 ) {
-		printk("init_task: open failed, returned %u\n", fd);
+	file = kernel_open("/test.txt", 0);
+	if ( NULL == file ) {
+		printk("init_task: open failed, returned %u\n", -1);
 	} else {
-		rval = kernel_read(fd, buf, 16);
+		rval = kernel_read(file, buf, 16);
 		if ( rval < 0 )
 			printk("read error: %d\n", rval);
 		else if ( rval == 0 )
@@ -46,15 +46,7 @@ int init_task(void *priv)
 			buf[rval] = '\0';
 			printk("read: %s.\n", buf);
 		}
-		_kernel_close(fd);
-		/* Dirty test to check fd allocation */
-		prv_fd = fd;
-		fd = _kernel_open("/test.txt", 0);
-		if ( fd != prv_fd )
-			printk("init_task: reopen returned different fd!\n");
-		else
-			printk("init_task: reopen returned same fd!\n");
-		_kernel_close(fd);
+		kernel_close(file);
 	}
 
 	ret = _kernel_exec("/bin/bash");
