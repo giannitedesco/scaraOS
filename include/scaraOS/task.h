@@ -5,6 +5,7 @@ struct task;
 
 #include <arch/task.h>
 #include <scaraOS/mm.h>
+#include <scaraOS/fcntl.h>
 
 #define TASK_RUNNING	0
 #define TASK_READY	1
@@ -31,6 +32,7 @@ struct task {
 	/* Filesystem info */
 	struct inode		*root;
 	struct inode		*cwd;
+	struct fd_table		*fd_table;
 };
 
 pid_t pid_alloc(void);

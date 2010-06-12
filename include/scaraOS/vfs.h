@@ -95,6 +95,7 @@ void vfs_init(void);
 void _inode_cache_init(void);
 void _dentry_cache_init(void);
 void _mounts_init(void);
+void _fd_table_init(void);
 
 /* MM balancing */
 void vfs_squeeze(void);

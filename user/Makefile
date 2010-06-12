@@ -8,7 +8,7 @@ TOPDIR :=  .
 .PHONY: all clean boot_floppy
 TARGET: all
 
-LDFLAGS := -melf_i386 -nostdlib --no-omagic --strip-all
+LDFLAGS := -melf_i386 -nostdlib -N --strip-all -e_start
 CFLAGS  := -pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
@@ -43,7 +43,7 @@ $(C_RUNTIME): $(CRT_OBJ)
 
 %: %.o $(C_RUNTIME)
 	@echo " [LINK] $@"
-	@$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) -o $@ $^
 
 INIT_C_SOURCES := init.c
 INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))
@@ -57,11 +57,15 @@ CPUHOGB_C_SOURCES := cpuhog-b.c
 CPUHOGB_OBJ := $(patsubst %.c, %.o, $(CPUHOGB_C_SOURCES))
 cpuhog-b: $(CPUHOGB_OBJ)
 
-ALL_TARGETS := $(C_RUNTIME) init cpuhog-a cpuhog-b
+CAT_C_SOURCES := cat.c
+CAT_OBJ := $(patsubst %.c, %.o, $(CAT_C_SOURCES))
+cat: $(CAT_OBJ)
 
-ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ) $(CPUHOGA_OBJ) $(CPUHOGB_OBJ)
+ALL_TARGETS := $(C_RUNTIME) init cpuhog-a cpuhog-b cat
+
+ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ) $(CPUHOGA_OBJ) $(CPUHOGB_OBJ) $(CAT_OBJ)
 ALL_ASM := $(CRT_ASM_SOURCES)
-ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES) $(CPUHOG_A_SOURCES) $(CPUHOGB_SOURCES)
+ALL_C   := $(CRT_C_SOURCES) $(INIT_C_SOURCES) $(CPUHOGA_C_SOURCES) $(CPUHOGB_C_SOURCES) $(CAT_C_SOURCES)
 
 ALL_DEP :=  $(patsubst %.S, %.d, $(ALL_ASM)) \
 		$(patsubst %.c, %.d, $(ALL_C) )

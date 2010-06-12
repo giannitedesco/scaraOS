@@ -6,6 +6,7 @@
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
+#include <scaraOS/fcntl.h>
 
 static LIST_HEAD(runq);
 static LIST_HEAD(delq);
@@ -148,6 +149,7 @@ int kernel_thread(const char *proc_name,
 		tsk->root = iref(current->root);
 	if ( current->cwd )
 		tsk->cwd = iref(current->cwd);
+	tsk->fd_table = fd_table_init();
 	task_init_kthread(tsk, thread_func, priv);
 
 	task_to_runq(tsk);

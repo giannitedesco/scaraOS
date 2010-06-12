@@ -6,6 +6,7 @@
 #include <scaraOS/fork.h>
 
 #include <scaraOS/exec.h>
+#include <scaraOS/fcntl.h>
 
 struct syscall_desc {
 	unsigned int type;
@@ -20,24 +21,6 @@ struct syscall_desc {
 };
 
 _noreturn void _sys_exit(uint32_t code);
-
-static int _sys_open(const char *fn, unsigned int flags)
-{
-	printk("sys_open: unimplemented\n");
-	return -1;
-}
-
-static int _sys_close(int fd)
-{
-	printk("sys_close: fd=%i unimplemented\n", fd);
-	return -1;
-}
-
-static int _sys_read(int fd, void *buf, size_t count)
-{
-	printk("sys_read: fd=%i len=%lu unimplemented\n", fd, count);
-	return -1;
-}
 
 static int _sys_write(int fd, void *buf, size_t count)
 {
