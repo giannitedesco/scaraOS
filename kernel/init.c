@@ -33,22 +33,6 @@ int init_task(void *priv)
 		panic("Unable to mount root filesystem\n");
 	}
 
-	file = kernel_open("/test.txt", 0);
-	if ( NULL == file ) {
-		printk("init_task: open failed, returned %u\n", -1);
-	} else {
-		rval = kernel_read(file, buf, 16);
-		if ( rval < 0 )
-			printk("read error: %d\n", rval);
-		else if ( rval == 0 )
-			printk("read returned EOF\n");
-		else {
-			buf[rval] = '\0';
-			printk("read: %s.\n", buf);
-		}
-		kernel_close(file);
-	}
-
 	ret = _kernel_exec("/bin/bash");
 	ret = _kernel_exec("/sbin/init");
 	printk("exec: /sbin/init: %i\n", (int)ret);
