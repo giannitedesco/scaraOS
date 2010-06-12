@@ -7,7 +7,6 @@
 int _sys_read(unsigned int handle, char *buf, size_t size)
 {
 	struct file *fd;
-	int ret;
 	struct task *me;
 
 	if ( !uaddr_ok((vaddr_t)buf, size) )
@@ -17,7 +16,7 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 	fd = fdt_entry_retr(me->fd_table, handle);
 	if ( NULL == fd )
 		return -1; /* EMAXFILE */
-	return kernel_read(fd->file, buf, size);
+	return kernel_read(fd, buf, size);
 }
 
 int kernel_read(struct file *file, char *buf, size_t size)
