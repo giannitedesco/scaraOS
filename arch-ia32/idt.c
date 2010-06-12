@@ -103,7 +103,7 @@ static void page_fault(struct intr_ctx *ctx)
 	}
 
 	if ( ctx->err_code & PAGEFAULT_USER )
-		;//_sys_exit(~0);
+		_sys_exit(~0);
 	else{
 		struct pagefault_fixup *fix;
 		for(fix = &__rodata_pagefault;
@@ -180,7 +180,7 @@ unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 	}
 
 	if ( (ctx.cs & __CPL3) == __CPL3 ) {
-		//_sys_exit(~0);
+		_sys_exit(~0);
 	}
 
 	cli();
