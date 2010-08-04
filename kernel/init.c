@@ -17,9 +17,6 @@ static inline _SYSCALL1(_SYS_close, int, _kernel_close, unsigned int);
 int init_task(void *priv)
 {
 	uint32_t ret;
-	struct file *file;
-	char buf[20];
-	int rval;
 
 	/* Initialise kernel subsystems */
 	blk_init();

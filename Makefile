@@ -11,7 +11,7 @@ KERNEL_DIR := $(TOPDIR)/kernel
 ARCH_DIR := $(TOPDIR)/arch-$(ARCH)
 FS_DIR := $(TOPDIR)/fs
 
-.PHONY: all clean squeaky boot_floppy
+.PHONY: all clean squeaky boot_floppy userland
 
 ## Target toolchain prefix
 CROSS_COMPILE=
@@ -51,13 +51,13 @@ CFLAGS  :=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	@$(LN) -sf arch-$(ARCH) ./include/arch
 
 # templates
-%.d %.o: %.c ./include/arch Makefile
-	@echo " [C] $@"
+%.o %.d: %.c ./include/arch Makefile
+	@echo " [C] $(patsubst %.d, %.c, $@)"
 	@$(GCC) $(CFLAGS) \
 		-MMD -MF $(patsubst %.o, %.d, $@) -MT $(patsubst %.d, %.o, $@) \
 		-c -o $(patsubst %.d, %.o, $@) $< 
 %.d %.o: %.S ./include/arch Makefile
-	@echo " [ASM] $@"
+	@echo " [ASM] $(patsubst %.d, %.S, $@)"
 	@$(GCC) $(CFLAGS) -D__ASM__ \
 		-MMD -MF $(patsubst %.o, %.d, $@) -MT $(patsubst %.d, %.o, $@) \
 		-c -o $(patsubst %.d, %.o, $@) $< 
