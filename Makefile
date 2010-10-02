@@ -91,7 +91,7 @@ ALL_DEPS := $(ARCH_DEP) $(KERNEL_DEP) $(FS_DEP)
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),squeaky)
-include $(ALL_DEPS)
+-include $(ALL_DEPS)
 endif
 endif
 
@@ -127,11 +127,12 @@ boot.img: userland kernel.elf.gz menu.lst
 boot_floppy: boot.img
 
 clean:
-	$(RM) -f $(IMAGE_OBJ) $(ALL_DEPS) \
+	@$(RM) -f $(IMAGE_OBJ) $(ALL_DEPS) \
 		$(KERNEL_OBJ) $(KERNEL_DIR)/kernel.o \
 		$(ARCH_OBJ) $(ARCH_DIR)/arch.o \
 		$(FS_OBJ) $(FS_DIR)/fs.o \
 		kernel.elf kernel.elf.stripped kernel.elf.gz
+	make -C user clean
 
 squeaky: clean
 	$(RM) -f ./include/arch
