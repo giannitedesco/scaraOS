@@ -43,7 +43,7 @@ $(C_RUNTIME): $(CRT_OBJ)
 
 %: %.o $(C_RUNTIME)
 	@echo " [LINK] $@"
-	$(LD) $(LDFLAGS) -o $@ $^
+	@$(LD) $(LDFLAGS) -o $@ $^
 
 INIT_C_SOURCES := init.c
 INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))
@@ -81,4 +81,4 @@ boot_floppy: all
 	@e2cp cpuhog-[ab] $(BOOT_FLOPPY):/sbin/
 
 clean:
-	rm -f $(ALL_OBJ) $(ALL_DEP) $(ALL_TARGETS)
+	@rm -f $(ALL_OBJ) $(ALL_DEP) $(ALL_TARGETS)
