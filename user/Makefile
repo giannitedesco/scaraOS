@@ -71,7 +71,7 @@ ALL_DEP :=  $(patsubst %.S, %.d, $(ALL_ASM)) \
 		$(patsubst %.c, %.d, $(ALL_C) )
 
 ifneq ($(MAKECMDGOALS),clean)
-include $(ALL_DEP)
+-include $(ALL_DEP)
 endif
 
 all: Makefile $(ALL_TARGETS)
