@@ -1,4 +1,3 @@
-#define DEBUG_MODULE 1
 #include <scaraOS/kernel.h>
 #include <scaraOS/mm.h>
 #include <scaraOS/task.h>

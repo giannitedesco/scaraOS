@@ -118,7 +118,7 @@ void _squeeze_inode_cache(void)
 /* Release an inode so that it can be freed under memory pressure */
 void inode_free(struct inode *i)
 {
-	printk("inode %lu ref dropped to 0\n", i->i_ino);
+	dprintk("inode %lu ref dropped to 0\n", i->i_ino);
 	BUG_ON(i->i_count);
 	sem_P(&slacksem);
 	list_add_tail(&i->i_list, &slack_inodes);
