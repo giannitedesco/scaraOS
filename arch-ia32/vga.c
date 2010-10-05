@@ -12,6 +12,9 @@
 #define MONITOR_MONO    2
 #define MONITOR_UNKNOWN 3
 
+#define CRTC_INDEX_REG	0x3d4
+#define CRTC_DATA_REG	0x3d5
+
 static volatile uint8_t *vidmem = (uint8_t *)VIDMEM;
 static uint16_t attrib = 0x0017;
 static uint8_t xpos, ypos;
@@ -111,10 +114,12 @@ void vga_curs(int x, int y)
 
 	vid_off = (x + y * COLS) * 2;
 	vid_off >>= 1;
-	outb(0x3d4, 0x0f);
-	outb(0x3d5, vid_off & 0xfff);
-	outw(0x3d4, 0x0e);
-	outb(0x3d5, vid_off >> 8);
+
+	outb(CRTC_INDEX_REG, 0x0f);
+	outb(CRTC_DATA_REG, vid_off & 0xfff);
+
+	outw(CRTC_INDEX_REG, 0x0e);
+	outb(CRTC_DATA_REG, vid_off >> 8);
 }
 
 void vga_init(void)
