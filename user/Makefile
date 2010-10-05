@@ -79,6 +79,8 @@ all: Makefile $(ALL_TARGETS)
 boot_floppy: all
 	@e2cp init $(BOOT_FLOPPY):/sbin/
 	@e2cp cpuhog-[ab] $(BOOT_FLOPPY):/sbin/
+	@e2cp cat $(BOOT_FLOPPY):/bin/
+	@e2cp ../README $(BOOT_FLOPPY):/README
 
 clean:
 	@rm -f $(ALL_OBJ) $(ALL_DEP) $(ALL_TARGETS)

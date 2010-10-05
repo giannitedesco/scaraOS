@@ -1,27 +1,31 @@
 #include "scaraOS.h"
 
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
-  static const char * const filename = "/test.txt";
-  int FH;
-  char *buf;
-  int len;
+	static const char * const filename = "/README";
+	char buf[512];
+	int fd;
+	int len;
 
-  FH = _open(filename, 0);
-  if ( FH == 1 ) {
-    _write(STDOUT_FILENO, "Failed to open target.\n", 23);
-    return EXIT_FAILURE;
-  }
+	fd = _open(filename, 0);
+	if ( fd == 1 ) {
+		_write(STDOUT_FILENO, "Failed to open target.\n", 23);
+		return EXIT_FAILURE;
+	}
 
-  len = _read(FH, buf, 512);
-  if ( len < 0 ) {
-    _write(STDOUT_FILENO, "Failed to read target.\n", 23);
-    _close(FH);
-    return EXIT_FAILURE;
-  }
+again:
+	len = _read(fd, buf, sizeof(buf));
+	if ( len < 0 ) {
+		_write(STDOUT_FILENO, "Failed to read target.\n", 23);
+		_close(fd);
+		return EXIT_FAILURE;
+	}
 
-  _write(STDOUT_FILENO, buf, len);
-  _close(FH);
+	_write(STDOUT_FILENO, buf, len);
+	if ( len != 0 )
+		goto again;
 
-  return EXIT_SUCCESS;
+	_close(fd);
+
+	return EXIT_SUCCESS;
 }

@@ -32,6 +32,7 @@ int init_task(void *priv)
 
 	ret = _kernel_exec("/bin/bash");
 	ret = _kernel_exec("/sbin/init");
+	ret = _kernel_exec("/bin/cat");
 	printk("exec: /sbin/init: %i\n", (int)ret);
 
 	return ret;
