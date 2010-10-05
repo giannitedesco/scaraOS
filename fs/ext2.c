@@ -9,7 +9,6 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 	size_t first_block, last_block, num_blk, x;
 	struct buffer *bh;
 	ssize_t copied;
-	char kbuf[len];
 
 	if ( off + len > i->i_size )
 		len = i->i_size - off;
@@ -34,15 +33,13 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 				i->i_sb->s_blocksize - coff : len;
 		dprintk("EXT2: got block %lu, copy %lu bytes at %lu\n",
 			i->u.ext2.block[x], clen, coff);
-		memcpy(kbuf, bh->b_buf + coff, clen);
+		memcpy(buf, bh->b_buf + coff, clen);
 		copied += clen;
 		len -= clen;
 		off += clen;
 
 		blk_free(bh);
 	}
-
-	copy_to_user(buf, kbuf, copied);
 
 	return copied;
 }
