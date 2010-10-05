@@ -1,3 +1,11 @@
+Version 0.0.6
+ + 100% correct but non-functional implementation of fork() - gah
+ + Kernel/usermode context switching
+ + Fully protected usermode apps
+ + Implemented open/close/read/write system calls
+ + Implement and use semaphores to protect kernel data structures
+ + Numerous other fixes
+
 Version 0.0.5
  + Fix build on x86_64
  + Register/stack dump on all unhandlex exceptions
