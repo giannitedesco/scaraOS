@@ -61,26 +61,19 @@ CFLAGS  :=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
 	@$(GCC) $(CFLAGS) -D__ASM__ \
 		-MMD -MF $(patsubst %.o, %.d, $@) -MT $(patsubst %.d, %.o, $@) \
 		-c -o $(patsubst %.d, %.o, $@) $< 
-%.a:
-	@echo " [AR] $@"
-	@$(AR) crs $@ $^
 
 include arch-$(ARCH)/Makefile
 include kernel/Makefile
 include fs/Makefile
 
-ARCH_OBJ := $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
-		$(patsubst %.c, %.o, $(ARCH_C_SOURCES))
-KERNEL_OBJ := $(patsubst %.c, %.o, $(KERNEL_C_SOURCES))
-FS_OBJ := $(patsubst %.c, %.o, $(FS_C_SOURCES))
+IMAGE_OBJ := $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
+		$(patsubst %.c, %.o, $(ARCH_C_SOURCES)) \
+		$(patsubst %.c, %.o, $(KERNEL_C_SOURCES)) \
+		$(patsubst %.c, %.o, $(FS_C_SOURCES))
 
 ALL_SOURCES := $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
 		$(KERNEL_C_SOURCES) \
 		$(FS_C_SOURCES)
-
-IMAGE_OBJ := $(ARCH_DIR)/arch.a \
-		$(KERNEL_DIR)/kernel.a \
-		$(FS_DIR)/fs.a
 
 # Generate dependencies
 ARCH_DEP := $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
