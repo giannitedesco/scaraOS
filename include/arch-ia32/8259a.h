@@ -41,13 +41,6 @@ typedef struct pic {
 /* PIC driver functions */
 void pic_init(void);
 
-/* PIC functions */
-void pic_unmask(p_pic, uint8_t);
-void pic_mask(p_pic, uint8_t);
-void pic_sync_imr(p_pic);
-void pic_eoi_cascade(p_pic, uint32_t);
-void pic_eoi(p_pic);
-
 /* PC/AT functions */
 void irq_eoi(uint16_t irq);
 void irq_on(uint16_t);

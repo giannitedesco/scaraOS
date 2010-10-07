@@ -43,35 +43,35 @@ void pic_init(void)
 	unlock_irq(flags);
 }
 
-void pic_unmask(p_pic pic, uint8_t bit)
+static void pic_unmask(p_pic pic, uint8_t bit)
 {
 	pic->imr &= ~(1<<bit);
 	if ( pic->master )
 		pic_unmask(pic->master, pic->cascade.master_pin);
 }
 
-void pic_mask(p_pic pic, uint8_t bit)
+static void pic_mask(p_pic pic, uint8_t bit)
 {
 	pic->imr |= 1<<bit;
 	if ( pic->master )
 		pic_mask(pic->master, pic->cascade.master_pin);
 }
 
-void pic_sync_imr(p_pic pic)
+static void pic_sync_imr(p_pic pic)
 {
 	outb(pic->port_imr, pic->imr);
 	if ( pic->master )
 		pic_sync_imr(pic->master);
 }
 
-void pic_eoi_cascade(p_pic pic, uint32_t pin)
+static void pic_eoi_cascade(p_pic pic, uint32_t pin)
 {
 	if ( pic->master )
 		pic_eoi_cascade(pic->master, pic->cascade.master_pin);
 	outb(pic->port, EOI_SPECIFIC+pin);
 }
 
-void pic_eoi(p_pic pic)
+static void pic_eoi(p_pic pic)
 {
 	if ( pic->master )
 		pic_eoi_cascade(pic->master, pic->cascade.master_pin);
