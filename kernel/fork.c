@@ -11,22 +11,22 @@ int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 
 	current = __this_task;
 
-	printk("fork: flags=0x%x fn=%p priv=%p stack=%p\n",
+	dprintk("fork: flags=0x%x fn=%p priv=%p stack=%p\n",
 		flags, fn, priv, stack);
 
 	if ( flags & FORK_NOFUNC ) {
-		printk("fork: - no thread func\n");
+		dprintk("fork: - no thread func\n");
 		ip = MAP_INVALID;
 		sp = MAP_INVALID;
 		if ( !(flags & FORK_MEM) ) {
-			printk("fork: warning: parent/child "
+			dprintk("fork: warning: parent/child "
 				"sharing same stack\n");
 		}
 	}else{
-		printk("fork: - using thread func %p / stack %p\n", fn, stack);
+		dprintk("fork: - using thread func %p / stack %p\n", fn, stack);
 		if ( !uaddr_ok((vaddr_t)fn, 0) ||
 				!uaddr_ok((vaddr_t)stack, 0) ) {
-			printk("fork: ... which are no damn good\n");
+			dprintk("fork: ... which are no damn good\n");
 			return -1;
 		}
 		ip = (vaddr_t)fn;
@@ -35,10 +35,10 @@ int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 
 	if ( flags & FORK_PID ) {
 		pid = pid_alloc();
-		printk("fork: - new pid %lu\n", pid);
+		dprintk("fork: - new pid %lu\n", pid);
 	}else{
 		pid = current->pid;
-		printk("fork: - keep old pid %lu\n", pid);
+		dprintk("fork: - keep old pid %lu\n", pid);
 	}
 
 	tsk = alloc_page();
