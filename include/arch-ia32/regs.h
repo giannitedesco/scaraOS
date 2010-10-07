@@ -16,6 +16,8 @@ struct intr_ctx {
 	uint32_t eip;
 	uint32_t cs;
 	uint32_t eflags;
+	uint32_t esp3;
+	uint32_t ss;
 };
 
 _asmlinkage void ret_from_fork_in_child(void);
