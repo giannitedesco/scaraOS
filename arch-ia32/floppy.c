@@ -1,13 +1,8 @@
 /* 
  * PC/AT/PS2 floppy driver
  *
- * Features
- *  o Supports reading
- *  o Multi-threaded seeks/reads
- *  
  * TODO
  *  o Generic command function
- *  o Protect critical regions with semaphores
  *  o Write support (should be easy)
  *  o Support more than one drive
  *  o Support more than one controller
