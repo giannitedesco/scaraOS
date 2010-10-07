@@ -41,7 +41,7 @@ void free_pages(void *ptr, unsigned int order)
 
 	P_POISON(ptr, order << PAGE_SHIFT);
 	page = virt_to_page(ptr);
-	page->flags = 0;
+	page->type = PG_free;
 	put_page(page);
 
 	/* TODO: Coalesce with buddy */

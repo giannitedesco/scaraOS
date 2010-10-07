@@ -25,7 +25,7 @@ struct page *pagecache_file_readpage(struct inode *in, off_t off)
 			p = &(*p)->rb_child[RB_RIGHT];
 		else {
 			dprintk("pagecache: soft fault\n");
-			BUG_ON(pg->flags != PG_pagecache);
+			BUG_ON(pg->type != PG_pagecache);
 			get_page(pg);
 			sem_V(&in->i_sem);
 			return pg;
@@ -47,7 +47,7 @@ struct page *pagecache_file_readpage(struct inode *in, off_t off)
 	memset((uint8_t *)ptr + (size_t)ret, 0, PAGE_SIZE - (size_t)ret);
 
 	new = virt_to_page(ptr);
-	new->flags = PG_pagecache;
+	new->type = PG_pagecache;
 
 	new->u.pagecache.pc_off = off;
 	rb_link_node(&new->u.pagecache.pc_rbt, parent, p);

@@ -72,7 +72,7 @@ static struct slab_hdr *memchunk_get(mempool_t p)
 	page = virt_to_page(pptr);
 	BUG_ON(page->count != 1);
 	c = &page->u.slab_hdr;
-	page->flags = PG_slab;
+	page->type = PG_slab;
 
 	c->c_r.ptr = pptr;
 
@@ -367,7 +367,7 @@ void objcache_free(void *obj)
 	page = virt_to_page(obj);
 	c = &page->u.slab_hdr;
 
-	BUG_ON(page->flags != PG_slab);
+	BUG_ON(page->type != PG_slab);
 	BUG_ON(page->count != 1);
 
 #if OBJCACHE_DEBUG_FREE
@@ -390,7 +390,7 @@ void objcache_free2(objcache_t o, void *obj)
 	page = virt_to_page(obj);
 	c = &page->u.slab_hdr;
 
-	BUG_ON(page->flags != PG_slab);
+	BUG_ON(page->type != PG_slab);
 	BUG_ON(page->count != 1);
 	BUG_ON(c->c_o.cache != o);
 

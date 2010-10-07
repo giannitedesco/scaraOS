@@ -17,15 +17,15 @@ typedef vaddr_t *pgt_t;
 #define get_pdbr(pgdir) \
 	asm volatile("movl %%cr3,%0": "=r" (pgdir));
 
-#define __flush_tlb()							\
-	do {								\
-		unsigned int tmpreg;					\
-									\
-		__asm__ __volatile__(					\
-			"movl %%cr3, %0;  # flush TLB \n"		\
-			"movl %0, %%cr3;              \n"		\
-			: "=r" (tmpreg)					\
-			:: "memory");					\
+#define __flush_tlb()				\
+	do {					\
+		unsigned int tmpreg;		\
+						\
+		__asm__ __volatile__(		\
+			"movl %%cr3, %0;\n"	\
+			"movl %0, %%cr3;\n"	\
+			: "=r" (tmpreg)		\
+			:: "memory");		\
 	} while (0)
 
 #define __pa(x)		((unsigned long)(x)-PAGE_OFFSET)
@@ -46,8 +46,8 @@ typedef vaddr_t *pgt_t;
 #define __mkvirt(d,t,o)		(__dir(d<<22) | __tbl(t<<12) | __ofs(o))
 
 /* Macros to seperate value and flags from pdes and ptes */
-#define __val(x)		(x&0xFFFFF000)
-#define __flags(x)		(x&0x00000FFF)
+#define __pg_val(x)		(x&0xFFFFF000)
+#define __pg_flags(x)		(x&0x00000FFF)
 
 /* Page directory entry flags */
 #define PDE_PRESENT	(1<<0)

@@ -26,8 +26,7 @@ struct pagecache_hdr {
 	off_t 		pc_off;
 };
 
-/* There is one of these structures for every page
- * frame in the system. */
+/* There is one of these structures for every page frame in the system. */
 struct page {
 	union {
 		struct list_head list;
@@ -35,13 +34,15 @@ struct page {
 		struct slab_hdr slab_hdr;
 	}u;
 	unsigned count;
-	unsigned flags;
+	uint16_t type;
+	uint16_t _flags;
 };
 
 /* Page flags */
-#define PG_reserved	(1<<0)
-#define PG_slab		(1<<1)
-#define PG_pagecache	(1<<2)
+#define PG_free		0
+#define PG_reserved	1
+#define PG_slab		2
+#define PG_pagecache	3
 
 /* Page reference counts */
 static inline struct page *get_page(struct page *page)
@@ -140,8 +141,6 @@ extern struct page *pfa;
 extern unsigned long nr_physpages;
 extern unsigned long nr_freepages;
 extern char *cmdline;
-//extern unsigned long nr_physpages;
-//extern unsigned long nr_freepages;
 
 #define alloc_page() alloc_pages(1)
 #define free_page(x) free_pages(x,1)

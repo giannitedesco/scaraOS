@@ -195,7 +195,7 @@ static void reserve_page_range(uint32_t first_page, uint32_t last_page)
 
 	for(i = first_page; i <= last_page; i++) {
 		pfa[i].count = 1;
-		pfa[i].flags = PG_reserved;
+		pfa[i].type = PG_reserved;
 		nr_reserved++;
 	}
 }
@@ -372,7 +372,7 @@ int map_page_to_ctx(struct arch_ctx *ctx, struct page *page,
 		memset(pt, 0, NR_PTE * sizeof(*pt));
 		pd[dir(addr)] = __pa(pt) | PDE_PRESENT | PDE_RW | PDE_USER;
 	}else{
-		pt = __va(__val(pd[dir(addr)]));
+		pt = __va(__pg_val(pd[dir(addr)]));
 	}
 
 	pa = page_phys(page);
