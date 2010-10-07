@@ -67,6 +67,8 @@ void task_init_kthread(struct task *tsk,
 void task_clone(struct task *parent, struct task *new, vaddr_t ip, vaddr_t sp)
 {
 	struct ia32_tss *ptss, *ntss;
+	uint8_t *stack_top;
+	struct intr_ctx *regs;
 
 	ptss = &parent->t.tss;
 	ntss = &new->t.tss;
@@ -82,31 +84,24 @@ void task_clone(struct task *parent, struct task *new, vaddr_t ip, vaddr_t sp)
 	ntss->ss0 = __KERNEL_DS;
 	ntss->flags = (1 << 9);
 
-	if ( sp == MAP_INVALID ) {
-		uint8_t *stack_top;
-		struct intr_ctx *regs;
+	ntss->ss = ntss->ds = ntss->es = __KERNEL_DS;
+	ntss->cs = __KERNEL_CS;
 
-		ntss->ss = ntss->ds = ntss->es = __KERNEL_DS;
-		ntss->cs = __KERNEL_CS;
+	regs = parent->t.intr_ctx;
 
-		regs = parent->t.intr_ctx;
+	stack_top = (uint8_t *)new + PAGE_SIZE;
+	memcpy(stack_top - sizeof(*regs), regs, sizeof(*regs));
+	regs = (struct intr_ctx *)(stack_top - sizeof(*regs));
+	regs->eax = 0;
 
-		stack_top = (uint8_t *)new + PAGE_SIZE;
-		memcpy(stack_top - sizeof(*regs), regs, sizeof(*regs));
-		regs = (struct intr_ctx *)(stack_top - sizeof(*regs));
-		regs->eax = 0;
-
-		ntss->esp = (vaddr_t)regs;
-		ntss->eax = return_from_intr(regs);
-		ntss->eip = (vaddr_t)ret_from_fork_in_child;
-	}else{
-		/* blank kernel stack and prepare to switch straight
-		 * to userspace when new task is scheduled */
-		BUG_ON(ip >= PAGE_OFFSET);
-		ntss->eip = ip;
-		ntss->ss = ntss->ds = ntss->es = __USER_DS | __CPL3;
-		ntss->cs = __USER_CS | __CPL3;
-		ntss->esp = sp;
+	ntss->esp = (vaddr_t)regs;
+	ntss->eax = return_from_intr(regs);
+	ntss->eip = (vaddr_t)ret_from_fork_in_child;
+	if ( ip != MAP_INVALID ) {
+		regs->eip = ip;
+	}
+	if ( sp != MAP_INVALID ) {
+		regs->esp3 = sp;
 	}
 }
 
