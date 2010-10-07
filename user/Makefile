@@ -61,7 +61,9 @@ CAT_C_SOURCES := cat.c
 CAT_OBJ := $(patsubst %.c, %.o, $(CAT_C_SOURCES))
 cat: $(CAT_OBJ)
 
-ALL_TARGETS := $(C_RUNTIME) init cpuhog-a cpuhog-b cat
+SBIN_TARGETS := init cpuhog-a cpuhog-b
+BIN_TARGETS := cat
+ALL_TARGETS := $(C_RUNTIME) $(SBIN_TARGETS) $(BIN_TARGETS)
 
 ALL_OBJ := $(CRT_OBJ) $(INIT_OBJ) $(CPUHOGA_OBJ) $(CPUHOGB_OBJ) $(CAT_OBJ)
 ALL_ASM := $(CRT_ASM_SOURCES)
@@ -77,9 +79,8 @@ endif
 all: Makefile $(ALL_TARGETS)
 
 boot_floppy: all
-	@e2cp init $(BOOT_FLOPPY):/sbin/
-	@e2cp cpuhog-[ab] $(BOOT_FLOPPY):/sbin/
-	@e2cp cat $(BOOT_FLOPPY):/bin/
+	@e2cp $(SBIN_TARGETS) $(BOOT_FLOPPY):/sbin/
+	@e2cp $(BIN_TARGETS) $(BOOT_FLOPPY):/bin/
 	@e2cp ../README $(BOOT_FLOPPY):/README
 
 clean:
