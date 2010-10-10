@@ -9,6 +9,7 @@
 
 void vga_curs(int x, int y);
 void vga_put(uint8_t);
+void serio_put(uint8_t);
 
 static void printkv_unlocked(const char *format, va_list va)
 {
@@ -16,10 +17,10 @@ static void printkv_unlocked(const char *format, va_list va)
 	int len, i;
 
 	len = vsnprintf(buf, sizeof(buf), format, va);
-	/* Don't want interrupts coming in and
-	 * mangling our output */
-	for(i = 0; i < len; i++)
+	for(i = 0; i < len; i++) {
+		serio_put(buf[i]);
 		vga_put(buf[i]);
+	}
 	vga_curs(-1, -1);
 }
 

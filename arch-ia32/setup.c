@@ -13,6 +13,7 @@
 #include <arch/processor.h>
 #include <arch/mm.h>
 #include <arch/vga.h>
+#include <arch/serio.h>
 #include <arch/timer.h>
 #include <arch/8259a.h>
 #include <arch/idt.h>
@@ -105,6 +106,7 @@ void do_initcalls(void)
 /* Entry point in to the kernel proper */
 _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 {
+	serio_init();
 	vga_preinit();
 
 	/* Need this mmediately to catch exceptions */
