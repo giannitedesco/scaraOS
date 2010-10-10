@@ -1,3 +1,4 @@
+#define DEBUG_MODULE 1
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/fork.h>
@@ -14,15 +15,7 @@ int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 	dprintk("fork: flags=0x%x fn=%p priv=%p stack=%p\n",
 		flags, fn, priv, stack);
 
-	if ( flags & FORK_NOFUNC ) {
-		dprintk("fork: - no thread func\n");
-		ip = MAP_INVALID;
-		sp = MAP_INVALID;
-		if ( !(flags & FORK_MEM) ) {
-			dprintk("fork: warning: parent/child "
-				"sharing same stack\n");
-		}
-	}else{
+	if ( flags & FORK_FUNC ) {
 		dprintk("fork: - using thread func %p / stack %p\n", fn, stack);
 		if ( !uaddr_ok((vaddr_t)fn, 0) ||
 				!uaddr_ok((vaddr_t)stack, 0) ) {
@@ -31,6 +24,14 @@ int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 		}
 		ip = (vaddr_t)fn;
 		sp = (vaddr_t)stack;
+	}else{
+		dprintk("fork: - no thread func\n");
+		ip = MAP_INVALID;
+		sp = MAP_INVALID;
+		if ( !(flags & FORK_MEM) ) {
+			dprintk("fork: warning: parent/child "
+				"sharing same stack\n");
+		}
 	}
 
 	if ( flags & FORK_PID ) {

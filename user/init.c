@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	_write(STDOUT_FILENO, (void *)0xdeadbeef, 20);
 
-	switch (_fork(FORK_PID|FORK_FD|FORK_FS|FORK_NOFUNC, NULL, NULL, NULL)) {
+	switch (_fork(FORK_PID|FORK_FD|FORK_FS, NULL, NULL, NULL)) {
 	case -1:
 		_write(STDOUT_FILENO, "Fork failed!\n", 13);
 		break;

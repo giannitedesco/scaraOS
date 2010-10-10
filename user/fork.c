@@ -5,7 +5,7 @@ pid_t fork(void)
 {
 	int ret;
 
-	ret = _fork(FORK_MEM|FORK_PID|FORK_FD|FORK_FS|FORK_NOFUNC,
+	ret = _fork(FORK_MEM|FORK_PID|FORK_FD|FORK_FS,
 			NULL, NULL, NULL);
 	if ( ret < 0 )
 		return -1;
