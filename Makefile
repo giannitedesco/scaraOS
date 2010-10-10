@@ -39,11 +39,12 @@ TARGET: all
 
 # Compiler flags
 LDFLAGS := -melf_i386 -nostdlib -N
-CFLAGS  :=-pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
+CFLAGS  :=-pipe -ggdb -Os -Wall \
+	-m32 -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
-	-Wmissing-format-attribute -m32 \
+	-Wmissing-format-attribute \
 	-I$(TOPDIR)/include $(EXTRA_DEFS)
 
 ./include/arch:
@@ -76,11 +77,10 @@ ALL_SOURCES := $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
 		$(FS_C_SOURCES)
 
 # Generate dependencies
-ARCH_DEP := $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
-		$(patsubst %.c, %.d, $(ARCH_C_SOURCES))
-KERNEL_DEP := $(patsubst %.c, %.d, $(KERNEL_C_SOURCES))
-FS_DEP := $(patsubst %.c, %.d, $(FS_C_SOURCES))
-ALL_DEPS := $(ARCH_DEP) $(KERNEL_DEP) $(FS_DEP)
+ALL_DEPS := $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
+		$(patsubst %.c, %.d, $(ARCH_C_SOURCES)) \
+		$(patsubst %.c, %.d, $(KERNEL_C_SOURCES)) \
+		$(patsubst %.c, %.d, $(FS_C_SOURCES))
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),squeaky)
@@ -109,7 +109,10 @@ kernel.elf.gz: kernel.elf.stripped
 all: kernel.elf.gz
 
 userland:
-	+$(MAKE) -C user boot_floppy BOOT_FLOPPY="../boot.img"
+	@echo " [USERLAND]"
+	+$(MAKE) CROSS_COMPILE=$(CROSS_COMPILE) \
+		BOOT_FLOPPY="../boot.img" \
+		-C user boot_floppy
 
 boot.img: userland kernel.elf.gz menu.lst
 	@echo " [BOOTFLOPPY] $@"
