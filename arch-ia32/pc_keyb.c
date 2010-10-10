@@ -10,27 +10,32 @@
 
 #include <arch/pc_keyb.h>
 
-#define KB_BUFLEN 0xff
+#define KB_BUFLEN 0x100
 
 static volatile uint8_t kb_buffer[KB_BUFLEN];
-static volatile uint8_t kb_len=0;
+static volatile uint8_t kb_len;
 
 static void kb_isr(int irq)
 {
-	uint8_t x=inb(KBR_DATA);
+	uint8_t x;
 	long flags;
 
+	x = inb(KBR_DATA);
 	if ( kb_len >= KB_BUFLEN ) {
 		printk("keyboard buffer overflow. scan=0x%x\n", x);
 		return;
 	}
 
 	lock_irq(flags);
-	kb_buffer[kb_len++]=x;
+	kb_buffer[kb_len++] = x;
 	unlock_irq(flags);
 }
 
-static void kb_wait(void) {while(inb(KBR_STATUS) & KB_STAT_IBF);}
+static void kb_wait(void)
+{
+	while(inb(KBR_STATUS) & KB_STAT_IBF)
+		/* nothing */;
+}
 
 static void kb_setleds(uint8_t l)
 {

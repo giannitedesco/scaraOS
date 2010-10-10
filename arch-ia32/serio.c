@@ -38,3 +38,34 @@ void serio_put(uint8_t c)
 {
 	outb(COM1 + 0, c);
 }
+
+static void serio_isr(int irq)
+{
+	uint32_t base;
+	uint8_t c;
+
+	switch(irq) {
+	case 4:
+		base = COM1;
+		break;
+	default:
+		return;
+	}
+
+	for(c = inb(base + 5); c & 1; c = inb(base + 5)) {
+		uint8_t k;
+		k = inb(base + 0);
+		printk("%c", (k == '\r') ? '\n' : k);
+	}
+}
+
+static void serio_driver_init(void)
+{
+	printk("serio: com1 initialised\n");
+	outb(COM1 + 1, 1);
+
+	set_irq_handler(4, serio_isr);
+	irq_on(4);
+}
+
+driver_init(serio_driver_init);

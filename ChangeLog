@@ -1,3 +1,7 @@
+Version 0.0.7
+ + serial console
+ + working fork() system call
+
 Version 0.0.6
  + 100% correct but non-functional implementation of fork() - gah
  + Kernel/usermode context switching
@@ -8,7 +12,7 @@ Version 0.0.6
 
 Version 0.0.5
  + Fix build on x86_64
- + Register/stack dump on all unhandlex exceptions
+ + Register/stack dump on all unhandled exceptions
  + Remove bogus save/restore of segment selectors in interrupt paths
  + Fix oops on schedule after exit()
  + Inode cache
