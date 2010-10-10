@@ -49,10 +49,10 @@ static void __init pci_detect_dev(int b, int d, int f)
 	unlock_irq(flags);
 
 	if ( id!=0xffffffff ) {
-		printk("pci-dev: %i:%i.%i device=%.4lx "
-			"vendor=%.4lx class=%.2lx.%.2lx.%.2lx\n",
+		printk("pci-dev: %i:%i.%i vendor=%.4lx "
+			"device=%.4lx class=%.2lx.%.2lx.%.2lx\n",
 			b, d, f,
-			id>>16, id&0xffff,
+			id & 0xffff, id >> 16,
 			class>>24, class>>16&0xff, class>>8&0xff);
 	}
 }
