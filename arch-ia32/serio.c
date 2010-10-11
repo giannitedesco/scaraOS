@@ -2,6 +2,8 @@
  * Really primitive serial driver
 */
 #include <scaraOS/kernel.h>
+#include <arch/8259a.h>
+#include <arch/serio.h>
 #include <arch/io.h>
 
 #define COM1	0x3f8
