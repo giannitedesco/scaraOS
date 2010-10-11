@@ -62,12 +62,12 @@ CAT_OBJ := $(patsubst %.c, %.o, $(CAT_C_SOURCES))
 cat: $(CAT_OBJ)
 
 TRUE_ASM_SOURCES := true.S
-TRUE_OBJ := $(patsubst %.c, %.o, $(CAT_ASM_SOURCES))
-true: $(TUE_OBJ)
+TRUE_OBJ := $(patsubst %.S, %.o, $(TRUE_ASM_SOURCES))
+true: $(TRUE_OBJ)
 
-TRUE_ASM_SOURCES := false.S
-TRUE_OBJ := $(patsubst %.c, %.o, $(CAT_ASM_SOURCES))
-true: $(TUE_OBJ)
+FALSE_ASM_SOURCES := false.S
+FALSE_OBJ := $(patsubst %.S, %.o, $(FALSE_ASM_SOURCES))
+false: $(FALSE_OBJ)
 
 SBIN_TARGETS := init cpuhog-a cpuhog-b
 BIN_TARGETS := cat true false
