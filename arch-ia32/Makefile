@@ -11,7 +11,8 @@ ARCH_C_SOURCES = $(ARCH_DIR)/8259a.c \
 		$(ARCH_DIR)/task.c \
 		$(ARCH_DIR)/timer.c \
 		$(ARCH_DIR)/serio.c \
-		$(ARCH_DIR)/vga.c
+		$(ARCH_DIR)/vga.c \
+		$(ARCH_DIR)/ata.c
 
 ARCH_ASM_SOURCES = $(ARCH_DIR)/entry.S \
 			$(ARCH_DIR)/intr.S \
