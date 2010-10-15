@@ -1,0 +1,15 @@
+TODO
+include/arch
+user/init
+user/cpuhog-a
+user/cpuhog-b
+user/cat
+user/true
+user/false
+.*.swp
+*.d
+*.o
+boot.img
+kernel.elf
+kernel.elf.stripped
+kernel.elf.gz
