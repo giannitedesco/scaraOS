@@ -19,7 +19,7 @@ static struct ide_channel {
 	{ATA_BAR2,ATA_BAR3,ATA_BAR4+8,0}
 };
 
-static struct identity {
+struct identity {
 	uint16_t generalconf;
 	uint16_t cylinders;
 	uint16_t reserved;
@@ -69,7 +69,7 @@ static uint8_t ide_read(const struct ide_channel *channel, uint8_t reg_offset)
 static void ide_read_buffer(const struct ide_channel *channel, uint16_t *buf, 
 	int len) 
 {
-	int i;
+	unsigned int i;
 	for(i = 0; i < len; i++) {
 		buf[i] = inw(channel->base);
 	}
@@ -78,7 +78,7 @@ static void ide_read_buffer(const struct ide_channel *channel, uint16_t *buf,
 /* Some of the values stored are strings which need byteswapping */
 static void identification_bytesex(struct identity *id)
 {
-	int k;
+	unsigned int k;
 
 	uint16_t model[20];
 	for(k = 0; k < 20; k++) {
@@ -91,14 +91,14 @@ static void identification_bytesex(struct identity *id)
 
 static void __init ata_init(void)
 {
-	int i,j;
-	struct identity *curDrive;
+	unsigned int i,j;
 
 	ide_write(&channels[ATA_PRIMARY], ATA_REG_CONTROL, 2);
 	ide_write(&channels[ATA_SECONDARY], ATA_REG_CONTROL, 2);
 	
 	for(i = 0; i < 2; i++) {
 		for(j = 0; j < 2; j++) {
+			struct identity *cur_drv;
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
 				0xA0 | (j << 4));
@@ -108,25 +108,28 @@ static void __init ata_init(void)
 				ATA_CMD_IDENTIFY);
 			
 			/* See what drives we have active */
-			if(ide_read(&channels[i], ATA_REG_STATUS) != 0) {
-				printk("IDE: Drive detected at %i,%i\n", i, j);
-			} else {
+			if(ide_read(&channels[i], ATA_REG_STATUS) == 0) {
 				continue;
 			}
 
-			curDrive = kmalloc(sizeof(struct identity));
+			cur_drv = kmalloc(sizeof(struct identity));
 
-			ide_read_buffer(&channels[i], (uint16_t *)curDrive,
-				256);
+			if(cur_drv == NULL) {
+				dprintk("IDE: Problem with kmalloc, quitting");
+				break;
+			}
 
-			identification_bytesex(curDrive);
+			ide_read_buffer(&channels[i], (uint16_t *)cur_drv,
+				sizeof(struct identity));
+
+			identification_bytesex(cur_drv);
 
 
-			printk("IDE: dev name: %.*s\n", 
-				sizeof(curDrive->model), 
-				(char*)(curDrive->model));
+			printk("IDE: %u,%u - %.*s\n", i, j, 
+				sizeof(cur_drv->model), 
+				(char*)(cur_drv->model));
 
-			kfree(curDrive);
+			kfree(cur_drv);
 		}
 	}
 }
