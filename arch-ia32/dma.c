@@ -5,7 +5,7 @@
 #include <arch/io.h>
 #include <arch/dma.h>
 
-static struct dma{
+static const struct dma{
 	uint8_t page;
 	uint8_t addr;
 	uint8_t count;
@@ -27,15 +27,17 @@ static struct dma{
 /* 	{page, 	addr, 	count, 	mask,	mode, 	clear}, */
 };
 
-void dma_cmd(uint8_t chan, uint8_t page, uint16_t ofs,
-		uint16_t len, uint8_t mode)
+static void dma_cmd(uint8_t chan, uint8_t page, uint16_t ofs,
+			uint16_t len, uint8_t mode)
 {
 	unsigned long flags;
+
+	BUG_ON(chan >= ARRAY_SIZE(dma_chan));
 
 	lock_irq(flags);
 
 	/* Mask that sucker */
-	outb(dma_chan[chan].mask, 0x04|chan);
+	outb(dma_chan[chan].mask, 0x04 | chan);
 
 	/* Clear any current transfers */
 	outb(dma_chan[chan].clear, 0x00);
@@ -44,18 +46,30 @@ void dma_cmd(uint8_t chan, uint8_t page, uint16_t ofs,
 	outb(dma_chan[chan].mode, mode);
 
 	/* Send the offset address byte at a time */
-	outb(dma_chan[chan].addr, ofs&0x00FF);
-	outb(dma_chan[chan].addr, (ofs&0xFF00)>>8);
+	outb(dma_chan[chan].addr, ofs & 0xff);
+	outb(dma_chan[chan].addr, (ofs >> 8) & 0xff);
 
 	/* Send the page */
 	outb(dma_chan[chan].page, page);
 	
 	/* Send data length */
-	outb(dma_chan[chan].count, len&0x00FF);
-	outb(dma_chan[chan].count, (len&0xFF00)>>8);
+	outb(dma_chan[chan].count, len & 0xff);
+	outb(dma_chan[chan].count, (len >> 8) & 0xff);
 	
 	/* unmask her */
 	outb(dma_chan[chan].mask, chan);
 
 	unlock_irq(flags);
+}
+
+void dma_write(uint8_t chan, void *addr, uint16_t len)
+{
+	uint32_t a = (uint32_t)addr;
+	dma_cmd(chan, a >> 16, a & 0xffff, len - 1, 0x48 + chan);
+}
+
+void dma_read(uint8_t chan, void *addr, uint16_t len)
+{
+	uint32_t a = (uint32_t)addr;
+	dma_cmd(chan, a >> 16, a & 0xffff, len - 1, 0x44 + chan);
 }
