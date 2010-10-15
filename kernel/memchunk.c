@@ -22,7 +22,7 @@
 #if OBJCACHE_POISON
 #define O_POISON(ptr, len) memset(ptr, OBJCACHE_POISON_PATTERN, len)
 #else
-#define O_POISON(ptr, len) do { } while(0);
+#define O_POISON(ptr, len) do { } while(0)
 #endif
 
 static struct _memchunk mc;

@@ -10,7 +10,7 @@
 #if PAGE_POISON
 #define P_POISON(ptr, len) memset(ptr, PAGE_POISON_PATTERN, len)
 #else
-#define P_POISON(ptr, len) do { } while(0);
+#define P_POISON(ptr, len) do { } while(0)
 #endif
 
 /* pageframe array */
