@@ -24,3 +24,4 @@
 #define ATA_CMD_IDENTIFY	0xEC
 
 #endif /* __ARCH_IA32_ATA__ */
+
