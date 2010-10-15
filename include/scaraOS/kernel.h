@@ -43,6 +43,8 @@ _printf(1, 2) _noreturn void panic(const char *, ...);
 #define BUG_ON(x) do {} while(0)
 #endif
 
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(*x))
+
 /* Driver initialisation */
 #define driver_init(fn) __initcall(fn)
 typedef void (*initcall_t)(void);
