@@ -80,13 +80,9 @@ static void identification_bytesex(struct identity *id)
 {
 	unsigned int k;
 
-	uint16_t model[20];
-	for(k = 0; k < 20; k++) {
-		model[k] = bswap16(id->model[k]);
+	for(k = 0; k < ARRAY_SIZE(id->model); k++) {
+		id->model[k] = bswap16(id->model[k]);
 	}
-
-	memcpy(id->model, model, 20);
-
 }
 
 static void __init ata_init(void)
