@@ -67,7 +67,7 @@ static uint8_t ide_read(const struct ide_channel *channel, uint8_t reg_offset)
 }
 
 static void ide_read_buffer(const struct ide_channel *channel, uint16_t *buf, 
-	int len) 
+	unsigned int len) 
 {
 	unsigned int i;
 	for(i = 0; i < len; i++) {
