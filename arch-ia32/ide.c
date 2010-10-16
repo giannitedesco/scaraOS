@@ -89,12 +89,15 @@ static void __init ata_init(void)
 {
 	unsigned int i,j;
 
+	/* Disable interrupts */
 	ide_write(&channels[ATA_PRIMARY], ATA_REG_CONTROL, 2);
 	ide_write(&channels[ATA_SECONDARY], ATA_REG_CONTROL, 2);
 	
 	for(i = 0; i < 2; i++) {
 		for(j = 0; j < 2; j++) {
 			struct identity *cur_drv;
+			int err = 0;
+
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
 				0xA0 | (j << 4));
@@ -105,7 +108,30 @@ static void __init ata_init(void)
 			
 			/* See what drives we have active */
 			if(ide_read(&channels[i], ATA_REG_STATUS) == 0) {
-				continue;
+				continue; /* No device so skip */
+			}
+
+
+			/* Check if drive is ATA */
+			while(1) {
+				int status = 
+					ide_read(&channels[i], ATA_REG_STATUS);
+				if((status & ATA_SR_ERR)) {
+					/* Not ATA */
+					err = 1;
+					break;
+				}
+				if(!(status & ATA_SR_BSY) &&
+					(status & ATA_SR_DRQ)) {
+					/* ATA */
+					break;
+				}
+			}
+
+			if(err != 0) {
+				/* TODO: Check type somehow? */
+				ide_write(&channels[i], ATA_REG_COMMAND, 
+					ATA_CMD_IDENTIFY_PACKET);
 			}
 
 			cur_drv = kmalloc(sizeof(struct identity));
