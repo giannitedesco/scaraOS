@@ -85,16 +85,35 @@ static void identification_bytesex(struct identity *id)
 	}
 }
 
+static int is_ata(const struct ide_channel *channel)
+{
+	unsigned int retries = 12;
+	uint8_t s;
+
+	while( --retries ) {
+		s = ide_read(channel, ATA_REG_STATUS);
+		if( s & ATA_SR_ERR )
+			return 0;
+		if ( (s & (ATA_SR_BSY|ATA_SR_DRQ)) == ATA_SR_DRQ )
+			return 1;
+		inb(0x80); /* pause */
+	}
+
+	return -1; /* ?? */
+}
+
 static void __init ata_init(void)
 {
 	unsigned int i,j;
 
+	/* Disable interrupts */
 	ide_write(&channels[ATA_PRIMARY], ATA_REG_CONTROL, 2);
 	ide_write(&channels[ATA_SECONDARY], ATA_REG_CONTROL, 2);
 	
 	for(i = 0; i < 2; i++) {
 		for(j = 0; j < 2; j++) {
 			struct identity *cur_drv;
+
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
 				0xA0 | (j << 4));
@@ -105,7 +124,15 @@ static void __init ata_init(void)
 			
 			/* See what drives we have active */
 			if(ide_read(&channels[i], ATA_REG_STATUS) == 0) {
-				continue;
+				continue; /* No device so skip */
+			}
+
+
+			/* Check if drive is ATA */
+			if( !is_ata(&channels[i]) ) {
+				/* TODO: Check type somehow? */
+				ide_write(&channels[i], ATA_REG_COMMAND, 
+					ATA_CMD_IDENTIFY_PACKET);
 			}
 
 			cur_drv = kmalloc(sizeof(struct identity));
@@ -119,7 +146,6 @@ static void __init ata_init(void)
 				sizeof(struct identity));
 
 			identification_bytesex(cur_drv);
-
 
 			printk("IDE: %u,%u - %.*s\n", i, j, 
 				sizeof(cur_drv->model), 
