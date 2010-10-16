@@ -243,7 +243,7 @@ static void __init floppy_init(void)
 	irq_on(6);
 
 	sem_P(&floppy0.blksem);
-	printk("floppy: resetting floppy controllers\n");
+	dprintk("floppy: resetting floppy controllers\n");
 	floppy_reset(dprts);
 
 	floppy_send(dprts, CMD_VERSION);

@@ -28,7 +28,7 @@ int _sys_exec(const char *path)
 		return -1;
 	}
 
-	printk("exec: %s: mode 0%lo, %lu bytes in %lu blocks\n",
+	dprintk("exec: %s: mode 0%lo, %lu bytes in %lu blocks\n",
 		kpath, inode->i_mode, inode->i_size, inode->i_blocks);
 
 	kfree(kpath);
@@ -85,7 +85,7 @@ int _sys_exec(const char *path)
 		if ( setup_vma(ctx, phdr->p_vaddr, phdr->p_memsz,
 				PROT_READ|PROT_EXEC, inode, phdr->p_offset) )
 			goto err_free_ctx;
-		printk("elf: PT_LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
+		dprintk("elf: PT_LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
 	}
 
