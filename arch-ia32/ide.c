@@ -128,10 +128,24 @@ static void __init ata_init(void)
 				}
 			}
 
-			if(err != 0) {
-				/* TODO: Check type somehow? */
-				ide_write(&channels[i], ATA_REG_COMMAND, 
-					ATA_CMD_IDENTIFY_PACKET);
+			if(err) {
+				/* ATA type is not IDE, let's check if it's
+				 * ATAPI 
+				 */
+				uint8_t lba1 = 
+					ide_read(&channels[i], ATA_REG_LBA1);
+				uint8_t lba2 =
+					ide_read(&channels[i], ATA_REG_LBA2);
+
+				if(lba1 == 0x14 && lba2 == 0xEB) {
+					/* Drive is ATAPI */
+					ide_write(&channels[i], ATA_REG_COMMAND,
+						ATA_CMD_IDENTIFY_PACKET);
+				}
+				else {
+					/* Unknown drive type */
+					continue;
+				}
 			}
 
 			cur_drv = kmalloc(sizeof(struct identity));
