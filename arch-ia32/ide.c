@@ -71,7 +71,7 @@ static void identification_bytesex(struct identity *id)
 	unsigned int k;
 
 	for(k = 0; k < ARRAY_SIZE(id->model); k++) {
-		id->model[k] = bswap16(id->model[k]);
+		id->model[k] = __bswap16(id->model[k]);
 	}
 }
 
