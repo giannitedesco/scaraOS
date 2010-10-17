@@ -22,9 +22,13 @@ static struct ide_channel {
 struct identity {
 	uint16_t _pad1[27]; /* 0-26 */
 	uint16_t model[20]; /* 27-46 */
-	uint16_t _pad2[53]; /* 47-99 */
-	uint16_t size[4]; /* 100-103 */
-	uint16_t _pad3[151]; /* 104-255 */
+	uint16_t _pad2[13]; /* 47-59 */
+	uint32_t max_lba28; /* 60-61 */
+	uint16_t _pad3[21]; /* 47-82 */
+	uint16_t features1; /* 83 */
+	uint16_t _pad4[17]; /* 84 - 99 */
+	uint16_t max_lba[4]; /* 100-103 */
+	uint16_t _pad5[151]; /* 104-255 */
 };
 
 
@@ -73,6 +77,7 @@ static void __init ata_init(void)
 			struct identity *cur_drv;
 			int err = 0;
 			uint8_t type;
+			uint8_t addr_mode;
 
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
@@ -126,6 +131,9 @@ static void __init ata_init(void)
 				}
 			}
 
+			while (ide_read(&channels[i], ATA_REG_STATUS) 
+				& (ATA_SR_BSY));
+
 			cur_drv = kmalloc(sizeof(struct identity));
 
 			if(cur_drv == NULL) {
@@ -138,19 +146,28 @@ static void __init ata_init(void)
 
 			identification_bytesex(cur_drv);
 
+			if(cur_drv->features1 & (1 << 10)) {
+				addr_mode = ATA_ADDR_LBA48; 
+			}
+
 
 			if(type == ATA_IDE) {
-				printk("IDE:   %u,%u - %.*s (%d)\n", 
-					i, j, 
+				printk("IDE:   (%s,%s) - %.*s (%uMB)\n", 
+					(const char *[]){"PRIMARY",
+						"SECONDARY"}[i], 
+					(const char *[]){"MASTER",
+						"SLAVE"}[j], 
 					sizeof(cur_drv->model), 
 					(char*)(cur_drv->model),
-					(uint64_t)(cur_drv->size[0])
-					);
+					cur_drv->max_lba28 / 1024 / 2);
 			} 
 
 			if(type == ATA_ATAPI) {
-				printk("ATAPI: %u,%u - %.*s\n", 
-					i, j, 
+				printk("ATAPI: (%s,%s) - %.*s\n", 
+					(const char *[]){"PRIMARY",
+						"SECONDARY"}[i], 
+					(const char *[]){"MASTER",
+						"SLAVE"}[j], 
 					sizeof(cur_drv->model), 
 					(char*)(cur_drv->model));
 			}

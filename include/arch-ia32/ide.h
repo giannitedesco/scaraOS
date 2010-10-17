@@ -12,6 +12,9 @@
 #define ATA_PRIMARY 	0x00
 #define ATA_SECONDARY 	0x01
 
+#define ATA_IDE 	0x01
+#define ATA_ATAPI 	0x02
+
 /* Register offsets from the base */
 #define ATA_REG_CONTROL    0x0C
 #define ATA_REG_HDDEVSEL   0x06
@@ -28,6 +31,11 @@
 #define ATA_SR_BSY	0x80
 #define ATA_SR_ERR	0x01
 #define ATA_SR_DRQ	0x08
+
+/* ATA addressing modes */
+#define ATA_ADDR_LBA48 0x00
+#define ATA_ADDR_LBA28 0x01
+#define ATA_ADDR_CHS 0x02
 
 #endif /* __ARCH_IA32_ATA__ */
 
