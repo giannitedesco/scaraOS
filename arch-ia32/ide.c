@@ -37,9 +37,9 @@ struct identity {
 	uint32_t max_lba28; /* 60-61 */
 	uint16_t _pad3[21]; /* 47-82 */
 	uint16_t features1; /* 83 */
-	uint16_t _pad4[17]; /* 84 - 99 */
+	uint16_t _pad4[16]; /* 84 - 99 */
 	uint64_t max_lba; /* 100-103 */
-	uint16_t _pad5[151]; /* 104-255 */
+	uint16_t _pad5[152]; /* 104-255 */
 } __attribute__((packed));
 
 
@@ -156,6 +156,7 @@ static void __init ata_init(void)
 				break;
 			}
 
+
 			ide_read_buffer(&channels[i], (uint16_t *)cur_drv,
 				sizeof(struct identity));
 
@@ -165,17 +166,17 @@ static void __init ata_init(void)
 				addr_mode = ATA_ADDR_LBA48; 
 			}
 
-
 			switch(type) {
 			case DRIVETYPE_IDE:
-				printk("IDE:   (%s,%s) - %.*s (%luMB)\n", 
+				printk("IDE:   (%s,%s) - %.*s (%LuMB)\n", 
 					(const char *[]){"PRIMARY",
 						"SECONDARY"}[i], 
 					(const char *[]){"MASTER",
 						"SLAVE"}[j], 
 					sizeof(cur_drv->model), 
 					(char*)(cur_drv->model),
-					cur_drv->max_lba28 / 1024 / 2);
+						cur_drv->max_lba
+							/ 1024 / 2);
 				break;
 			case DRIVETYPE_ATAPI:
 				printk("ATAPI: (%s,%s) - %.*s\n", 
