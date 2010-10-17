@@ -8,6 +8,10 @@
 #include <arch/io.h>
 #include <arch/ide.h>
 
+#define DRIVETYPE_UNKNOWN	0
+#define DRIVETYPE_IDE 		1
+#define DRIVETYPE_ATAPI 	2
+
 static struct ide_channel {
 	uint16_t base;  /* I/O Base. */
 	uint16_t ctrl;  /* Control Base */
@@ -20,36 +24,15 @@ static struct ide_channel {
 };
 
 struct identity {
-	uint16_t generalconf;
-	uint16_t cylinders;
-	uint16_t reserved;
-	uint16_t heads;
-	uint16_t unfmtd_bytes_per_track;
-	uint16_t unfmtd_bytes_per_sector;
-	uint16_t sectors_per_track;
-	uint16_t vendor_unq[3];
-	uint16_t sn[10];
-	uint16_t buf_typ;
-	uint16_t buf_sz;
-	uint16_t ECC_bytes_avail;
-	uint16_t fw_rev[4];
-	uint16_t model[20];
-	uint16_t max_sec_per_ir;
-	uint16_t dblw_io_cap;
-	uint16_t capabilities;
-	uint16_t rsrvd2;
-	uint16_t pio_mode;
-	uint16_t dma_mode;
-	uint16_t rsrvd3;
-	uint16_t cur_cylinders;
-	uint16_t cur_heads;
-	uint16_t cur_sec_per_track;
-	uint16_t cur_cap_in_sectors[2];
-	uint16_t rsrvd4;
-	uint16_t total_addressable_sectors[2];
-	uint16_t singlew_dma_mode;
-	uint16_t multiw_dma_mode;
-	uint16_t padding[192];
+	uint16_t _pad1[27]; /* 0-26 */
+	uint16_t model[20]; /* 27-46 */
+	uint16_t _pad2[13]; /* 47-59 */
+	uint32_t max_lba28; /* 60-61 */
+	uint16_t _pad3[21]; /* 47-82 */
+	uint16_t features1; /* 83 */
+	uint16_t _pad4[17]; /* 84 - 99 */
+	uint16_t max_lba[4]; /* 100-103 */
+	uint16_t _pad5[151]; /* 104-255 */
 };
 
 
@@ -85,21 +68,47 @@ static void identification_bytesex(struct identity *id)
 	}
 }
 
-static int is_ata(const struct ide_channel *channel)
+static int drive_type(const struct ide_channel *chan)
 {
 	unsigned int retries = 12;
-	uint8_t s;
+	uint8_t lba1, lba2, s;
+	int ret = DRIVETYPE_UNKNOWN;
 
 	while( --retries ) {
-		s = ide_read(channel, ATA_REG_STATUS);
+		s = ide_read(chan, ATA_REG_STATUS);
 		if( s & ATA_SR_ERR )
-			return 0;
-		if ( (s & (ATA_SR_BSY|ATA_SR_DRQ)) == ATA_SR_DRQ )
-			return 1;
+			break;
+		if ( (s & (ATA_SR_BSY|ATA_SR_DRQ)) == ATA_SR_DRQ ) {
+			ret = DRIVETYPE_IDE;
+			goto out;
+		}
 		inb(0x80); /* pause */
 	}
 
-	return -1; /* ?? */
+	/* ATA type is not IDE, let's check if it's
+	 * ATAPI 
+	 */
+	lba1 = ide_read(chan, ATA_REG_LBA1);
+	lba2 = ide_read(chan, ATA_REG_LBA2);
+	if(lba1 == 0x14 && lba2 == 0xEB) {
+		/* Drive is ATAPI */
+		ide_write(chan, ATA_REG_COMMAND, ATA_CMD_IDENTIFY_PACKET);
+		ret = DRIVETYPE_ATAPI;
+	}
+
+out:
+	for(retries = 12; retries; --retries) {
+		s = ide_read(chan, ATA_REG_STATUS);
+		if ( s & ATA_SR_ERR )
+			return DRIVETYPE_UNKNOWN;
+		if ( (s & ATA_SR_BSY) == 0 )
+			goto out_ok;
+		inb(0x80); /* pause */
+	}
+
+	return DRIVETYPE_UNKNOWN; /* ?? */
+out_ok:
+	return ret;
 }
 
 static void __init ata_init(void)
@@ -113,6 +122,8 @@ static void __init ata_init(void)
 	for(i = 0; i < 2; i++) {
 		for(j = 0; j < 2; j++) {
 			struct identity *cur_drv;
+			int type;
+			uint8_t addr_mode;
 
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
@@ -129,11 +140,7 @@ static void __init ata_init(void)
 
 
 			/* Check if drive is ATA */
-			if( !is_ata(&channels[i]) ) {
-				/* TODO: Check type somehow? */
-				ide_write(&channels[i], ATA_REG_COMMAND, 
-					ATA_CMD_IDENTIFY_PACKET);
-			}
+			type = drive_type(&channels[i]);
 
 			cur_drv = kmalloc(sizeof(struct identity));
 
@@ -147,9 +154,34 @@ static void __init ata_init(void)
 
 			identification_bytesex(cur_drv);
 
-			printk("IDE: %u,%u - %.*s\n", i, j, 
-				sizeof(cur_drv->model), 
-				(char*)(cur_drv->model));
+			if(cur_drv->features1 & (1 << 10)) {
+				addr_mode = ATA_ADDR_LBA48; 
+			}
+
+
+			switch(type) {
+			case DRIVETYPE_IDE:
+				printk("IDE:   (%s,%s) - %.*s (%luMB)\n", 
+					(const char *[]){"PRIMARY",
+						"SECONDARY"}[i], 
+					(const char *[]){"MASTER",
+						"SLAVE"}[j], 
+					sizeof(cur_drv->model), 
+					(char*)(cur_drv->model),
+					cur_drv->max_lba28 / 1024 / 2);
+				break;
+			case DRIVETYPE_ATAPI:
+				printk("ATAPI: (%s,%s) - %.*s\n", 
+					(const char *[]){"PRIMARY",
+						"SECONDARY"}[i], 
+					(const char *[]){"MASTER",
+						"SLAVE"}[j], 
+					sizeof(cur_drv->model), 
+					(char*)(cur_drv->model));
+				break;
+			default:
+				break;
+			} 
 
 			kfree(cur_drv);
 		}
