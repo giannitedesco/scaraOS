@@ -12,6 +12,13 @@
 #define DRIVETYPE_IDE 		1
 #define DRIVETYPE_ATAPI 	2
 
+/* Base address constants for parallel IDE */
+#define IDE_BAR0 0x1F0 	
+#define IDE_BAR1 0x3F4 	
+#define IDE_BAR2 0x170 	
+#define IDE_BAR3 0x374 
+#define IDE_BAR4 0x000
+
 static struct ide_channel {
 	uint16_t base;  /* I/O Base. */
 	uint16_t ctrl;  /* Control Base */
@@ -19,8 +26,8 @@ static struct ide_channel {
 	uint8_t  nIEN;  /* nIEN (No Interrupt); */
 }channels[]={                                    
     	/* default BAR locs. for PATA */
-	{ATA_BAR0,ATA_BAR1,ATA_BAR4+0,0},	
-	{ATA_BAR2,ATA_BAR3,ATA_BAR4+8,0}
+	{IDE_BAR0,IDE_BAR1,IDE_BAR4+0,0},	
+	{IDE_BAR2,IDE_BAR3,IDE_BAR4+8,0}
 };
 
 struct identity {

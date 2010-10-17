@@ -1,13 +1,6 @@
 #ifndef __ARCH_IA32_ATA__
 #define __ARCH_IA32_ATA__
 
-/* Base address constants for parallel IDE */
-#define ATA_BAR0 0x1F0 	
-#define ATA_BAR1 0x3F4 	
-#define ATA_BAR2 0x170 	
-#define ATA_BAR3 0x374 
-#define ATA_BAR4 0x000
-
 /* Channel index for our array of channels */
 #define ATA_PRIMARY 	0x00
 #define ATA_SECONDARY 	0x01
