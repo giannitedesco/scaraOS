@@ -38,9 +38,9 @@ struct identity {
 	uint16_t _pad3[21]; /* 47-82 */
 	uint16_t features1; /* 83 */
 	uint16_t _pad4[17]; /* 84 - 99 */
-	uint16_t max_lba[4]; /* 100-103 */
+	uint64_t max_lba; /* 100-103 */
 	uint16_t _pad5[151]; /* 104-255 */
-};
+} __attribute__((packed));
 
 
 static void ide_write(const struct ide_channel *channel, uint8_t reg_offset, 
