@@ -14,12 +14,12 @@ int main(int argc, char **argv)
 		_write(STDOUT_FILENO, "Fork failed!\n", 13);
 		break;
 	case 0:
+		_exec("/sbin/cpuhog-b");
 		break;
 	default:
-		_exec("/bin/cpuhog-b");
-		return EXIT_FAILURE;
+		_exec("/sbin/cpuhog-a");
+		break;
 	}
 
-	_exec("/bin/cpuhog-a");
 	return EXIT_FAILURE;
 }

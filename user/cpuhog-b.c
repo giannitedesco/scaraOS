@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
 	unsigned int i;
 
-	for(i = 0; i < 100; i++) {
+	for(i = 0; i < 50; i++) {
 		_write(STDOUT_FILENO, "B", 1);
 		__delay(100000000);
 	}
