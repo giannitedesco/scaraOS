@@ -1,6 +1,9 @@
 #ifndef __ENDIAN_HEADER_INCLUDED__
 #define __ENDIAN_HEADER_INCLUDED__
 
+#define	__LITTLE_ENDIAN	1234
+#define	__BIG_ENDIAN	4321
+
 #include <arch/endian.h>
 
 # if __BYTE_ORDER == __LITTLE_ENDIAN
