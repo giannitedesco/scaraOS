@@ -20,36 +20,11 @@ static struct ide_channel {
 };
 
 struct identity {
-	uint16_t generalconf;
-	uint16_t cylinders;
-	uint16_t reserved;
-	uint16_t heads;
-	uint16_t unfmtd_bytes_per_track;
-	uint16_t unfmtd_bytes_per_sector;
-	uint16_t sectors_per_track;
-	uint16_t vendor_unq[3];
-	uint16_t sn[10];
-	uint16_t buf_typ;
-	uint16_t buf_sz;
-	uint16_t ECC_bytes_avail;
-	uint16_t fw_rev[4];
-	uint16_t model[20];
-	uint16_t max_sec_per_ir;
-	uint16_t dblw_io_cap;
-	uint16_t capabilities;
-	uint16_t rsrvd2;
-	uint16_t pio_mode;
-	uint16_t dma_mode;
-	uint16_t rsrvd3;
-	uint16_t cur_cylinders;
-	uint16_t cur_heads;
-	uint16_t cur_sec_per_track;
-	uint16_t cur_cap_in_sectors[2];
-	uint16_t rsrvd4;
-	uint16_t total_addressable_sectors[2];
-	uint16_t singlew_dma_mode;
-	uint16_t multiw_dma_mode;
-	uint16_t padding[192];
+	uint16_t _pad1[27]; /* 0-26 */
+	uint16_t model[20]; /* 27-46 */
+	uint16_t _pad2[53]; /* 47-99 */
+	uint16_t size[4]; /* 100-103 */
+	uint16_t _pad3[151]; /* 104-255 */
 };
 
 
@@ -97,6 +72,7 @@ static void __init ata_init(void)
 		for(j = 0; j < 2; j++) {
 			struct identity *cur_drv;
 			int err = 0;
+			uint8_t type;
 
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
@@ -124,6 +100,7 @@ static void __init ata_init(void)
 				if(!(status & ATA_SR_BSY) &&
 					(status & ATA_SR_DRQ)) {
 					/* ATA */
+					type = ATA_IDE;
 					break;
 				}
 			}
@@ -139,6 +116,7 @@ static void __init ata_init(void)
 
 				if(lba1 == 0x14 && lba2 == 0xEB) {
 					/* Drive is ATAPI */
+					type = ATA_ATAPI;
 					ide_write(&channels[i], ATA_REG_COMMAND,
 						ATA_CMD_IDENTIFY_PACKET);
 				}
@@ -161,9 +139,21 @@ static void __init ata_init(void)
 			identification_bytesex(cur_drv);
 
 
-			printk("IDE: %u,%u - %.*s\n", i, j, 
-				sizeof(cur_drv->model), 
-				(char*)(cur_drv->model));
+			if(type == ATA_IDE) {
+				printk("IDE:   %u,%u - %.*s (%d)\n", 
+					i, j, 
+					sizeof(cur_drv->model), 
+					(char*)(cur_drv->model),
+					(uint64_t)(cur_drv->size[0])
+					);
+			} 
+
+			if(type == ATA_ATAPI) {
+				printk("ATAPI: %u,%u - %.*s\n", 
+					i, j, 
+					sizeof(cur_drv->model), 
+					(char*)(cur_drv->model));
+			}
 
 			kfree(cur_drv);
 		}
