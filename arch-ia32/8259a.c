@@ -1,7 +1,6 @@
 /*
- * This handles the low level specifics of programming the
- * intel 8259A programmable interrupt controller, of which, in
- * a PC there are two.
+ * This handles the low level specifics of programming the intel 8259A
+ * programmable interrupt controller of which, in a PC, there are two.
 */
 #include <scaraOS/kernel.h>
 #include <arch/8259a.h>
@@ -9,12 +8,12 @@
 
 #define NUM_PINS 8
 
-static pic_t pics[]={
-	{0x20, 0x21, 0xFF, IVECTOR_M, NULL, {1<<2}}, /* Master PIC in PC/AT */
-	{0xA0, 0xA1, 0xFF, IVECTOR_S, NULL, {2}}, /* Slave PIC in PC/AT */
+static struct pic pics[] = {
+	{0x20, 0x21, 0xFF, IVECTOR_M, NULL, {1 << 2}}, /* Master PIC in PC/AT */
+	{0xA0, 0xA1, 0xFF, IVECTOR_S, &pics[0], {2}}, /* Slave PIC in PC/AT */
 };
 
-void pic_init(void)
+__init void pic_init(void)
 {
 	unsigned int i;
 	long flags;
@@ -23,10 +22,8 @@ void pic_init(void)
 	 * during programming the PIC */
 	lock_irq(flags);
 
-	pics[1].master = &pics[0];
-
 	/* Initialise PICs */
-	for (i = 0; i < (sizeof(pics)/sizeof(*pics)); i++) {
+	for (i = 0; i < ARRAY_SIZE(pics); i++) {
 		outb(pics[i].port, ICW1);
 		outb(pics[i].port_imr, pics[i].vector);
 
@@ -43,44 +40,45 @@ void pic_init(void)
 	unlock_irq(flags);
 }
 
-static void pic_unmask(p_pic pic, uint8_t bit)
+static void pic_unmask(struct pic *pic, uint8_t bit)
 {
 	pic->imr &= ~(1<<bit);
 	if ( pic->master )
 		pic_unmask(pic->master, pic->cascade.master_pin);
 }
 
-static void pic_mask(p_pic pic, uint8_t bit)
+static void pic_mask(struct pic *pic, uint8_t bit)
 {
 	pic->imr |= 1<<bit;
 	if ( pic->master )
 		pic_mask(pic->master, pic->cascade.master_pin);
 }
 
-static void pic_sync_imr(p_pic pic)
+static void pic_sync_imr(struct pic *pic)
 {
 	outb(pic->port_imr, pic->imr);
 	if ( pic->master )
 		pic_sync_imr(pic->master);
 }
 
-static void pic_eoi_cascade(p_pic pic, uint32_t pin)
+static void pic_eoi_cascade(struct pic *pic, uint32_t pin)
 {
 	if ( pic->master )
 		pic_eoi_cascade(pic->master, pic->cascade.master_pin);
-	outb(pic->port, EOI_SPECIFIC+pin);
+	outb(pic->port, EOI_SPECIFIC + pin);
 }
 
-static void pic_eoi(p_pic pic)
+static void pic_eoi(struct pic *pic)
 {
 	if ( pic->master )
 		pic_eoi_cascade(pic->master, pic->cascade.master_pin);
 	outb(pic->port, EOI);
 }
 
-/* ==========================
-*   PC/AT Specific commands 
-*  ========================== */
+/* =========================
+ *  PC/AT Specific commands 
+ * =========================
+*/
 void irq_on(uint16_t irq)
 {
 	long flags;

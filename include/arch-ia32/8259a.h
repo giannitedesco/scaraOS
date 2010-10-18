@@ -1,17 +1,17 @@
 #ifndef __ARCH_IA32_8259A__
 #define __ARCH_IA32_8259A__
 
-typedef struct pic {
+struct pic {
 	uint16_t	port;
 	uint16_t	port_imr;
-	uint8_t	imr;
-	uint8_t	vector;
+	uint8_t		imr;
+	uint8_t		vector;
 	struct pic 	*master;
 	union {
 		uint8_t	slave_pins;
 		uint8_t	master_pin;
 	}cascade;
-}pic_t, *p_pic;
+};
 
 /* ICW1 */
 #define ICW1_INITIALISE		(1<<4)
@@ -39,7 +39,7 @@ typedef struct pic {
 #define EOI		0x20	/* Then send this to slave */
 
 /* PIC driver functions */
-void pic_init(void);
+__init void pic_init(void);
 
 /* PC/AT functions */
 void irq_eoi(uint16_t irq);
