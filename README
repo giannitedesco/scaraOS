@@ -13,7 +13,7 @@ all at once, things such as:
  o How crap a typical PC BIOS is
  o How crap DOS is
  o How a computer system works as a whole, from hardware to BIOS, to
- bootloader, to kernel, to OS subsystems, to applications, to user interfaces.
+   bootloader, to kernel, to OS subsystems, to applications, to user interfaces.
 
 ScaraOS might be of use to someone who also wants to write their own
 kernel for fun. If so they are free to use my code, which is under GPL.
@@ -34,5 +34,7 @@ Current features:
  o 32bit protected mode
  o 8254 PIT support
  o 8259A PIC support
- o PCI device enumeration
+ o PCI support
  o VGA text mode output
+ o PC serial driver
+ o IDE hard disk driver

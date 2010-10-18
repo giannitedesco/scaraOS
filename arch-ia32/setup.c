@@ -113,7 +113,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 	idt_init();
 
 	/* print a pretty message */
-	printk("ScaraOS v0.0.6 for IA-32");
+	printk("ScaraOS v0.0.7 for IA-32");
 	if ( mbi->flags & MBF_CMDLINE ) {
 		cmdline = __va(mbi->cmdline);
 		printk(": %s", cmdline);
