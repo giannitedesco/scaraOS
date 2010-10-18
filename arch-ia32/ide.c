@@ -131,6 +131,7 @@ static void __init ata_init(void)
 			struct identity *cur_drv;
 			int type;
 			uint8_t addr_mode;
+			unsigned int size = 0;
 
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
@@ -163,20 +164,24 @@ static void __init ata_init(void)
 			identification_bytesex(cur_drv);
 
 			if(cur_drv->features1 & (1 << 10)) {
-				addr_mode = ATA_ADDR_LBA48; 
+				addr_mode = ATA_ADDR_LBA48;
+				size = cur_drv->max_lba / 1024 / 2;
+			}
+			else {
+				addr_mode = ATA_ADDR_LBA28;
+				size = cur_drv->max_lba28 / 1024 / 2;
 			}
 
 			switch(type) {
 			case DRIVETYPE_IDE:
-				printk("IDE:   (%s,%s) - %.*s (%LuMB)\n", 
+				printk("IDE:   (%s,%s) - %.*s (%uMB)\n", 
 					(const char *[]){"PRIMARY",
 						"SECONDARY"}[i], 
 					(const char *[]){"MASTER",
 						"SLAVE"}[j], 
 					sizeof(cur_drv->model), 
 					(char*)(cur_drv->model),
-						cur_drv->max_lba
-							/ 1024 / 2);
+						size);
 				break;
 			case DRIVETYPE_ATAPI:
 				printk("ATAPI: (%s,%s) - %.*s\n", 
