@@ -7,7 +7,7 @@ static unsigned int num_domains;
 static const char * const cls_str[] = {
 	"PCI-1.x",
 	"Mass Storage",
-	"Network Contoller",
+	"Network Controller",
 	"Display Controller",
 	"Multimedia Controller",
 	"Memory Controller",
