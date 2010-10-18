@@ -7,8 +7,6 @@ struct pci_dom_conf1 {
 	uint32_t confreg;
 };
 
-#define PCICMD(bus, dev, fn)	(0x80000000 | (PCI_BDF(bus, dev, fn) << 3))
-
 #define PCI_CONFREG		0x0cf8
 #define PCI_CONF_MODE		0x0cfb
 #define PCI_CONFDATA		0x0cfc

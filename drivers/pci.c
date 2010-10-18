@@ -4,6 +4,33 @@
 static LIST_HEAD(pci_domains);
 static unsigned int num_domains;
 
+static const char * const cls_str[] = {
+	"PCI-1.x",
+	"Mass Storage",
+	"Network Contoller",
+	"Display Controller",
+	"Multimedia Controller",
+	"Memory Controller",
+	"Bridge",
+	"Simple Comms Controller",
+	"Base system peripherals",
+	"Input",
+	"Docking Station",
+	"Processor",
+	"Serial bus",
+};
+
+static const char * const bridge_str[] = {
+	"Host/PCI bridge",
+	"PCI/ISA bridge",
+	"PCI/EISA bridge",
+	"PCI/Micro Channel bridge",
+	"PCI/PCI bridge",
+	"PCI/PCMCIA bridge",
+	"PCI/NuBus bridge",
+	"PCI/CardBus bridge",
+};
+
 #define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | (ofs << 2))
 
 static uint32_t pcidev_conf_read(struct pci_dev *dev, unsigned int addr)
@@ -64,6 +91,8 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 {
 	struct pci_dev *dev;
 	uint32_t id, cls;
+	const char *cstr;
+	char clsbuf[10];
 
 	dev = kmalloc(sizeof(*dev));
 	if ( NULL == dev )
@@ -75,12 +104,26 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 
 	id = pcidev_conf_read(dev, PCI_CONF_ID);
 	cls = pcidev_conf_read(dev, PCI_CONF_CLASS);
+
+	if ( (cls >> 24) < ARRAY_SIZE(cls_str) ) {
+		if ( (cls >> 24) == 6 &&
+			((cls >> 16) & 0xff) < ARRAY_SIZE(bridge_str) ) {
+			cstr = bridge_str[(cls >> 16) & 0xff];
+		}else{
+			cstr = cls_str[cls >> 24];
+		}
+	}else{
+		snprintf(clsbuf, sizeof(clsbuf),
+			"%.2lx.%.2lx.%.2lx",
+			cls >> 24, cls >> 16 & 0xff, cls >> 8 & 0xff);
+		cstr = clsbuf;
+	}
 	printk("pci-dev: %i:%i.%i vendor=%.4lx "
-		"device=%.4lx rev=0x%.2lx class=%.2lx.%.2lx.%.2lx\n",
+		"device=%.4lx %s rev=%d\n",
 		b, d, f,
 		id & 0xffff, id >> 16,
-		cls & 0xff,
-		cls >> 24, cls >> 16 & 0xff, cls >> 8 & 0xff);
+		cstr,
+		cls & 0xff);
 	
 	pcidev_scan_bars(dev);
 }
