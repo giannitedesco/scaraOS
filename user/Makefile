@@ -36,7 +36,7 @@ C_RUNTIME := crt0.a
 CRT_ASM_SOURCES := _crt0.S
 CRT_C_SOURCES := _exit.c _fork.c _exec.c \
 		_open.c _close.c _read.c _write.c \
-		vfork.c fork.c string.c
+		fork.c string.c
 CRT_OBJ :=  $(patsubst %.S, %.o, $(CRT_ASM_SOURCES)) \
 		$(patsubst %.c, %.o, $(CRT_C_SOURCES))
 $(C_RUNTIME): $(CRT_OBJ)
