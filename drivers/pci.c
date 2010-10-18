@@ -31,7 +31,7 @@ static const char * const bridge_str[] = {
 	"PCI/CardBus bridge",
 };
 
-#define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | (ofs << 2))
+#define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | ((ofs << 2) & 0xff))
 
 static uint32_t pcidev_conf_read(struct pci_dev *dev, unsigned int addr)
 {
@@ -119,7 +119,7 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 		cstr = clsbuf;
 	}
 	printk("pci-dev: %i:%i.%i vendor=%.4lx "
-		"device=%.4lx %s rev=%d\n",
+		"device=%.4lx %s rev=%ld\n",
 		b, d, f,
 		id & 0xffff, id >> 16,
 		cstr,
