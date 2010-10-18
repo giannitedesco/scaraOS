@@ -10,6 +10,7 @@ TOPDIR :=  .
 KERNEL_DIR := $(TOPDIR)/kernel
 ARCH_DIR := $(TOPDIR)/arch-$(ARCH)
 FS_DIR := $(TOPDIR)/fs
+DRIVERS_DIR := $(TOPDIR)/drivers
 
 .PHONY: all clean squeaky boot_floppy userland
 
@@ -66,31 +67,31 @@ CFLAGS  :=-pipe -ggdb -Os -Wall \
 include arch-$(ARCH)/Makefile
 include kernel/Makefile
 include fs/Makefile
+include drivers/Makefile
 
 IMAGE_OBJ := $(patsubst %.S, %.o, $(ARCH_ASM_SOURCES)) \
 		$(patsubst %.c, %.o, $(ARCH_C_SOURCES)) \
 		$(patsubst %.c, %.o, $(KERNEL_C_SOURCES)) \
-		$(patsubst %.c, %.o, $(FS_C_SOURCES))
+		$(patsubst %.c, %.o, $(FS_C_SOURCES)) \
+		$(patsubst %.c, %.o, $(DRIVERS_C_SOURCES))
 
 ALL_SOURCES := $(ARCH_C_SOURCES) $(ARCH_ASM_SOURCES) \
 		$(KERNEL_C_SOURCES) \
-		$(FS_C_SOURCES)
+		$(FS_C_SOURCES) \
+		$(DRIVERS_C_SOURCES)
 
 # Generate dependencies
 ALL_DEPS := $(patsubst %.S, %.d, $(ARCH_ASM_SOURCES)) \
 		$(patsubst %.c, %.d, $(ARCH_C_SOURCES)) \
 		$(patsubst %.c, %.d, $(KERNEL_C_SOURCES)) \
-		$(patsubst %.c, %.d, $(FS_C_SOURCES))
+		$(patsubst %.c, %.d, $(FS_C_SOURCES)) \
+		$(patsubst %.c, %.d, $(DRIVERS_C_SOURCES))
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),squeaky)
 -include $(ALL_DEPS)
 endif
 endif
-
-$(KERNEL_DIR)/kernel.a: $(KERNEL_OBJ)
-$(ARCH_DIR)/arch.a: $(ARCH_OBJ)
-$(FS_DIR)/fs.a: $(FS_OBJ)
 
 kernel.elf: Makefile $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	@echo " [LINK] $@"

@@ -1,10 +1,17 @@
 #include <scaraOS/kernel.h>
+#include <scaraOS/pci.h>
 #include <arch/io.h>
-#include <arch/pci.h>
+
+struct pci_dom_conf1 {
+	struct pci_dom d;
+	uint32_t confreg;
+};
 
 #define PCICMD(bus, dev, fn)	(0x80000000 | (PCI_BDF(bus, dev, fn) << 3))
 
-static unsigned int pci_conf;
+#define PCI_CONFREG		0x0cf8
+#define PCI_CONF_MODE		0x0cfb
+#define PCI_CONFDATA		0x0cfc
 
 static int __init pci_probe(void)
 {
@@ -30,96 +37,52 @@ static int __init pci_probe(void)
 	return 0;
 }
 
-/* TODO: Grab whole configuration space */
-static void __init pci_detect_dev(int b, int d, int f)
+static void conf_latch(struct pci_dom_conf1 *d, uint32_t latch)
 {
-	uint32_t id, class;
-	uint32_t loc = PCICMD(b,d,f);
-	unsigned int i;
-	long flags;
-
-	lock_irq(flags);
-
-	outl(PCI_CONFREG, loc | (PCI_CONF_ID << 2));
-	id = inl(PCI_CONFDATA);
-	outl(PCI_CONFREG, loc | (PCI_CONF_CLASS << 2));
-	class = inl(PCI_CONFDATA);
-
-	if ( id == 0xffffffff )
-		goto out;
-
-	printk("pci-dev: %i:%i.%i vendor=%.4lx "
-		"device=%.4lx rev=0x%.2x class=%.2lx.%.2lx.%.2lx\n",
-		b, d, f,
-		id & 0xffff, id >> 16,
-		class & 0xff,
-		class >> 24, class >> 16 & 0xff, class >> 8 & 0xff);
-	
-	for(i = 0; i < PCI_NUM_BARS; i++) {
-		uint32_t bar, sz, io;
-		outl(PCI_CONFREG, loc | ((PCI_CONF_BAR0 + i) << 2));
-		bar = inl(PCI_CONFDATA);
-		outl(PCI_CONFDATA, ~0UL);
-		sz = inl(PCI_CONFDATA);
-		if ( !bar )
-			continue;
-		if ( bar & 1 ) {
-			io = 1;
-			bar &= ~0x3;
-			sz = ~(sz & ~0x3) + 1;
-		}else{
-			uint32_t mask;
-			switch ( (bar & 0x3) >> 1 ) {
-			case 0:
-				mask = ~0xfUL;
-				break;
-			case 1:
-				mask = ~0xfUL;
-				break;
-			case 2:
-				i++;
-				continue;
-			default:
-				/* ??? */
-				continue;
-			}
-			io = 0;
-			bar &= mask;
-			sz = ~(sz & mask) + 1;
-		}
-		printk(" - %s BAR%d (%8u @ 0x%.8x)\n",
-			(io) ? "I/O" : "MEM", i, sz, bar);
+	if ( d->confreg != latch ) {
+		d->confreg = latch;
+		outl(PCI_CONFREG, latch);
 	}
-
-out:
-	unlock_irq(flags);
 }
 
-static void __init pci_scan_bus(int bus)
+static uint32_t read_conf1(struct pci_dom *dom, uint32_t addr)
 {
-	int d;
-
-	for(d = 0; d < 31; d++)
-		pci_detect_dev(bus, d, 0);
+	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
+	conf_latch(d, addr);
+	return inl(PCI_CONFDATA);
 }
 
-void __init pci_init(void)
+static void write_conf1(struct pci_dom *dom, uint32_t addr, uint32_t w)
 {
-	long flags;
+	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
+	conf_latch(d, addr);
+	outl(PCI_CONFDATA, w);
+}
 
-	lock_irq(flags);
+static const struct pci_dom_ops pci_conf1_ops = {
+	.read_conf = read_conf1,
+	.write_conf = write_conf1,
+};
+
+static struct pci_dom_conf1 pci_conf1 = {
+	.d.d_ops = &pci_conf1_ops,
+	.confreg = ~0UL,
+};
+
+void __init pci_arch_init(void)
+{
+	unsigned int pci_conf;
+
 	pci_conf = pci_probe();
-	unlock_irq(flags);
 
 	/* We can only deal with conf1 for now */
 	switch(pci_conf) {
 	case 1:
 		dprintk("pci: Using configuration 1\n");
+		pci_domain_add(&pci_conf1.d);
 		break;
 	default:
 		printk("pci: Using configuration %d (deprecated)\n", pci_conf);
 		return;
 	}
-
-	pci_scan_bus(0);
 }

@@ -4,7 +4,7 @@
 #include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
 #include <scaraOS/syscall.h>
-#include <arch/pci.h>
+#include <scaraOS/pci.h>
 
 static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
 
