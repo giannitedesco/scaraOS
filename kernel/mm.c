@@ -103,7 +103,7 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 	vma->vma_prot = prot;
 
 	if ( ino ) {
-		vma->vma_ino = ino;
+		vma->vma_ino = iref(ino);
 		vma->vma_off = off - (va - vma->vma_begin);
 		BUG_ON(vma->vma_off & PAGE_MASK);
 	}else
@@ -116,6 +116,40 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 
 	vma_insert(ctx, vma);
 	return 0;
+}
+
+struct mem_ctx *mem_ctx_clone(struct mem_ctx *ctx)
+{
+	struct mem_ctx *new;
+	struct vma *vma, *new_vma;
+
+	new = objcache_alloc(memctx);
+	if ( NULL == new )
+		return NULL;
+
+	if ( setup_new_ctx(&new->arch) ) {
+		objcache_free2(memctx, ctx);
+		return NULL;
+	}
+
+	new->vmas.rb_node = NULL;
+
+	for(vma = rb_entry(rb_first(&new->vmas), struct vma, vma_rbt);
+		vma;
+		vma = rb_entry(rb_next(&vma->vma_rbt), struct vma, vma_rbt)) {
+		/* lets just copy each vma */
+		new_vma = objcache_alloc(vmas);
+		memcpy(new_vma, vma, sizeof(*new_vma));
+		vma_insert(new, new_vma);
+		if( new_vma->vma_ino ) {
+			new_vma->vma_ino = iref(new_vma->vma_ino);
+		}else{
+			/* this is what mem nodes are for */
+		}
+	}
+
+	new->count = 1;
+	return new;
 }
 
 struct mem_ctx *get_kthread_ctx(void)

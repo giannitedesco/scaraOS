@@ -6,6 +6,7 @@
 int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 {
 	struct task *tsk, *current;
+	struct mem_ctx *mm;
 	vaddr_t ip, sp;
 	pid_t pid;
 
@@ -41,6 +42,12 @@ int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 		dprintk("fork: - keep old pid %lu\n", pid);
 	}
 
+	if ( flags & FORK_MEM ) {
+		mm = mem_ctx_clone(current->ctx);
+	}else{
+		mm = mem_ctx_get(current->ctx);
+	}
+
 	tsk = alloc_page();
 	if ( NULL == tsk ) {
 		if ( flags & FORK_PID )
@@ -52,7 +59,7 @@ int _sys_fork(unsigned int flags, void (*fn)(void *), void *priv, void *stack)
 
 	tsk->pid = pid;
 	tsk->name = "[forked-task]";
-	tsk->ctx = mem_ctx_get(current->ctx);
+	tsk->ctx = mm;
 	if ( current->root )
 		tsk->root = iref(current->root);
 	if ( current->cwd )

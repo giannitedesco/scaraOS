@@ -117,6 +117,7 @@ int map_page_to_ctx(struct arch_ctx *tsk, struct page *page,
 int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len,
 		unsigned prot, struct inode *ino, off_t off);
 struct vma *lookup_vma(struct mem_ctx *ctx, vaddr_t va);
+struct mem_ctx *mem_ctx_clone(struct mem_ctx *ctx);
 
 static inline struct mem_ctx *mem_ctx_get(struct mem_ctx *ctx)
 {
