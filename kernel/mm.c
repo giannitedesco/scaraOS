@@ -94,6 +94,9 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 {
 	struct vma *vma;
 
+	if ( (off % PAGE_SIZE) )
+		return -1; /* EINVAL */
+
 	vma = objcache_alloc(vmas);
 	if ( NULL == vma )
 		return -1; /* ENOMEM */
@@ -105,7 +108,6 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 	if ( ino ) {
 		vma->vma_ino = ino;
 		vma->vma_off = off - (va - vma->vma_begin);
-		/* FIXME: allow non-page-aligned offsets somehow */
 		BUG_ON(vma->vma_off & PAGE_MASK);
 	}else
 		vma->vma_ino = NULL;
