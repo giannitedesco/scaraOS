@@ -94,9 +94,6 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 {
 	struct vma *vma;
 
-	if ( (off % PAGE_SIZE) )
-		return -1; /* EINVAL */
-
 	vma = objcache_alloc(vmas);
 	if ( NULL == vma )
 		return -1; /* ENOMEM */
