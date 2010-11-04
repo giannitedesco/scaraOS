@@ -102,9 +102,13 @@ static void page_fault(struct intr_ctx *ctx)
 			return;
 	}
 
-	if ( ctx->err_code & PAGEFAULT_USER )
+	if ( ctx->err_code & PAGEFAULT_USER ) {
+		printk("%s: User mode pagefault %sing 0x%.8lx ip 0x%.8lx\n",
+			__this_task->name,
+			(ctx->err_code & PAGEFAULT_WRITE) ? "read" : "writ",
+			pf_address(), ctx->eip);
 		_sys_exit(~0);
-	else{
+	}else{
 		struct pagefault_fixup *fix;
 		for(fix = &__rodata_pagefault;
 				fix < &__rodata_pagefault_end; fix++) {
