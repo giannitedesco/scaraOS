@@ -24,6 +24,9 @@ _noreturn void _sys_exit(uint32_t code);
 
 static int _sys_write(int fd, void *buf, size_t count)
 {
+	if ( !uaddr_ok((vaddr_t)buf, count) )
+		return -1; /* EFAULT */
+
 	if ( fd == 1 ) {
 		char *kbuf;
 		int sz;
