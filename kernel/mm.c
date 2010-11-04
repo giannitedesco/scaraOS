@@ -7,6 +7,8 @@ static objcache_t memctx;
 static objcache_t vmas;
 static struct mem_ctx *kthread_ctx;
 
+#define rb_vma(x) rb_entry((x), struct vma, vma_rbt)
+
 struct vma *lookup_vma(struct mem_ctx *ctx, vaddr_t va)
 {
 	struct rb_node *n;
@@ -118,34 +120,64 @@ int setup_vma(struct mem_ctx *ctx, vaddr_t va, size_t len, unsigned prot,
 	return 0;
 }
 
+static void do_free_vma(struct vma *vma)
+{
+	if ( NULL == &vma->vma_rbt )
+		return;
+	do_free_vma(rb_vma(vma->vma_rbt.rb_child[RB_LEFT]));
+	do_free_vma(rb_vma(vma->vma_rbt.rb_child[RB_RIGHT]));
+	objcache_free2(vmas, vma);
+}
+
+static int do_clone_vma(struct vma *orig, struct rb_node **pnew)
+{
+	struct vma *new;
+
+	if ( NULL == &orig->vma_rbt )
+		return 1;
+
+	new = objcache_alloc(vmas);
+	if ( NULL == new )
+		return 0;
+
+	memcpy(new, orig, sizeof(*new));
+	memset(&new->vma_rbt, 0, sizeof(new->vma_rbt));
+
+	if( new->vma_ino ) {
+		new->vma_ino = iref(orig->vma_ino);
+	}else{
+		/* this is what mem nodes are for */
+	}
+
+	if ( !do_clone_vma(rb_vma(orig->vma_rbt.rb_child[RB_LEFT]),
+			&new->vma_rbt.rb_child[RB_LEFT]) )
+		return 0;
+	if ( !do_clone_vma(rb_vma(orig->vma_rbt.rb_child[RB_RIGHT]),
+			&new->vma_rbt.rb_child[RB_RIGHT]) )
+		return 0;
+
+	return 1;
+}
+
 struct mem_ctx *mem_ctx_clone(struct mem_ctx *ctx)
 {
 	struct mem_ctx *new;
-	struct vma *vma, *new_vma;
 
 	new = objcache_alloc(memctx);
 	if ( NULL == new )
 		return NULL;
 
 	if ( setup_new_ctx(&new->arch) ) {
-		objcache_free2(memctx, ctx);
-		return NULL;
+		objcache_free2(memctx, new);
+		return NULL; /* ENOMEM */
 	}
 
 	new->vmas.rb_node = NULL;
 
-	for(vma = rb_entry(rb_first(&new->vmas), struct vma, vma_rbt);
-		vma;
-		vma = rb_entry(rb_next(&vma->vma_rbt), struct vma, vma_rbt)) {
-		/* lets just copy each vma */
-		new_vma = objcache_alloc(vmas);
-		memcpy(new_vma, vma, sizeof(*new_vma));
-		vma_insert(new, new_vma);
-		if( new_vma->vma_ino ) {
-			new_vma->vma_ino = iref(new_vma->vma_ino);
-		}else{
-			/* this is what mem nodes are for */
-		}
+	if ( !do_clone_vma(rb_vma(ctx->vmas.rb_node), &new->vmas.rb_node) ) {
+		do_free_vma(rb_vma(ctx->vmas.rb_node));
+		objcache_free2(memctx, new);
+		return NULL; /* ENOMEM */
 	}
 
 	new->count = 1;
@@ -182,6 +214,7 @@ void mem_use_ctx(struct mem_ctx *ctx)
 
 void mem_ctx_free(struct mem_ctx *ctx)
 {
+	do_free_vma(rb_vma(ctx->vmas.rb_node));
 	destroy_ctx(&ctx->arch);
 	objcache_free2(memctx, ctx);
 }
