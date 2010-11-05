@@ -82,7 +82,7 @@ void task_clone(struct task *parent, struct task *new, vaddr_t ip, vaddr_t sp)
 
 	ntss->sp0 = (vaddr_t)((uint8_t *)new + PAGE_SIZE);
 	ntss->ss0 = __KERNEL_DS;
-	ntss->flags = (1 << 9);
+	ntss->flags = ptss->flags | (1 << 9);
 
 	ntss->ss = ntss->ds = ntss->es = __KERNEL_DS;
 	ntss->cs = __KERNEL_CS;
@@ -113,8 +113,6 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 
 	cli();
 
-	tss = &tsk->t.tss;
-
 	store_tr(tr);
 	tr >>= 3;
 	BUG_ON(tr != TSS0 && tr != TSS1);
@@ -124,6 +122,9 @@ void task_init_exec(struct task *tsk, vaddr_t ip, vaddr_t sp)
 			(sizeof(*tss) - 1),
 			(D_TSS | D_BIG | D_BIG_LIM));
 	load_tr(scratch_tr << 3);
+
+	tss = &tsk->t.tss;
+	memset(tss, 0, sizeof(*tss));
 
 	tss->ss = tss->ds = tss->es = tss->gs = tss->fs = __USER_DS | __CPL3;
 	tss->cs = __USER_CS | __CPL3;
