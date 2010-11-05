@@ -3,7 +3,7 @@
 int main(int argc, char **argv)
 {
 	static const char * const filename = "/README";
-	char buf[512];
+	static char buf[512];
 	int fd;
 	int len;
 
