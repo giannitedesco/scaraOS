@@ -1,9 +1,14 @@
+#define DEBUG_MODULE 1
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
 #include <scaraOS/vfs.h>
 #include <scaraOS/elf.h>
 #include <scaraOS/exec.h>
+
+#define USER_STACK_BASE 	0x80000000
+#define USER_STACK_PAGES	1024UL
+#define USER_STACK_SIZE		(USER_STACK_PAGES << PAGE_SHIFT)
 
 int _sys_exec(const char *path)
 {
@@ -82,16 +87,22 @@ int _sys_exec(const char *path)
 		Elf32_Phdr *phdr = (Elf32_Phdr *)ph;
 		if ( phdr->p_type != PT_LOAD )
 			continue;
-		if ( setup_vma(ctx, phdr->p_vaddr, phdr->p_memsz,
-				PROT_READ|PROT_EXEC, inode, phdr->p_offset) )
-			goto err_free_ctx;
 		dprintk("elf: PT_LOAD: va=0x%.8lx %lu bytes from offset %lu\n",
 			phdr->p_vaddr, phdr->p_filesz, phdr->p_offset);
+		if ( phdr->p_filesz ) {
+			if ( setup_vma(ctx, phdr->p_vaddr, phdr->p_memsz,
+				PROT_READ|PROT_EXEC, inode, phdr->p_offset) )
+			goto err_free_ctx;
+		}else{
+			if ( setup_vma(ctx, phdr->p_vaddr, phdr->p_memsz,
+				PROT_READ|PROT_WRITE, NULL, 0) )
+			goto err_free_ctx;
+		}
 	}
 
 	/* setup usermode stack */
-	if ( setup_vma(ctx, 0x80000000 - PAGE_SIZE, PAGE_SIZE,
-			PROT_READ|PROT_WRITE, NULL, 0) )
+	if ( setup_vma(ctx, USER_STACK_BASE - USER_STACK_SIZE,
+			USER_STACK_SIZE, PROT_READ|PROT_WRITE, NULL, 0) )
 		goto err_free_ctx;
 
 	kfree(phbuf);
@@ -101,7 +112,8 @@ int _sys_exec(const char *path)
 	mem_use_ctx(ctx);
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
-	task_init_exec(tsk, hdr.e_entry, 0x80000000);
+	dprintk("elf: entry = 0x%.8x\n", hdr.e_entry);
+	task_init_exec(tsk, hdr.e_entry, USER_STACK_BASE);
 	return 0;
 
 err_free_ctx:
