@@ -92,26 +92,27 @@ void ctx_dump(struct intr_ctx *ctx)
 
 static void page_fault(struct intr_ctx *ctx)
 {
-	if ( ctx->err_code & PAGEFAULT_USER ) {
-		unsigned prot;
-		if ( (ctx->err_code & PAGEFAULT_WRITE) )
-			prot = PROT_WRITE;
-		else
-			prot = PROT_READ;
+	unsigned prot;
 
-		if ( 0 == (ctx->err_code & (PAGEFAULT_PROTECTION)) ) {
-			if ( !mm_pagefault(__this_task, pf_address(), prot) )
-				return;
-		}else if ( 0 == (ctx->err_code & PAGEFAULT_PROTECTION) ) {
-			/* copy on write? */
-		}
+	if ( (ctx->err_code & PAGEFAULT_WRITE) )
+		prot = PROT_WRITE;
+	else
+		prot = PROT_READ;
 
+	if ( 0 == (ctx->err_code & (PAGEFAULT_PROTECTION)) ) {
+		if ( !mm_pagefault(__this_task, pf_address(), prot) )
+			return;
+	}else if ( 0 == (ctx->err_code & PAGEFAULT_PROTECTION) ) {
+		/* copy on write? */
+	}
+
+	if ( (ctx->err_code & PAGEFAULT_USER) ) {
 		printk("%s: User mode pagefault %sing 0x%.8lx ip 0x%.8lx\n",
 			__this_task->name,
 			(ctx->err_code & PAGEFAULT_WRITE) ? "read" : "writ",
 			pf_address(), ctx->eip);
 		_sys_exit(~0);
-	}else if ( pf_address() < PAGE_OFFSET ) {
+	}else{
 		struct pagefault_fixup *fix;
 		for(fix = &__rodata_pagefault;
 				fix < &__rodata_pagefault_end; fix++) {
