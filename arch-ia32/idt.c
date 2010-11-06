@@ -188,6 +188,10 @@ unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 	}
 
 	if ( (ctx.cs & __CPL3) == __CPL3 ) {
+		printk("%s: User mode %s %s\n",
+			__this_task->name,
+			exc[exc_num].name,
+			tname[exc[exc_num].type]);
 		_sys_exit(~0);
 	}
 
