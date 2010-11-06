@@ -1,4 +1,3 @@
-#define DEBUG_MODULE 1
 #include <scaraOS/kernel.h>
 #include <scaraOS/task.h>
 #include <scaraOS/vfs.h>
@@ -112,7 +111,6 @@ int _sys_exec(const char *path)
 	mem_use_ctx(ctx);
 	mem_ctx_put(tsk->ctx);
 	tsk->ctx = ctx;
-	dprintk("elf: entry = 0x%.8x\n", hdr.e_entry);
 	task_init_exec(tsk, hdr.e_entry, USER_STACK_BASE);
 	return 0;
 
