@@ -43,6 +43,7 @@ struct page {
 #define PG_reserved	1
 #define PG_slab		2
 #define PG_pagecache	3
+#define PG_anon		4
 
 /* Page reference counts */
 static inline struct page *get_page(struct page *page)

@@ -59,6 +59,7 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 
 		memset(ptr, 0, PAGE_SIZE);
 		page = virt_to_page(ptr);
+		page->type = PG_anon;
 	}
 
 	if ( map_page_to_ctx(&tsk->ctx->arch, page, va, prot) )
