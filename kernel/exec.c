@@ -9,7 +9,7 @@
 #define USER_STACK_PAGES	1024UL
 #define USER_STACK_SIZE		(USER_STACK_PAGES << PAGE_SHIFT)
 
-int _sys_exec(const char *path)
+static int do_exec(char *path)
 {
 	struct mem_ctx *ctx;
 	struct inode *inode;
@@ -18,24 +18,19 @@ int _sys_exec(const char *path)
 	unsigned int i;
 	Elf32_Ehdr hdr;
 	size_t phbufsz;
-	char *kpath;
 	ssize_t ret;
 
-	kpath = strdup_from_user(path, UACCESS_KERNEL_OK);
-	if ( NULL == kpath )
-		return -1; /* EFAULT or ENOMEM */
-
-	inode = namei(kpath);
+	inode = namei(path);
 	if ( NULL == inode ) {
-		printk("exec: %s: ENOENT or ENOTDIR\n", kpath);
-		kfree(kpath);
+		printk("exec: %s: ENOENT or ENOTDIR\n", path);
+		kfree(path);
 		return -1;
 	}
 
 	dprintk("exec: %s: mode 0%lo, %lu bytes in %lu blocks\n",
-		kpath, inode->i_mode, inode->i_size, inode->i_blocks);
+		path, inode->i_mode, inode->i_size, inode->i_blocks);
 
-	kfree(kpath);
+	kfree(path);
 
 	ret = inode->i_iop->pread(inode, &hdr, sizeof(hdr), 0);
 	if ( ret <= 0 || (size_t)ret != sizeof(hdr) ) {
@@ -119,4 +114,26 @@ err_free_ctx:
 err_free:
 	kfree(phbuf);
 	return -1;
+}
+
+int _sys_exec(const char *path)
+{
+	char *kpath;
+
+	kpath = strdup_from_user(path);
+	if ( NULL == kpath )
+		return -1; /* EFAULT or ENOMEM */
+	
+	return do_exec(kpath);
+}
+
+int _kernel_exec(const char *path)
+{
+	char *kpath;
+
+	kpath = strdup(path);
+	if ( NULL == kpath )
+		return -1; /* EFAULT or ENOMEM */
+	
+	return do_exec(kpath);
 }

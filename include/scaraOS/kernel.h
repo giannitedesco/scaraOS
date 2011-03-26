@@ -78,21 +78,16 @@ int memcmp(const void *s1, const void *s2, size_t n);
 void memcpy(void *dst, const void *src, size_t n);
 char *strchr(const char *str, int c);
 void memset(void *dst, int c, size_t n);
-
-#define UACCESS_KERNEL_OK (1 << 0)
+char *strdup(const char *s);
 
 /* Userspace access */
-static inline int strlen_from_user(const char *d, unsigned flags)
+static inline int strlen_from_user(const char *d)
 {
 	size_t max;
 
-	if ( flags & UACCESS_KERNEL_OK ) {
-		max = ~0;
-	}else{
-		max = uaddr_maxstr((vaddr_t)d);
-		if ( 0 == max )
-			return -1;
-	}
+	max = uaddr_maxstr((vaddr_t)d);
+	if ( 0 == max )
+		return -1;
 
 	return __strnlen_from_user(d, max);
 }
@@ -115,12 +110,12 @@ _malloc void *kmalloc(size_t sz);
 _malloc void *kmalloc0(size_t sz);
 void kfree(void *);
 
-static inline char *strdup_from_user(const char *uptr, unsigned flags)
+static inline char *strdup_from_user(const char *uptr)
 {
 	char *ret;
 	int sz, ssz;
 
-	sz = strlen_from_user(uptr, flags);
+	sz = strlen_from_user(uptr);
 	if ( sz <= 0 )
 		return NULL;
 
@@ -130,10 +125,7 @@ static inline char *strdup_from_user(const char *uptr, unsigned flags)
 	if ( NULL == ret )
 		return NULL;
 
-	if ( flags & UACCESS_KERNEL_OK )
-		ssz = __copy_from_user(ret, uptr, sz);
-	else
-		ssz = copy_from_user(ret, uptr, sz);
+	ssz = copy_from_user(ret, uptr, sz);
 	if ( ssz != sz || ret[sz - 1] != '\0' ) {
 		kfree(ret);
 		return NULL;

@@ -3,10 +3,8 @@
 #include <scaraOS/vfs.h>
 #include <scaraOS/blk.h>
 #include <scaraOS/mm.h>
-#include <scaraOS/syscall.h>
+#include <scaraOS/exec.h>
 #include <scaraOS/pci.h>
-
-static inline _SYSCALL1(_SYS_exec, int, _kernel_exec, const char *);
 
 /* Init task - the job of this task is to initialise all
  * installed drivers, mount the root filesystem and

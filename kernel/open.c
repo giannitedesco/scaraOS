@@ -13,7 +13,7 @@ int _sys_open(const char *fn, unsigned int mode)
 
 	me = __this_task;
 
-	kfn = strdup_from_user(fn, UACCESS_KERNEL_OK);
+	kfn = strdup_from_user(fn);
 	if ( NULL == kfn )
 		return -1; /* EFAULT or ENOMEM */
 

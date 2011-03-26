@@ -46,6 +46,24 @@ void itoa(char *buf, int base, int d)
 	}
 }
 
+char *strdup(const char *s)
+{
+	size_t len;
+	char *ret;
+	
+	if ( NULL == s )
+		return NULL;
+	
+	len = strlen(s);
+	ret = kmalloc(len + 1);
+	if ( NULL == ret )
+		return NULL;
+
+	memcpy(ret, s, len);
+	ret[len] = '\0';
+	return ret;
+}
+
 size_t strlen(const char *s)
 {
 	size_t ret;
