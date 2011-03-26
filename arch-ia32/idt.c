@@ -196,6 +196,7 @@ unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 	}
 
 	cli();
+	printk("Unhandled exception in kernel mode, halting\n");
 	printk("%s: %s @ 0x%.8lx",
 		tname[exc[exc_num].type], exc[exc_num].name, ctx.eip);
 	if ( exc[exc_num].err_code ) {
