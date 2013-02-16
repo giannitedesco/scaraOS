@@ -1,6 +1,7 @@
 # ScaraOS: A modern multiboot kernel for learning OS fundamentals
-## Copyright (c) 2001-2010 Gianni Tedesco (gianni at scaramanga dot co dot uk)
+Copyright (c) 2001-2010 Gianni Tedesco (gianni at scaramanga dot co dot uk)
 Released under the terms of the GNU GPL version 3 (see: COPYING)
+
 ---
 
 ScaraOS started out as a good way for me to learn a lot of interesting stuff
