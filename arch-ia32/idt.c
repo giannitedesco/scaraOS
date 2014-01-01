@@ -173,7 +173,7 @@ static const struct {
 	{EXC_TYPE_FAULT, 0, "SIMD Exception"},
 };
 
-unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
+_asmlinkage unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 {
 	static const char * const tname[] = {
 		"UNKNOWN",
@@ -220,7 +220,7 @@ unsigned exc_handler(uint32_t exc_num, volatile struct intr_ctx ctx)
 	idle_task_func();
 }
 
-void panic_exc(volatile struct intr_ctx ctx)
+_asmlinkage void panic_exc(volatile struct intr_ctx ctx)
 {
 	cli();
 	ctx_dump((struct intr_ctx *)&ctx);

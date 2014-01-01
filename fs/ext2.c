@@ -6,7 +6,7 @@
 
 static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 {
-	size_t first_block, last_block, num_blk, x;
+	size_t first_block, last_block, x;
 	struct buffer *bh;
 	ssize_t copied;
 
@@ -15,7 +15,6 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 
 	first_block = off / i->i_sb->s_blocksize;
 	last_block = (off + len) / i->i_sb->s_blocksize;
-	num_blk = last_block - first_block;
 	dprintk("EXT2: pread %lu @ %lu: blocks %lu - %lu\n",
 		len, off, first_block, last_block);
 

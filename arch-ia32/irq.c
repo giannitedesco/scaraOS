@@ -27,7 +27,7 @@ void set_irq_handler(int irq, irqfn h)
 		irq_fns[irq] = h;
 }
 
-unsigned irq_handler(uint32_t irq, volatile struct intr_ctx ctx)
+_asmlinkage unsigned irq_handler(uint32_t irq, volatile struct intr_ctx ctx)
 {
 	if ( irq >= 0 && irq < 16 )
 		irq_fns[irq](irq);

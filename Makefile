@@ -31,7 +31,6 @@ else
 GCC := $(CROSS_COMPILE)gcc
 endif
 CC  := $(CROSS_COMPILE)gcc
-LD  := $(CROSS_COMPILE)ld
 AR  := $(CROSS_COMPILE)ar
 STRIP := $(CROSS_COMPILE)strip
 
@@ -39,10 +38,10 @@ STRIP := $(CROSS_COMPILE)strip
 TARGET: all
 
 # Compiler flags
-LDFLAGS := -melf_i386 -nostdlib -N
-CFLAGS  :=-pipe -ggdb -Os -Wall \
+CFLAGS  :=-pipe -ggdb -O2 \
+	-mtune=corei7 \
 	-m32 -ffreestanding -fno-stack-protector \
-	-Wsign-compare -Wcast-align -Waggregate-return \
+	-Wall -Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
 	-Wmissing-format-attribute \
@@ -95,8 +94,10 @@ endif
 
 kernel.elf: Makefile $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	@echo " [LINK] $@"
-	@$(LD) $(LDFLAGS) -T $(ARCH_DIR)/kernel.lnk -o $@ \
-		--whole-archive $(IMAGE_OBJ)
+	@$(GCC) $(CFLAGS) -Wl,-melf_i386 -Wl,-nostdlib \
+		-nostartfiles \
+		-Wl,-T,$(ARCH_DIR)/kernel.lnk -o $@ \
+		$(IMAGE_OBJ)
 
 kernel.elf.stripped: kernel.elf
 	@echo " [STRIP] $@"
@@ -124,7 +125,7 @@ boot.img: userland kernel.elf.gz menu.lst
 boot_floppy: boot.img
 
 clean:
-	@$(RM) -f $(IMAGE_OBJ) $(ALL_DEPS) \
+	$(RM) -f $(IMAGE_OBJ) $(ALL_DEPS) \
 		$(KERNEL_OBJ) $(KERNEL_DIR)/kernel.o \
 		$(ARCH_OBJ) $(ARCH_DIR)/arch.o \
 		$(FS_OBJ) $(FS_DIR)/fs.o \

@@ -21,7 +21,7 @@
 
 #if __GNUC__
 #define _section(x) __attribute__((__section__(x)))
-#define _asmlinkage __attribute__((regparm(0)))
+#define _asmlinkage __attribute__((regparm(0))) __attribute__((used))
 #define _noreturn __attribute__((noreturn))
 #define _purefn __attribute__((pure))
 #define _printf(x,y) __attribute__((format(printf,x,y)))

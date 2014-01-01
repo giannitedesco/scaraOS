@@ -59,7 +59,7 @@ static const struct syscall_desc syscall_tbl[_SYS_NR_SYSCALLS] = {
 	[_SYS_write] {.type = _SYS_ARG3, .u.arg3 = (sys3_t)_sys_write },
 };
 
-unsigned syscall_exc(volatile struct intr_ctx ctx)
+_asmlinkage unsigned syscall_exc(volatile struct intr_ctx ctx)
 {
 	const struct syscall_desc *sys;
 	uint32_t ret;

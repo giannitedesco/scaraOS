@@ -1,6 +1,6 @@
 /*
 * ATA driver
-* 
+*
 * TODO:
 *	- Everything!
 */
@@ -9,14 +9,14 @@
 #include <arch/ide.h>
 
 #define DRIVETYPE_UNKNOWN	0
-#define DRIVETYPE_IDE 		1
-#define DRIVETYPE_ATAPI 	2
+#define DRIVETYPE_IDE		1
+#define DRIVETYPE_ATAPI		2
 
 /* Base address constants for parallel IDE */
-#define IDE_BAR0 0x1F0 	
-#define IDE_BAR1 0x3F4 	
-#define IDE_BAR2 0x170 	
-#define IDE_BAR3 0x374 
+#define IDE_BAR0 0x1F0
+#define IDE_BAR1 0x3F4
+#define IDE_BAR2 0x170
+#define IDE_BAR3 0x374
 #define IDE_BAR4 0x000
 
 static struct ide_channel {
@@ -24,9 +24,9 @@ static struct ide_channel {
 	uint16_t ctrl;  /* Control Base */
 	uint16_t bmide; /* Bus Master IDE */
 	uint8_t  nIEN;  /* nIEN (No Interrupt); */
-}channels[]={                                    
-    	/* default BAR locs. for PATA */
-	{IDE_BAR0,IDE_BAR1,IDE_BAR4+0,0},	
+}channels[]={
+	/* default BAR locs. for PATA */
+	{IDE_BAR0,IDE_BAR1,IDE_BAR4+0,0},
 	{IDE_BAR2,IDE_BAR3,IDE_BAR4+8,0}
 };
 
@@ -125,7 +125,7 @@ static void __init ata_init(void)
 	/* Disable interrupts */
 	ide_write(&channels[ATA_PRIMARY], ATA_REG_CONTROL, 2);
 	ide_write(&channels[ATA_SECONDARY], ATA_REG_CONTROL, 2);
-	
+
 	for(i = 0; i < 2; i++) {
 		for(j = 0; j < 2; j++) {
 			struct identity *cur_drv;
@@ -136,11 +136,11 @@ static void __init ata_init(void)
 			/* Select drive command sent, not sure what 0xA0 is*/
 			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
 				0xA0 | (j << 4));
-			
+
 			/* Identify drive command */
 			ide_write(&channels[i], ATA_REG_COMMAND, 
 				ATA_CMD_IDENTIFY);
-			
+
 			/* See what drives we have active */
 			if(ide_read(&channels[i], ATA_REG_STATUS) == 0) {
 				continue; /* No device so skip */

@@ -9,7 +9,7 @@ TOPDIR :=  .
 TARGET: all
 
 LDFLAGS := -melf_i386 -nostdlib -e_start --strip-all
-CFLAGS  := -pipe -ggdb -Os -Wall -ffreestanding -fno-stack-protector \
+CFLAGS  := -pipe -ggdb -O2 -Wall -ffreestanding -fno-stack-protector \
 	-Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wmissing-noreturn \
@@ -90,7 +90,7 @@ all: Makefile $(ALL_TARGETS)
 boot_floppy: all
 	@e2cp $(SBIN_TARGETS) $(BOOT_FLOPPY):/sbin/
 	@e2cp $(BIN_TARGETS) $(BOOT_FLOPPY):/bin/
-	@e2cp ../README $(BOOT_FLOPPY):/README
+	@e2cp ../README.md $(BOOT_FLOPPY):/README
 
 clean:
 	@rm -f $(ALL_OBJ) $(ALL_DEP) $(ALL_TARGETS)
