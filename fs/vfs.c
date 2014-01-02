@@ -20,6 +20,7 @@ void vfs_init(void)
 }
 
 /* Add a filesystem type */
+__attribute__((used))
 void vfs_add_fstype(struct vfs_fstype *t)
 {
 	if ( !t )

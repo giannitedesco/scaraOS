@@ -97,7 +97,7 @@ void do_initcalls(void)
 	/* Initialise device drivers */
 	for(fptr = &__initcall_start; fptr < &__initcall_end; fptr++) {
 		initcall_t fn = *fptr;
-		//printk("initcall fn *0x%x 0x%x\n", fptr, fn);
+		//printk("initcall fn *%p %p\n", fptr, fn);
 		fn();
 	}
 

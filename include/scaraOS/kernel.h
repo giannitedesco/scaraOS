@@ -20,9 +20,9 @@
 #include <scaraOS/ctype.h>
 
 /* GCC extensions */
-#define __init		_section(".text.init")
-#define __initdata	_section(".data.init")
-#define __init_call	_section(".initcall.init")
+#define __init		_section(".text.init") __attribute__((used))
+#define __initdata	_section(".data.init") __attribute__((used))
+#define __init_call	_section(".initcall.init") __attribute__((used))
 
 /* Common kernel API stuff */
 #if DEBUG_MODULE
@@ -39,7 +39,7 @@ _printf(1, 2) _noreturn void panic(const char *, ...);
 #if KDEBUG
 #define BUG_ON(x) if ( x ) panic("%s:%s:%u: %s\n", \
 			__FILE__, __FUNCTION__, __LINE__, #x)
-#else 
+#else
 #define BUG_ON(x) do {} while(0)
 #endif
 
@@ -48,7 +48,7 @@ _printf(1, 2) _noreturn void panic(const char *, ...);
 /* Driver initialisation */
 #define driver_init(fn) __initcall(fn)
 typedef void (*initcall_t)(void);
-#define __initcall(fn)  extern __init_call initcall_t __initcall_##fn; \
+#define __initcall(fn)  __init_call initcall_t __initcall_##fn; \
 			__init_call initcall_t __initcall_##fn = fn
 void do_initcalls(void);
 int init_task(void *priv);

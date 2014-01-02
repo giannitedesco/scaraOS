@@ -38,8 +38,11 @@ STRIP := $(CROSS_COMPILE)strip
 TARGET: all
 
 # Compiler flags
+#	-fno-inline \
+#
 CFLAGS  :=-pipe -ggdb -O2 \
 	-mtune=corei7 \
+	-flto -fwhole-program \
 	-m32 -ffreestanding -fno-stack-protector \
 	-Wall -Wsign-compare -Wcast-align -Waggregate-return \
 	-Wstrict-prototypes -Wmissing-prototypes \

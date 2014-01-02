@@ -122,7 +122,7 @@ void vga_curs(int x, int y)
 	outb(CRTC_DATA_REG, vid_off >> 8);
 }
 
-void vga_init(void)
+void __init vga_init(void)
 {
 	static const char * const m[] = {"none", "colour", "monochrome"};
 

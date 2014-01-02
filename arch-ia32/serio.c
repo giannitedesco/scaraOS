@@ -61,7 +61,7 @@ static void serio_isr(int irq)
 	}
 }
 
-static void serio_driver_init(void)
+static __init void serio_driver_init(void)
 {
 	printk("serio: com1 initialised\n");
 	outb(COM1 + 1, 1);
