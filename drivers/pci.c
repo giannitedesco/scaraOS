@@ -33,39 +33,41 @@ static const char * const bridge_str[] = {
 
 #define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | (ofs & 0xff))
 
-static uint32_t pcidev_conf_read32(struct pci_dev *dev, unsigned int addr)
+static inline uint32_t pcidev_conf_read32(struct pci_dev *dev,
+						unsigned int addr)
 {
 	return (*dev->pci_domain->d_ops->read_conf32)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static void pcidev_conf_write32(struct pci_dev *dev,
+static inline void pcidev_conf_write32(struct pci_dev *dev,
 				unsigned int addr, uint32_t v)
 {
 	(*dev->pci_domain->d_ops->write_conf32)(dev->pci_domain,
 					CONF_LOC(dev->pci_bdf, addr), v);
 }
 
-static uint16_t pcidev_conf_read16(struct pci_dev *dev, unsigned int addr)
+static inline uint16_t pcidev_conf_read16(struct pci_dev *dev,
+						unsigned int addr)
 {
 	return (*dev->pci_domain->d_ops->read_conf16)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static void pcidev_conf_write16(struct pci_dev *dev,
+static inline void pcidev_conf_write16(struct pci_dev *dev,
 				unsigned int addr, uint16_t v)
 {
 	(*dev->pci_domain->d_ops->write_conf8)(dev->pci_domain,
 					CONF_LOC(dev->pci_bdf, addr), v);
 }
 
-static uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr)
+static inline uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr)
 {
 	return (*dev->pci_domain->d_ops->read_conf8)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static void pcidev_conf_write8(struct pci_dev *dev,
+static inline void pcidev_conf_write8(struct pci_dev *dev,
 				unsigned int addr, uint8_t v)
 {
 	(*dev->pci_domain->d_ops->write_conf8)(dev->pci_domain,
@@ -182,7 +184,7 @@ __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)
 		}
 
 		/* extract the header type */
-		id = (*dom->d_ops->read_conf8)(dom,
+		type = (*dom->d_ops->read_conf8)(dom,
 					CONF_LOC(bdf, PCI_CONF_HDRTYPE));
 
 		switch(type & 0x7f) {
@@ -193,7 +195,7 @@ __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)
 			/* TODO: handle bridge */
 			break;
 		default:
-			printk(" - UNSUPPORTED HEADER TYPE: %ld\n", type);
+			printk(" - UNSUPPORTED HEADER TYPE: %d\n", type);
 			break;
 		}
 

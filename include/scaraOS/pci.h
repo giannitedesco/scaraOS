@@ -80,10 +80,6 @@ void __init pci_domain_add(struct pci_dom *dom);
 void __init pci_arch_init(void);
 void __init pci_init(void);
 
-struct pci_cls_driver {
-	uint32_t cls_rev;
-	uint32_t mask;
-};
 #endif
 
 #endif /* __PCI_H__ */
