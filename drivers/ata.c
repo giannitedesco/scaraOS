@@ -5,29 +5,29 @@
 *	- Everything!
 */
 #include <scaraOS/kernel.h>
+#include <scaraOS/ata.h>
 #include <arch/io.h>
-#include <arch/ide.h>
 
 #define DRIVETYPE_UNKNOWN	0
-#define DRIVETYPE_IDE		1
+#define DRIVETYPE_ATA		1
 #define DRIVETYPE_ATAPI		2
 
-/* Base address constants for parallel IDE */
-#define IDE_BAR0 0x1F0
-#define IDE_BAR1 0x3F4
-#define IDE_BAR2 0x170
-#define IDE_BAR3 0x374
-#define IDE_BAR4 0x000
+/* Base address constants for parallel ATA */
+#define ATA_BAR0 0x1F0
+#define ATA_BAR1 0x3F4
+#define ATA_BAR2 0x170
+#define ATA_BAR3 0x374
+#define ATA_BAR4 0x000
 
 static struct ide_channel {
 	uint16_t base;  /* I/O Base. */
 	uint16_t ctrl;  /* Control Base */
-	uint16_t bmide; /* Bus Master IDE */
+	uint16_t bmide; /* Bus Master ATA */
 	uint8_t  nIEN;  /* nIEN (No Interrupt); */
 }channels[]={
 	/* default BAR locs. for PATA */
-	{IDE_BAR0,IDE_BAR1,IDE_BAR4+0,0},
-	{IDE_BAR2,IDE_BAR3,IDE_BAR4+8,0}
+	{ATA_BAR0,ATA_BAR1,ATA_BAR4+0,0},
+	{ATA_BAR2,ATA_BAR3,ATA_BAR4+8,0}
 };
 
 struct identity {
@@ -43,21 +43,21 @@ struct identity {
 } __attribute__((packed));
 
 
-static void ide_write(const struct ide_channel *channel, uint8_t reg_offset, 
-	uint8_t data) 
+static void ide_write(const struct ide_channel *channel, uint8_t reg_offset,
+	uint8_t data)
 {
 	outb(channel->base  + reg_offset, data);
 }
 
-static uint8_t ide_read(const struct ide_channel *channel, uint8_t reg_offset) 
+static uint8_t ide_read(const struct ide_channel *channel, uint8_t reg_offset)
 {
 	uint8_t result;
 	result = inb(channel->base  + reg_offset);
 	return result;
 }
 
-static void ide_read_buffer(const struct ide_channel *channel, uint16_t *buf, 
-	unsigned int len) 
+static void ide_read_buffer(const struct ide_channel *channel, uint16_t *buf,
+	unsigned int len)
 {
 	unsigned int i;
 	for(i = 0; i < len; i++) {
@@ -86,14 +86,14 @@ static int drive_type(const struct ide_channel *chan)
 		if( s & ATA_SR_ERR )
 			break;
 		if ( (s & (ATA_SR_BSY|ATA_SR_DRQ)) == ATA_SR_DRQ ) {
-			ret = DRIVETYPE_IDE;
+			ret = DRIVETYPE_ATA;
 			goto out;
 		}
 		inb(0x80); /* pause */
 	}
 
-	/* ATA type is not IDE, let's check if it's
-	 * ATAPI 
+	/* ATA type is not ATA, let's check if it's
+	 * ATAPI
 	 */
 	lba1 = ide_read(chan, ATA_REG_LBA1);
 	lba2 = ide_read(chan, ATA_REG_LBA2);
@@ -120,25 +120,29 @@ out_ok:
 
 static void __init ata_init(void)
 {
+	struct identity *cur_drv;
 	unsigned int i,j;
 
 	/* Disable interrupts */
 	ide_write(&channels[ATA_PRIMARY], ATA_REG_CONTROL, 2);
 	ide_write(&channels[ATA_SECONDARY], ATA_REG_CONTROL, 2);
 
+	cur_drv = kmalloc(sizeof(*cur_drv));
+	if ( NULL == cur_drv ) {
+		panic("OOM\n");
+	}
+
 	for(i = 0; i < 2; i++) {
 		for(j = 0; j < 2; j++) {
-			struct identity *cur_drv;
 			int type;
-			uint8_t addr_mode;
 			unsigned int size = 0;
 
 			/* Select drive command sent, not sure what 0xA0 is*/
-			ide_write(&channels[i], ATA_REG_HDDEVSEL, 
+			ide_write(&channels[i], ATA_REG_HDDEVSEL,
 				0xA0 | (j << 4));
 
 			/* Identify drive command */
-			ide_write(&channels[i], ATA_REG_COMMAND, 
+			ide_write(&channels[i], ATA_REG_COMMAND,
 				ATA_CMD_IDENTIFY);
 
 			/* See what drives we have active */
@@ -150,55 +154,46 @@ static void __init ata_init(void)
 			/* Check if drive is ATA */
 			type = drive_type(&channels[i]);
 
-			cur_drv = kmalloc(sizeof(struct identity));
-
-			if(cur_drv == NULL) {
-				dprintk("IDE: Problem with kmalloc, quitting");
-				break;
-			}
-
-
+			memset(cur_drv, 0, sizeof(*cur_drv));
 			ide_read_buffer(&channels[i], (uint16_t *)cur_drv,
-				sizeof(struct identity));
+				sizeof(*cur_drv) / 2);
 
 			identification_bytesex(cur_drv);
 
 			if(cur_drv->features1 & (1 << 10)) {
-				addr_mode = ATA_ADDR_LBA48;
 				size = cur_drv->max_lba / 1024 / 2;
 			}
 			else {
-				addr_mode = ATA_ADDR_LBA28;
 				size = cur_drv->max_lba28 / 1024 / 2;
 			}
 
 			switch(type) {
-			case DRIVETYPE_IDE:
-				printk("IDE:   (%s,%s) - %.*s (%uMB)\n", 
+			case DRIVETYPE_ATA:
+				printk("ATA:   (%s,%s) - %.*s (%uMB)\n",
 					(const char *[]){"PRIMARY",
-						"SECONDARY"}[i], 
+						"SECONDARY"}[i],
 					(const char *[]){"MASTER",
-						"SLAVE"}[j], 
-					sizeof(cur_drv->model), 
+						"SLAVE"}[j],
+					sizeof(cur_drv->model),
 					(char*)(cur_drv->model),
 						size);
 				break;
 			case DRIVETYPE_ATAPI:
-				printk("ATAPI: (%s,%s) - %.*s\n", 
+				printk("ATAPI: (%s,%s) - %.*s\n",
 					(const char *[]){"PRIMARY",
-						"SECONDARY"}[i], 
+						"SECONDARY"}[i],
 					(const char *[]){"MASTER",
-						"SLAVE"}[j], 
-					sizeof(cur_drv->model), 
+						"SLAVE"}[j],
+					sizeof(cur_drv->model),
 					(char*)(cur_drv->model));
 				break;
 			default:
 				break;
-			} 
-
-			kfree(cur_drv);
+			}
 		}
 	}
+
+	kfree(cur_drv);
 }
 
 driver_init(ata_init);
