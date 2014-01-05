@@ -76,6 +76,13 @@ struct pci_dev {
 	uint32_t pci_bdf;
 };
 
+void pcidev_conf_write32(struct pci_dev *dev, unsigned int addr, uint32_t v);
+void pcidev_conf_write16(struct pci_dev *dev, unsigned int addr, uint16_t v);
+void pcidev_conf_write8(struct pci_dev *dev, unsigned int addr, uint8_t v);
+uint32_t pcidev_conf_read32(struct pci_dev *dev, unsigned int addr);
+uint16_t pcidev_conf_read16(struct pci_dev *dev, unsigned int addr);
+uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr);
+
 void __init pci_domain_add(struct pci_dom *dom);
 void __init pci_arch_init(void);
 void __init pci_init(void);

@@ -33,42 +33,37 @@ static const char * const bridge_str[] = {
 
 #define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | (ofs & 0xff))
 
-static inline uint32_t pcidev_conf_read32(struct pci_dev *dev,
-						unsigned int addr)
+uint32_t pcidev_conf_read32(struct pci_dev *dev, unsigned int addr)
 {
 	return (*dev->pci_domain->d_ops->read_conf32)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static inline void pcidev_conf_write32(struct pci_dev *dev,
-				unsigned int addr, uint32_t v)
+void pcidev_conf_write32(struct pci_dev *dev, unsigned int addr, uint32_t v)
 {
 	(*dev->pci_domain->d_ops->write_conf32)(dev->pci_domain,
 					CONF_LOC(dev->pci_bdf, addr), v);
 }
 
-static inline uint16_t pcidev_conf_read16(struct pci_dev *dev,
-						unsigned int addr)
+uint16_t pcidev_conf_read16(struct pci_dev *dev, unsigned int addr)
 {
 	return (*dev->pci_domain->d_ops->read_conf16)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static inline void pcidev_conf_write16(struct pci_dev *dev,
-				unsigned int addr, uint16_t v)
+void pcidev_conf_write16(struct pci_dev *dev, unsigned int addr, uint16_t v)
 {
 	(*dev->pci_domain->d_ops->write_conf8)(dev->pci_domain,
 					CONF_LOC(dev->pci_bdf, addr), v);
 }
 
-static inline uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr)
+uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr)
 {
 	return (*dev->pci_domain->d_ops->read_conf8)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static inline void pcidev_conf_write8(struct pci_dev *dev,
-				unsigned int addr, uint8_t v)
+void pcidev_conf_write8(struct pci_dev *dev, unsigned int addr, uint8_t v)
 {
 	(*dev->pci_domain->d_ops->write_conf8)(dev->pci_domain,
 					CONF_LOC(dev->pci_bdf, addr), v);
