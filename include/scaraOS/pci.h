@@ -4,25 +4,37 @@
 #define PCI_NUM_BARS		6
 
 /* PCI CONFIG SPACE */
-#define PCI_CONF_ID		0x00 /* vendor and device ID */
-#define PCI_CONF_CMDSTAT	0x01 /* commands & stats */
-#define	PCI_CONF_CLASS		0x02 /* class & revision */
-#define PCI_CONF_BIST		0x03 /* bist, type, timer, cache line size */
+#define PCI_CONF_ID		0x00 /* device ID */
+#define  PCI_CONF_DEVCE		 0x00
+#define  PCI_CONF_VENDOR	 0x02
+#define PCI_CONF_CMDSTAT	0x04 /* commands & stats */
+#define  PCI_CONF_STATUS	 0x04
+#define  PCI_CONF_COMMAND	 0x06
+#define	PCI_CONF_CLASSREV	0x08 /* class & revision */
+#define  PCI_CONF_REV		 0x08
+#define  PCI_CONF_CLASS		 0x09
+#define  PCI_CONF_SUBCLASS	 0x0a
+#define  PCI_CONF_PROGIF	 0x0b
+#define PCI_CONF_HWINFO		0x0c /* cache-line size, lat, hdr type, bist */
+#define  PCI_CONF_CACHE_LINE	 0x0c
+#define  PCI_CONF_LATENCY	 0x0d
+#define  PCI_CONF_HDRTYPE	 0x0e
+#define  PCI_CONF_BIST		 0x0f
 
 /* type 0 header */
-#define PCI_CONF0_BAR0		0x04
-#define PCI_CONF0_BAR1		0x05
-#define PCI_CONF0_BAR2		0x06
-#define PCI_CONF0_BAR3		0x07
-#define PCI_CONF0_BAR4		0x08
-#define PCI_CONF0_BAR5		0x09
-#define PCI_CONF0_CIS		0x0a /* CardBUS CIS pointer */
-#define PCI_CONF0_SUBSYS	0x0b
-#define PCI_CONF0_ROM_BAR	0x0c
-#define PCI_CONF0_CAP_OFS	0x0d
-#define PCI_CONF0_RSVD1		0x0e
-#define PCI_CONF0_IRQ		0x0f /* line, pin, min/max lat */
-#define PCI_CONF0_RSVD		0x10
+#define PCI_CONF0_BAR0		0x10
+#define PCI_CONF0_BAR1		0x14
+#define PCI_CONF0_BAR2		0x18
+#define PCI_CONF0_BAR3		0x1c
+#define PCI_CONF0_BAR4		0x20
+#define PCI_CONF0_BAR5		0x24
+#define PCI_CONF0_CIS		0x28 /* CardBUS CIS pointer */
+#define PCI_CONF0_SUBSYS	0x2c
+#define PCI_CONF0_ROM_BAR	0x30
+#define PCI_CONF0_CAP_OFS	0x34
+#define PCI_CONF0_RSVD1		0x38
+#define PCI_CONF0_IRQ		0x3c /* line, pin, min/max lat */
+#define PCI_CONF0_RSVD		0x40
 
 #define PCI_NUM_BUSSES		0x100
 #define PCI_NUM_DEVS		0x20
@@ -49,8 +61,12 @@ struct pci_dom {
 };
 
 struct pci_dom_ops {
-	uint32_t (*read_conf)(struct pci_dom *dom, uint32_t addr);
-	void (*write_conf)(struct pci_dom *dom, uint32_t addr, uint32_t w);
+	uint32_t (*read_conf32)(struct pci_dom *dom, uint32_t addr);
+	void (*write_conf32)(struct pci_dom *dom, uint32_t addr, uint32_t w);
+	uint16_t (*read_conf16)(struct pci_dom *dom, uint32_t addr);
+	void (*write_conf16)(struct pci_dom *dom, uint32_t addr, uint16_t w);
+	uint8_t (*read_conf8)(struct pci_dom *dom, uint32_t addr);
+	void (*write_conf8)(struct pci_dom *dom, uint32_t addr, uint8_t w);
 };
 
 struct pci_dev {

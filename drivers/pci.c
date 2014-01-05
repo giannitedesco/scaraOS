@@ -31,18 +31,44 @@ static const char * const bridge_str[] = {
 	"PCI/CardBus bridge",
 };
 
-#define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | ((ofs << 2) & 0xff))
+#define CONF_LOC(bdf, ofs)(0x80000000 | (bdf << 8) | (ofs & 0xff))
 
-static uint32_t pcidev_conf_read(struct pci_dev *dev, unsigned int addr)
+static uint32_t pcidev_conf_read32(struct pci_dev *dev, unsigned int addr)
 {
-	return (*dev->pci_domain->d_ops->read_conf)(dev->pci_domain,
+	return (*dev->pci_domain->d_ops->read_conf32)(dev->pci_domain,
 						CONF_LOC(dev->pci_bdf, addr));
 }
 
-static void pcidev_conf_write(struct pci_dev *dev,
+static void pcidev_conf_write32(struct pci_dev *dev,
 				unsigned int addr, uint32_t v)
 {
-	(*dev->pci_domain->d_ops->write_conf)(dev->pci_domain,
+	(*dev->pci_domain->d_ops->write_conf32)(dev->pci_domain,
+					CONF_LOC(dev->pci_bdf, addr), v);
+}
+
+static uint16_t pcidev_conf_read16(struct pci_dev *dev, unsigned int addr)
+{
+	return (*dev->pci_domain->d_ops->read_conf16)(dev->pci_domain,
+						CONF_LOC(dev->pci_bdf, addr));
+}
+
+static void pcidev_conf_write16(struct pci_dev *dev,
+				unsigned int addr, uint16_t v)
+{
+	(*dev->pci_domain->d_ops->write_conf8)(dev->pci_domain,
+					CONF_LOC(dev->pci_bdf, addr), v);
+}
+
+static uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr)
+{
+	return (*dev->pci_domain->d_ops->read_conf8)(dev->pci_domain,
+						CONF_LOC(dev->pci_bdf, addr));
+}
+
+static void pcidev_conf_write8(struct pci_dev *dev,
+				unsigned int addr, uint8_t v)
+{
+	(*dev->pci_domain->d_ops->write_conf8)(dev->pci_domain,
 					CONF_LOC(dev->pci_bdf, addr), v);
 }
 
@@ -53,9 +79,9 @@ static void pcidev_scan_bars(struct pci_dev *dev)
 
 	for(i = 0; i < PCI_NUM_BARS; i++) {
 		uint32_t bar, sz, io;
-		bar = pcidev_conf_read(dev, PCI_CONF0_BAR0 + i);
-		pcidev_conf_write(dev, PCI_CONF0_BAR0 + i, ~0UL);
-		sz = pcidev_conf_read(dev, PCI_CONF0_BAR0 + i);
+		bar = pcidev_conf_read32(dev, PCI_CONF0_BAR0 + (i << 2));
+		pcidev_conf_write32(dev, PCI_CONF0_BAR0 + (i << 2), ~0UL);
+		sz = pcidev_conf_read32(dev, PCI_CONF0_BAR0 + (i << 2));
 		if ( !bar )
 			continue;
 		if ( bar & 1 ) {
@@ -86,11 +112,11 @@ static void pcidev_scan_bars(struct pci_dev *dev)
 			(io) ? "I/O" : "MEM", i, sz, bar);
 	}
 
-	irq = pcidev_conf_read(dev, PCI_CONF0_IRQ);
+	irq = pcidev_conf_read32(dev, PCI_CONF0_IRQ);
 	if ( irq & 0xff ) {
 		printk(" - IRQ line %ld, #INT%c pin\n",
 			(irq) & 0xff,
-			'A' + ((irq >> 8) & 0xff));
+			'A' + (int)((irq >> 8) & 0xff));
 	}
 }
 
@@ -98,7 +124,7 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 				unsigned d, unsigned f)
 {
 	struct pci_dev *dev;
-	uint32_t id, cls, type;
+	uint32_t id, cls;
 	const char *cstr;
 	char clsbuf[10];
 
@@ -111,12 +137,8 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 	dev->pci_bdf = PCI_BDF(b, d, f);
 	list_add_tail(&dev->pci_list, &dom->d_devices);
 
-	id = pcidev_conf_read(dev, PCI_CONF_ID);
-	cls = pcidev_conf_read(dev, PCI_CONF_CLASS);
-
-	/* extract the header type */
-	type = pcidev_conf_read(dev, PCI_CONF_BIST);
-	type = (type >> 16) & 0x7f;
+	id = pcidev_conf_read32(dev, PCI_CONF_ID);
+	cls = pcidev_conf_read32(dev, PCI_CONF_CLASSREV);
 
 	if ( (cls >> 24) < ARRAY_SIZE(cls_str) ) {
 		if ( (cls >> 24) == 6 &&
@@ -137,14 +159,7 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 		id & 0xffff, id >> 16,
 		cstr,
 		cls & 0xff);
-	switch(type) {
-	case 0:
-		pcidev_scan_bars(dev);
-		break;
-	default:
-		printk(" - UNSUPPORTED HEADER TYPE: %ld\n", type);
-		break;
-	}
+	pcidev_scan_bars(dev);
 
 }
 
@@ -154,8 +169,11 @@ __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)
 	uint32_t id;
 
 	for(f = 0; f < PCI_NUM_FUNCS; f++) {
+		uint8_t type;
+
 		bdf = PCI_BDF(b, d, f);
-		id = (*dom->d_ops->read_conf)(dom, CONF_LOC(bdf, PCI_CONF_ID));
+		id = (*dom->d_ops->read_conf32)(dom,
+					CONF_LOC(bdf, PCI_CONF_ID));
 		if ( id == ~0UL ) {
 			if ( 0 == f )
 				return;
@@ -163,7 +181,26 @@ __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)
 				continue;
 		}
 
-		pcidev_add(dom, b, d, f);
+		/* extract the header type */
+		id = (*dom->d_ops->read_conf8)(dom,
+					CONF_LOC(bdf, PCI_CONF_HDRTYPE));
+
+		switch(type & 0x7f) {
+		case 0:
+			pcidev_add(dom, b, d, f);
+			break;
+		case 1:
+			/* TODO: handle bridge */
+			break;
+		default:
+			printk(" - UNSUPPORTED HEADER TYPE: %ld\n", type);
+			break;
+		}
+
+		if ( f == 0 && (type & 0x80) ) {
+			/* we know it's a single function device */
+			return;
+		}
 	}
 }
 

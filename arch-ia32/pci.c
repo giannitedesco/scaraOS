@@ -43,23 +43,55 @@ static void conf_latch(struct pci_dom_conf1 *d, uint32_t latch)
 	}
 }
 
-static uint32_t read_conf1(struct pci_dom *dom, uint32_t addr)
+static uint32_t read_conf1_32(struct pci_dom *dom, uint32_t addr)
 {
 	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
 	conf_latch(d, addr);
 	return inl(PCI_CONFDATA);
 }
 
-static void write_conf1(struct pci_dom *dom, uint32_t addr, uint32_t w)
+static void write_conf1_32(struct pci_dom *dom, uint32_t addr, uint32_t w)
 {
 	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
 	conf_latch(d, addr);
 	outl(PCI_CONFDATA, w);
 }
 
+static uint16_t read_conf1_16(struct pci_dom *dom, uint32_t addr)
+{
+	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
+	conf_latch(d, addr);
+	return inw(PCI_CONFDATA + (addr & 0x2));
+}
+
+static void write_conf1_16(struct pci_dom *dom, uint32_t addr, uint16_t w)
+{
+	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
+	conf_latch(d, addr);
+	outw(PCI_CONFDATA, w + (addr & 0x2));
+}
+
+static uint8_t read_conf1_8(struct pci_dom *dom, uint32_t addr)
+{
+	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
+	conf_latch(d, addr);
+	return inb(PCI_CONFDATA + (addr & 0x3));
+}
+
+static void write_conf1_8(struct pci_dom *dom, uint32_t addr, uint8_t w)
+{
+	struct pci_dom_conf1 *d = (struct pci_dom_conf1 *)dom;
+	conf_latch(d, addr);
+	outb(PCI_CONFDATA, w + (addr & 0x3));
+}
+
 static const struct pci_dom_ops pci_conf1_ops = {
-	.read_conf = read_conf1,
-	.write_conf = write_conf1,
+	.read_conf32 = read_conf1_32,
+	.write_conf32 = write_conf1_32,
+	.read_conf16 = read_conf1_16,
+	.write_conf16 = write_conf1_16,
+	.read_conf8 = read_conf1_8,
+	.write_conf8 = write_conf1_8,
 };
 
 static struct pci_dom_conf1 pci_conf1 = {
