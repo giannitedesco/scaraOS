@@ -122,15 +122,15 @@ static int ext2_read_inode(struct inode *i)
 		printk("EXT2: Bad group %lu\n", block_group);
 		return -1;
 	}
-	
+
 	/* 3. Obtain block group descriptor */
 	group_desc = block_group / i->i_sb->u.ext2.s_desc_per_block;
 	desc = block_group % i->i_sb->u.ext2.s_desc_per_block;
 	b = i->i_sb->u.ext2.s_group_desc[group_desc];
 	gdp = (struct ext2_group_desc *)b->b_buf;
-	
+
 	/* 4. Obtain correct block from inode table */
-	block = gdp[desc].bg_inode_table + 
+	block = gdp[desc].bg_inode_table +
 		((i->i_ino - 1) / i->i_sb->u.ext2.s_inodes_per_block);
 	if ( !(b=blk_read(i->i_sb->s_dev, block)) ) {
 		printk("EXT2: Unable to read inode block - inode=%lu, block=%lu\n",
@@ -142,7 +142,7 @@ static int ext2_read_inode(struct inode *i)
 	offset = (i->i_ino - 1) * i->i_sb->u.ext2.s_es->s_inode_size;
 	offset &= (i->i_sb->s_blocksize - 1);
 	raw_inode = (struct ext2_inode *)(b->b_buf + offset);
-	
+
 	/* 6. Copy the inode */
 	dprintk("Inode %lu mode %o\n", i->i_ino, raw_inode->i_mode);
 	switch(raw_inode->i_mode & S_IFMT) {
@@ -261,7 +261,7 @@ err:
 	return -1;
 }
 
-static struct vfs_fstype ext2_fstype={
+static struct vfs_fstype ext2_fstype = {
 	.name = "ext2",
 	.read_super = ext2_get_super,
 };

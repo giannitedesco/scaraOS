@@ -5,7 +5,7 @@
 #define INT_MAX		((int)(~0U>>1))
 #define INT_MIN		(-INT_MAX - 1)
 #define UINT_MAX	(~0U)
-#define NULL 		((void *)0)
+#define NULL		((void *)0)
 
 #include <scaraOS/compiler.h>
 #include <scaraOS/types.h>
