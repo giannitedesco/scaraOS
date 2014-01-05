@@ -27,7 +27,7 @@ static int __init pci_probe(void)
 	outb(PCI_CONF_MODE, 0x00);
 	outb(PCI_CONFREG, 0x00);
 	outb(0x0cfa, 0x00);
-	if ( (inb(PCI_CONFREG) == 0x00) && 
+	if ( (inb(PCI_CONFREG) == 0x00) &&
 		(inb(0xCFA) == 0x00)) {
 		return 2;
 	}

@@ -49,12 +49,13 @@ static void pcidev_conf_write(struct pci_dev *dev,
 static void pcidev_scan_bars(struct pci_dev *dev)
 {
 	unsigned int i;
+	uint32_t irq;
 
 	for(i = 0; i < PCI_NUM_BARS; i++) {
 		uint32_t bar, sz, io;
-		bar = pcidev_conf_read(dev, PCI_CONF_BAR0 + i);
-		pcidev_conf_write(dev, PCI_CONF_BAR0 + i, ~0UL);
-		sz = pcidev_conf_read(dev, PCI_CONF_BAR0 + i);
+		bar = pcidev_conf_read(dev, PCI_CONF0_BAR0 + i);
+		pcidev_conf_write(dev, PCI_CONF0_BAR0 + i, ~0UL);
+		sz = pcidev_conf_read(dev, PCI_CONF0_BAR0 + i);
 		if ( !bar )
 			continue;
 		if ( bar & 1 ) {
@@ -84,13 +85,20 @@ static void pcidev_scan_bars(struct pci_dev *dev)
 		printk(" - %s BAR%d (%8lu @ 0x%.8lx)\n",
 			(io) ? "I/O" : "MEM", i, sz, bar);
 	}
+
+	irq = pcidev_conf_read(dev, PCI_CONF0_IRQ);
+	if ( irq & 0xff ) {
+		printk(" - IRQ line %ld, #INT%c pin\n",
+			(irq) & 0xff,
+			'A' + ((irq >> 8) & 0xff));
+	}
 }
 
 static void pcidev_add(struct pci_dom *dom, unsigned b,
 				unsigned d, unsigned f)
 {
 	struct pci_dev *dev;
-	uint32_t id, cls;
+	uint32_t id, cls, type;
 	const char *cstr;
 	char clsbuf[10];
 
@@ -99,11 +107,16 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 		return;
 
 	dev->pci_domain = dom;
+	dev->pci_driver = NULL;
 	dev->pci_bdf = PCI_BDF(b, d, f);
 	list_add_tail(&dev->pci_list, &dom->d_devices);
 
 	id = pcidev_conf_read(dev, PCI_CONF_ID);
 	cls = pcidev_conf_read(dev, PCI_CONF_CLASS);
+
+	/* extract the header type */
+	type = pcidev_conf_read(dev, PCI_CONF_BIST);
+	type = (type >> 16) & 0x7f;
 
 	if ( (cls >> 24) < ARRAY_SIZE(cls_str) ) {
 		if ( (cls >> 24) == 6 &&
@@ -124,8 +137,15 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 		id & 0xffff, id >> 16,
 		cstr,
 		cls & 0xff);
-	
-	pcidev_scan_bars(dev);
+	switch(type) {
+	case 0:
+		pcidev_scan_bars(dev);
+		break;
+	default:
+		printk(" - UNSUPPORTED HEADER TYPE: %ld\n", type);
+		break;
+	}
+
 }
 
 __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)

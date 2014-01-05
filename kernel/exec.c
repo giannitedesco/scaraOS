@@ -123,7 +123,7 @@ int _sys_exec(const char *path)
 	kpath = strdup_from_user(path);
 	if ( NULL == kpath )
 		return -1; /* EFAULT or ENOMEM */
-	
+
 	return do_exec(kpath);
 }
 
@@ -134,6 +134,6 @@ int _kernel_exec(const char *path)
 	kpath = strdup(path);
 	if ( NULL == kpath )
 		return -1; /* EFAULT or ENOMEM */
-	
+
 	return do_exec(kpath);
 }
