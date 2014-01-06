@@ -5,9 +5,19 @@
 *	- Everything!
 */
 #include <scaraOS/kernel.h>
-#include <scaraOS/ata.h>
 #include <scaraOS/pci.h>
+#include <scaraOS/semaphore.h>
+#include <scaraOS/blk.h>
+#include <arch/timer.h>
 #include <arch/io.h>
+#include <scaraOS/ata.h>
+
+/* Table 4 - PCI Adapter bit definitions in Programming Interface byte */
+#define PROGIF_X_MODE		(1 << 0)
+#define PROGIF_X_MODE_FIXED	(1 << 1)
+#define PROGIF_Y_MODE		(1 << 2)
+#define PROGIF_Y_MODE_FIXED	(1 << 3)
+#define PROGIF_BUS_MASTER	(1 << 7)
 
 #define DRIVETYPE_UNKNOWN	0
 #define DRIVETYPE_ATA		1
@@ -15,198 +25,250 @@
 
 /* Base address constants for parallel ATA */
 #define ATA_BAR0 0x1F0
-#define ATA_BAR1 0x3F4
+#define ATA_BAR1 0x3F6
 #define ATA_BAR2 0x170
-#define ATA_BAR3 0x374
+#define ATA_BAR3 0x376
 #define ATA_BAR4 0x000
 
-static struct ide_channel {
-	uint16_t base;  /* I/O Base. */
-	uint16_t ctrl;  /* Control Base */
-	uint16_t bmide; /* Bus Master ATA */
-	uint8_t  nIEN;  /* nIEN (No Interrupt); */
-}channels[]={
-	/* default BAR locs. for PATA */
-	{ATA_BAR0,ATA_BAR1,ATA_BAR4+0,0},
-	{ATA_BAR2,ATA_BAR3,ATA_BAR4+8,0}
+struct ata_chan {
+	unsigned int cmd_bar;
+	unsigned int ctl_bar;
+	unsigned int dma_bar;
+	unsigned int irq;
 };
 
-struct identity {
-	uint16_t _pad1[27]; /* 0-26 */
-	uint16_t model[20]; /* 27-46 */
-	uint16_t _pad2[13]; /* 47-59 */
-	uint32_t max_lba28; /* 60-61 */
-	uint16_t _pad3[21]; /* 47-82 */
-	uint16_t features1; /* 83 */
-	uint16_t _pad4[16]; /* 84 - 99 */
-	uint64_t max_lba; /* 100-103 */
-	uint16_t _pad5[152]; /* 104-255 */
-} __attribute__((packed));
+struct ata_dev {
+	struct ata_chan ata_x;
+	struct ata_chan ata_y;
+	unsigned int ata_ref; /* reference count */
+};
+struct ata_blkdev {
+	struct blkdev blk;
+	struct ata_dev *dev;
+	unsigned int chan; /* 0 for X, 1 for Y */
+	unsigned int sel; /* 0 for master, 1 for slave */
+};
 
-
-static void ide_write(const struct ide_channel *channel, uint8_t reg_offset,
-	uint8_t data)
+static inline
+void ata_devctl(const struct ata_chan *chan, uint8_t data)
 {
-	outb(channel->base  + reg_offset, data);
+	outb(chan->ctl_bar, ATA_DEVCTL_RSVD|data);
 }
 
-static uint8_t ide_read(const struct ide_channel *channel, uint8_t reg_offset)
+static inline
+uint8_t ata_alt_status(const struct ata_chan *chan)
 {
-	uint8_t result;
-	result = inb(channel->base  + reg_offset);
-	return result;
+	return inb(chan->ctl_bar);
 }
 
-static void ide_read_buffer(const struct ide_channel *channel, uint16_t *buf,
-	unsigned int len)
+static inline
+uint8_t ata_data(const struct ata_chan *chan)
 {
-	unsigned int i;
-	for(i = 0; i < len; i++) {
-		buf[i] = inw(channel->base);
-	}
+	return inb(chan->cmd_bar);
 }
 
-/* Some of the values stored are strings which need byteswapping */
-static void identification_bytesex(struct identity *id)
+static inline
+uint8_t ata_error(const struct ata_chan *chan)
 {
-	unsigned int k;
-
-	for(k = 0; k < ARRAY_SIZE(id->model); k++) {
-		id->model[k] = __bswap_16(id->model[k]);
-	}
+	return inb(chan->cmd_bar + 1);
 }
 
-static int drive_type(const struct ide_channel *chan)
+static inline
+void ata_feature(const struct ata_chan *chan, uint8_t f)
 {
-	unsigned int retries = 12;
-	uint8_t lba1, lba2, s;
-	int ret = DRIVETYPE_UNKNOWN;
-
-	while( --retries ) {
-		s = ide_read(chan, ATA_REG_STATUS);
-		if( s & ATA_SR_ERR )
-			break;
-		if ( (s & (ATA_SR_BSY|ATA_SR_DRQ)) == ATA_SR_DRQ ) {
-			ret = DRIVETYPE_ATA;
-			goto out;
-		}
-		inb(0x80); /* pause */
-	}
-
-	/* ATA type is not ATA, let's check if it's
-	 * ATAPI
-	 */
-	lba1 = ide_read(chan, ATA_REG_LBA1);
-	lba2 = ide_read(chan, ATA_REG_LBA2);
-	if(lba1 == 0x14 && lba2 == 0xEB) {
-		/* Drive is ATAPI */
-		ide_write(chan, ATA_REG_COMMAND, ATA_CMD_IDENTIFY_PACKET);
-		ret = DRIVETYPE_ATAPI;
-	}
-
-out:
-	for(retries = 12; retries; --retries) {
-		s = ide_read(chan, ATA_REG_STATUS);
-		if ( s & ATA_SR_ERR )
-			return DRIVETYPE_UNKNOWN;
-		if ( (s & ATA_SR_BSY) == 0 )
-			goto out_ok;
-		inb(0x80); /* pause */
-	}
-
-	return DRIVETYPE_UNKNOWN; /* ?? */
-out_ok:
-	return ret;
+	outb(chan->cmd_bar + 1, f);
 }
 
-static void __init ata_init(void)
+static inline
+uint8_t ata_get_sector_count(const struct ata_chan *chan)
 {
-	struct identity *cur_drv;
-	unsigned int i,j;
-
-	/* Disable interrupts */
-	ide_write(&channels[ATA_PRIMARY], ATA_REG_CONTROL, 2);
-	ide_write(&channels[ATA_SECONDARY], ATA_REG_CONTROL, 2);
-
-	cur_drv = kmalloc(sizeof(*cur_drv));
-	if ( NULL == cur_drv ) {
-		panic("OOM\n");
-	}
-
-	for(i = 0; i < 2; i++) {
-		for(j = 0; j < 2; j++) {
-			int type;
-			unsigned int size = 0;
-
-			/* Select drive command sent, not sure what 0xA0 is*/
-			ide_write(&channels[i], ATA_REG_HDDEVSEL,
-				0xA0 | (j << 4));
-
-			/* Identify drive command */
-			ide_write(&channels[i], ATA_REG_COMMAND,
-				ATA_CMD_IDENTIFY);
-
-			/* See what drives we have active */
-			if(ide_read(&channels[i], ATA_REG_STATUS) == 0) {
-				continue; /* No device so skip */
-			}
-
-
-			/* Check if drive is ATA */
-			type = drive_type(&channels[i]);
-
-			memset(cur_drv, 0, sizeof(*cur_drv));
-			ide_read_buffer(&channels[i], (uint16_t *)cur_drv,
-				sizeof(*cur_drv) / 2);
-
-			identification_bytesex(cur_drv);
-
-			if(cur_drv->features1 & (1 << 10)) {
-				size = cur_drv->max_lba / 1024 / 2;
-			}
-			else {
-				size = cur_drv->max_lba28 / 1024 / 2;
-			}
-
-			switch(type) {
-			case DRIVETYPE_ATA:
-				printk("ATA:   (%s,%s) - %.*s (%uMB)\n",
-					(const char *[]){"PRIMARY",
-						"SECONDARY"}[i],
-					(const char *[]){"MASTER",
-						"SLAVE"}[j],
-					sizeof(cur_drv->model),
-					(char*)(cur_drv->model),
-						size);
-				break;
-			case DRIVETYPE_ATAPI:
-				printk("ATAPI: (%s,%s) - %.*s\n",
-					(const char *[]){"PRIMARY",
-						"SECONDARY"}[i],
-					(const char *[]){"MASTER",
-						"SLAVE"}[j],
-					sizeof(cur_drv->model),
-					(char*)(cur_drv->model));
-				break;
-			default:
-				break;
-			}
-		}
-	}
-
-	kfree(cur_drv);
+	return inb(chan->cmd_bar + 2);
+}
+static inline
+void ata_set_sector_count(const struct ata_chan *chan, uint8_t f)
+{
+	outb(chan->cmd_bar + 2, f);
 }
 
-driver_init(ata_init);
-
-static int pci_ata_attach(struct pci_dev *dev)
+static inline
+uint8_t ata_get_sector(const struct ata_chan *chan)
 {
-	uint8_t progif;
+	return inb(chan->cmd_bar + 3);
+}
+static inline
+void ata_set_sector(const struct ata_chan *chan, uint8_t f)
+{
+	outb(chan->cmd_bar + 3, f);
+}
 
-	progif = pcidev_conf_read8(dev, PCI_CONF_PROGIF);
-	printk("progif 0x%x\n", progif);
+static inline
+uint8_t ata_get_cyl_lo(const struct ata_chan *chan)
+{
+	return inb(chan->cmd_bar + 4);
+}
+static inline
+void ata_set_cyl_lo(const struct ata_chan *chan, uint8_t f)
+{
+	outb(chan->cmd_bar + 4, f);
+}
+
+static inline
+uint8_t ata_get_cyl_hi(const struct ata_chan *chan)
+{
+	return inb(chan->cmd_bar + 5);
+}
+static inline
+void ata_set_cyl_hi(const struct ata_chan *chan, uint8_t f)
+{
+	outb(chan->cmd_bar + 5, f);
+}
+
+static inline
+uint8_t ata_get_drive_head(const struct ata_chan *chan)
+{
+	return inb(chan->cmd_bar + 6);
+}
+static inline
+void ata_set_drive_head(const struct ata_chan *chan, uint8_t d, uint8_t h)
+{
+	/* TODO: cache this to avoid un-necessary drive selections */
+	/* 0xa0 are the obsolete bits which must be set to one */
+	outb(chan->cmd_bar + 6, 0xa0 | (!!d << 4) | (h & 0xf));
+}
+
+static inline
+uint8_t ata_status(const struct ata_chan *chan)
+{
+	return inb(chan->cmd_bar + 7);
+}
+
+static inline
+void ata_command(const struct ata_chan *chan, uint8_t f)
+{
+	outb(chan->cmd_bar + 7, f);
+}
+
+static int ata_chan_reset(const struct ata_chan *chan)
+{
+	/* reset and disable interrupts */
+	ata_devctl(chan, ATA_DEVCTL_SRST|ATA_DEVCTL_nIEN);
+	/* de-assert reset, leave interrupts disabled */
+	ata_devctl(chan, ATA_DEVCTL_nIEN);
+
+#if 0
+	do{
+		udelay(10);
+		printk("rst: 0x%.2x\n", ata_status(chan));
+	}while( ata_status(chan) & ATA_STATUS_BSY );
+#endif
 
 	return 0;
+}
+
+static int ata_chan_init(const struct ata_dev *dev, const struct ata_chan *chan)
+{
+	unsigned int d;
+	int ret;
+
+	ret = ata_chan_reset(chan);
+	if ( ret )
+		return ret;
+
+	for(d = 0; d < 2; d++) {
+		ata_set_drive_head(chan, d, 0);
+		ata_command(chan, ATA_CMD_IDENTIFY);
+#if 0
+		do{
+			udelay(10);
+			printk("cmd: 0x%.2x\n", ata_status(chan));
+		}while( ata_status(chan) & ATA_STATUS_BSY );
+#endif
+		if ( !ata_status(chan) )
+			continue;
+
+		printk("drive %d attached\n", d);
+	}
+	printk("\n");
+	return 0;
+}
+
+static int ata_dev_init(struct ata_dev *dev)
+{
+	int ret;
+
+	ret = ata_chan_init(dev, &dev->ata_x);
+	if ( ret )
+		return ret;
+
+	ret = ata_chan_init(dev, &dev->ata_y);
+	if ( ret )
+		return ret;
+
+	return 0;
+}
+
+static int pci_ata_attach(struct pci_dev *pcidev)
+{
+	struct ata_dev *dev;
+	uint8_t progif;
+	int ret = -1; /* ENOMEM */
+
+	dev = kmalloc0(sizeof(*dev));
+	if ( NULL == dev )
+		goto out;
+
+	progif = pcidev_conf_read8(pcidev, PCI_CONF_PROGIF);
+
+	if ( progif & PROGIF_X_MODE ) {
+		dev->ata_x.cmd_bar = ATA_BAR0;
+		dev->ata_x.ctl_bar = ATA_BAR1;
+		dev->ata_x.dma_bar = ATA_BAR4 + 0;
+		dev->ata_x.irq = 14;
+	}else{
+		dev->ata_x.cmd_bar = pcidev_conf_read32(pcidev,
+							PCI_CONF0_BAR0);
+		dev->ata_x.ctl_bar = pcidev_conf_read32(pcidev,
+							PCI_CONF0_BAR1);
+		dev->ata_x.dma_bar = pcidev_conf_read32(pcidev,
+							PCI_CONF0_BAR4 + 0);
+		dev->ata_x.irq = pcidev_conf_read8(pcidev, PCI_CONF0_IRQ);
+	}
+
+	if ( progif & PROGIF_Y_MODE ) {
+		dev->ata_y.cmd_bar = ATA_BAR2;
+		dev->ata_y.ctl_bar = ATA_BAR3;
+		dev->ata_y.dma_bar = ATA_BAR4 + 8;
+		dev->ata_y.irq = 15;
+	}else{
+		dev->ata_y.cmd_bar = pcidev_conf_read32(pcidev,
+							PCI_CONF0_BAR2);
+		dev->ata_y.ctl_bar = pcidev_conf_read32(pcidev,
+							PCI_CONF0_BAR3);
+		dev->ata_y.dma_bar = pcidev_conf_read32(pcidev,
+							PCI_CONF0_BAR4 + 8);
+		dev->ata_y.irq = pcidev_conf_read8(pcidev, PCI_CONF0_IRQ);
+	}
+
+	if ( !(progif & PROGIF_BUS_MASTER) ) {
+		dev->ata_x.dma_bar = 0;
+		dev->ata_y.dma_bar = 0;
+	}
+
+	/* TODO: sanity checks */
+
+	ret = ata_dev_init(dev);
+	if ( ret )
+		goto out_free;
+
+	/* TODO: identify and register attached devices */
+
+	/* success */
+	ret = 0;
+
+out_free:
+	kfree(dev);
+out:
+	return ret;
 }
 
 static int pci_ata_detach(struct pci_dev *dev)

@@ -1,31 +1,24 @@
 #ifndef __ARCH_IA32_ATA__
 #define __ARCH_IA32_ATA__
 
-/* Channel index for our array of channels */
-#define ATA_PRIMARY	0x00
-#define ATA_SECONDARY	0x01
+/* status bits */
+#define ATA_STATUS_ERR		(1 << 0)
+#define ATA_STATUS_IDX		(1 << 1)
+#define ATA_STATUS_CORR		(1 << 2)
+#define ATA_STATUS_DRQ		(1 << 3)
+#define ATA_STATUS_DSC		(1 << 4)
+#define ATA_STATUS_DWF		(1 << 5)
+#define ATA_STATUS_DRDY		(1 << 6)
+#define ATA_STATUS_BSY		(1 << 7)
 
-/* Register offsets from the base */
-#define ATA_REG_CONTROL		0x0C
-#define ATA_REG_HDDEVSEL	0x06
-#define ATA_REG_COMMAND		0x07
-#define ATA_REG_STATUS		0x07
-#define ATA_REG_LBA1		0x04
-#define ATA_REG_LBA2		0x05
+/* device control bits */
+#define ATA_DEVCTL_nIEN		(1 << 0) /* !interrupts enabled */
+#define ATA_DEVCTL_SRST		(1 << 1) /* software reset */
+#define ATA_DEVCTL_RSVD		(1 << 2)
 
 /* ATA Commands */
 #define ATA_CMD_IDENTIFY	0xEC
 #define ATA_CMD_IDENTIFY_PACKET	0xA1
-
-/* service routines */
-#define ATA_SR_BSY		0x80
-#define ATA_SR_ERR		0x01
-#define ATA_SR_DRQ		0x08
-
-/* ATA addressing modes */
-#define ATA_ADDR_LBA48		0x00
-#define ATA_ADDR_LBA28		0x01
-#define ATA_ADDR_CHS		0x02
 
 #endif /* __ARCH_IA32_ATA__ */
 
