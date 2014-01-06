@@ -28,6 +28,10 @@ SECTIONS {
 	__rodata_pagefault = .;
 		*(.rodata.pagefault) 
 	__rodata_pagefault_end = .;
+	__pci_cls_start = .;
+		*(.rodata.pci_cls)
+	__pci_cls_end = .;
+
 	}
 	. = ALIGN(4096);
 	__rodata_end = .;

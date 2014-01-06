@@ -6,6 +6,7 @@
 */
 #include <scaraOS/kernel.h>
 #include <scaraOS/ata.h>
+#include <scaraOS/pci.h>
 #include <arch/io.h>
 
 #define DRIVETYPE_UNKNOWN	0
@@ -197,3 +198,26 @@ static void __init ata_init(void)
 }
 
 driver_init(ata_init);
+
+static int pci_ata_attach(struct pci_dev *dev)
+{
+	uint8_t progif;
+
+	progif = pcidev_conf_read8(dev, PCI_CONF_PROGIF);
+	printk("progif 0x%x\n", progif);
+
+	return 0;
+}
+
+static int pci_ata_detach(struct pci_dev *dev)
+{
+	return -1; /* EBUSY */
+}
+
+static const struct pci_driver pci_ata_driver = {
+	.name = "PCI ATA",
+	.attach = pci_ata_attach,
+	.detach = pci_ata_detach,
+};
+
+pci_cls_driver(pci_ata_driver, 0xffff0000, 0x01010000);

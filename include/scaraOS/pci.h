@@ -12,9 +12,9 @@
 #define  PCI_CONF_COMMAND	 0x06
 #define	PCI_CONF_CLASSREV	0x08 /* class & revision */
 #define  PCI_CONF_REV		 0x08
-#define  PCI_CONF_CLASS		 0x09
+#define  PCI_CONF_PROGIF	 0x09
 #define  PCI_CONF_SUBCLASS	 0x0a
-#define  PCI_CONF_PROGIF	 0x0b
+#define  PCI_CONF_CLASS		 0x0b
 #define PCI_CONF_HWINFO		0x0c /* cache-line size, lat, hdr type, bist */
 #define  PCI_CONF_CACHE_LINE	 0x0c
 #define  PCI_CONF_LATENCY	 0x0d
@@ -70,11 +70,32 @@ struct pci_dom_ops {
 };
 
 struct pci_dev {
+	const struct pci_driver *pci_driver;
+	void *pci_driver_priv;
 	struct pci_dom *pci_domain;
-	struct pci_driver *pci_driver;
 	struct list_head pci_list;
 	uint32_t pci_bdf;
 };
+
+struct pci_driver {
+	const char *name;
+	int (*attach)(struct pci_dev *dev);
+	int (*detach)(struct pci_dev *dev);
+};
+
+struct pci_cls_tbl {
+	const struct pci_driver *cls_driver;
+	uint32_t cls_mask;
+	uint32_t cls_val;
+}__attribute__((packed));
+#define pci_cls_driver(driver, mask, val) \
+	_section(".rodata.pci_cls") __attribute__((used)) \
+	static const struct pci_cls_tbl \
+		__pci_cls_ ##driver ## _ ##mask ## _ ##val = { \
+		.cls_driver = &driver, \
+		.cls_mask = mask, \
+		.cls_val = val, \
+	};
 
 void pcidev_conf_write32(struct pci_dev *dev, unsigned int addr, uint32_t v);
 void pcidev_conf_write16(struct pci_dev *dev, unsigned int addr, uint16_t v);
@@ -83,9 +104,14 @@ uint32_t pcidev_conf_read32(struct pci_dev *dev, unsigned int addr);
 uint16_t pcidev_conf_read16(struct pci_dev *dev, unsigned int addr);
 uint8_t pcidev_conf_read8(struct pci_dev *dev, unsigned int addr);
 
-void __init pci_domain_add(struct pci_dom *dom);
-void __init pci_arch_init(void);
 void __init pci_init(void);
+
+/* pci_arch_init() adds domains */
+void __init pci_domain_add(struct pci_dom *dom);
+
+/* Architectures must implement these */
+void __init pci_arch_init(void);
+const struct pci_driver *pci_arch_scan_cls(uint32_t cls);
 
 #endif
 

@@ -69,6 +69,11 @@ void pcidev_conf_write8(struct pci_dev *dev, unsigned int addr, uint8_t v)
 					CONF_LOC(dev->pci_bdf, addr), v);
 }
 
+static const struct pci_driver *pci_driver_lookup(uint32_t id, uint32_t cls)
+{
+	return pci_arch_scan_cls(cls);
+}
+
 static void pcidev_scan_bars(struct pci_dev *dev)
 {
 	unsigned int i;
@@ -150,6 +155,7 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 			cls >> 24, cls >> 16 & 0xff, cls >> 8 & 0xff);
 		cstr = clsbuf;
 	}
+
 	printk("pci-dev: %i:%i.%i vendor=%.4lx "
 		"device=%.4lx %s rev=%ld\n",
 		b, d, f,
@@ -158,6 +164,11 @@ static void pcidev_add(struct pci_dom *dom, unsigned b,
 		cls & 0xff);
 	pcidev_scan_bars(dev);
 
+	dev->pci_driver = pci_driver_lookup(id, cls);
+	if ( dev->pci_driver ) {
+		printk(" - DRIVER: %s\n", dev->pci_driver->name);
+		(*dev->pci_driver->attach)(dev);
+	}
 }
 
 __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)
@@ -194,7 +205,7 @@ __init static void probe_dev(struct pci_dom *dom, unsigned b, unsigned d)
 			break;
 		}
 
-		if ( f == 0 && (type & 0x80) ) {
+		if ( f == 0 && !(type & 0x80) ) {
 			/* we know it's a single function device */
 			return;
 		}

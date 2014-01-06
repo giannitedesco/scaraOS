@@ -116,3 +116,17 @@ void __init pci_arch_init(void)
 		return;
 	}
 }
+
+extern const struct pci_cls_tbl __pci_cls_start;
+extern const struct pci_cls_tbl __pci_cls_end;
+const struct pci_driver *pci_arch_scan_cls(uint32_t cls)
+{
+	const struct pci_cls_tbl *ptr;
+
+	for(ptr = &__pci_cls_start; ptr < &__pci_cls_end; ptr++) {
+		if ( (cls & ptr->cls_mask) == ptr->cls_val )
+			return ptr->cls_driver;
+	}
+
+	return NULL;
+}
