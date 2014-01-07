@@ -61,7 +61,7 @@ static void floppy_send(const struct floppy_ports *p, uint8_t b)
 {
 	uint8_t msr;
 	int tmo;
-	
+
 	for(tmo=0; tmo<128; tmo++) {
 		msr=inb(p->msr);
 		if ((msr&0xc0) == 0x80) {
@@ -77,7 +77,7 @@ static uint8_t floppy_recv(const struct floppy_ports *p)
 {
 	uint8_t msr;
 	int tmo;
-	
+
 	for(tmo=0; tmo<128; tmo++) {
 		msr=inb(p->msr);
 		if ((msr&0xd0) == 0xd0) {
@@ -212,7 +212,7 @@ static void floppy_reset(const struct floppy_ports *p)
 
 /* Interrupt service routine, remember ISRs are
  * re-entrant on scaraOS - for now anyway */
-static void floppy_isr(int irq)
+static void floppy_isr(int irq, void *priv)
 {
 	unsigned long flags;
 
@@ -236,13 +236,10 @@ static void __init floppy_init(void)
 {
 	uint8_t v;
 
-	blkdev_add(&floppy0);
-
 	/* Install handler for IRQ6 */
-	set_irq_handler(6, floppy_isr);
+	set_irq_handler(6, floppy_isr, NULL);
 	irq_on(6);
 
-	sem_P(&floppy0.blksem);
 	dprintk("floppy: resetting floppy controllers\n");
 	floppy_reset(dprts);
 
@@ -256,7 +253,9 @@ static void __init floppy_init(void)
 
 	/* Reset disk-change flag */
 	inb(dprts->dir);
-	sem_V(&floppy0.blksem);
+
+	blkdev_add(&floppy0);
+
 }
 
 driver_init(floppy_init);

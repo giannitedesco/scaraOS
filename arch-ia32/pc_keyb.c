@@ -15,7 +15,7 @@
 static volatile uint8_t kb_buffer[KB_BUFLEN];
 static volatile uint8_t kb_len;
 
-static void kb_isr(int irq)
+static void kb_isr(int irq, void *priv)
 {
 	uint8_t x;
 	long flags;
@@ -55,7 +55,7 @@ static void __init pc_keyb_init(void)
 	kb_setleds(0);
 
 	/* Enable IRQ 1 */
-	set_irq_handler(1, kb_isr);
+	set_irq_handler(1, kb_isr, NULL);
 	irq_on(1);
 
 	/* Ah, all done */

@@ -224,7 +224,7 @@ static void ident_swizzle(struct ata_identity *ident)
 	swizzle_string(ident->fw_rev, sizeof(ident->fw_rev));
 }
 
-static void ata_isr(int irq)
+static void ata_isr(int irq, void *priv)
 {
 	printk("ATA IRQ %d\n", irq);
 }
@@ -356,7 +356,7 @@ static int ata_chan_init(struct ata_dev *dev, struct ata_chan *chan,
 	}
 
 	if ( chan->irq ) {
-		set_irq_handler(chan->irq, ata_isr);
+		set_irq_handler(chan->irq, ata_isr, dev);
 		irq_on(chan->irq);
 	}
 

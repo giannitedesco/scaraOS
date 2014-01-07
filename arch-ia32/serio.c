@@ -41,7 +41,7 @@ void serio_put(uint8_t c)
 	outb(COM1 + 0, c);
 }
 
-static void serio_isr(int irq)
+static void serio_isr(int irq, void *priv)
 {
 	uint32_t base;
 	uint8_t c;
@@ -66,7 +66,7 @@ static __init void serio_driver_init(void)
 	printk("serio: com1 initialised\n");
 	outb(COM1 + 1, 1);
 
-	set_irq_handler(4, serio_isr);
+	set_irq_handler(4, serio_isr, NULL);
 	irq_on(4);
 }
 

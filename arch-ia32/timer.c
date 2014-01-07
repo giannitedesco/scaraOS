@@ -43,7 +43,7 @@ void udelay(uint32_t m)
 void calibrate_delay_loop(void)
 {
 	uint32_t lb, lp=8;
-	
+
 	/* Coarse calibration */
 	__this_cpu->loops_ms = (1<<12);
 	while ( __this_cpu->loops_ms <<= 1 ) {
@@ -72,14 +72,14 @@ void calibrate_delay_loop(void)
 	__this_cpu->loops_ms /= 1000;
 }
 
-static void pit_isr(int irq)
+static void pit_isr(int irq, void *priv)
 {
 	ticks++;
 }
 
 void pit_start_timer1(void)
 {
-	set_irq_handler(0, pit_isr);
+	set_irq_handler(0, pit_isr, NULL);
 	set_timer_chan(LATCH, 0);
 	irq_on(0);
 }

@@ -6,7 +6,7 @@ struct pic {
 	uint16_t	port_imr;
 	uint8_t		imr;
 	uint8_t		vector;
-	struct pic 	*master;
+	struct pic	*master;
 	union {
 		uint8_t	slave_pins;
 		uint8_t	master_pin;

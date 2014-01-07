@@ -10,8 +10,8 @@
 #define lock_irq(x) asm volatile("pushfl; popl %0; cli":"=g" (x): : "memory")
 #define unlock_irq(x) asm volatile("pushl %0; popfl": :"g" (x): "memory", "cc")
 
-typedef void (*irqfn)(int irq);
-void set_irq_handler(int, irqfn);
+typedef void (*irqfn)(int irq, void *);
+void set_irq_handler(int, irqfn, void *);
 
 void _irq0(void);
 void _irq1(void);
