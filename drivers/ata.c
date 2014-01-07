@@ -10,6 +10,8 @@
 #include <scaraOS/blk.h>
 #include <arch/timer.h>
 #include <arch/io.h>
+#include <arch/irq.h>
+#include <arch/8259a.h>
 #include <scaraOS/ata.h>
 
 /* Table 4 - PCI Adapter bit definitions in Programming Interface byte */
@@ -39,20 +41,23 @@ struct ata_chan {
 #define DISK_TYPE_NONE		0
 #define DISK_TYPE_ATA		1
 #define DISK_TYPE_ATAPI		2
-	unsigned int disk_type;
-	unsigned int num_sect;
+	unsigned long num_sect;
+	uint8_t disk_type;
+	uint8_t drvsel;
 };
 
 struct ata_dev {
 	struct ata_chan ata_x;
 	struct ata_chan ata_y;
 	unsigned int ata_ref; /* reference count */
+	struct ata_blkdev *bd[4]; /* X0, X1, Y0, Y1 */
 };
+
 struct ata_blkdev {
 	struct blkdev blk;
 	struct ata_dev *dev;
-	unsigned int chan; /* 0 for X, 1 for Y */
-	unsigned int sel; /* 0 for master, 1 for slave */
+	struct ata_chan *chan;
+	unsigned int drvsel; /* 0 for master, 1 for slave */
 };
 
 static inline
@@ -137,7 +142,6 @@ uint8_t ata_get_drive_head(const struct ata_chan *chan)
 static inline
 void ata_set_drive_head(const struct ata_chan *chan, uint8_t d, uint8_t h)
 {
-	/* TODO: cache this to avoid un-necessary drive selections */
 	/* 0xa0 are the obsolete bits which must be set to one */
 	outb(chan->cmd_bar + 6, 0xa0 | (!!d << 4) | (h & 0xf));
 }
@@ -161,11 +165,22 @@ static inline void ata_busy_wait(const struct ata_chan *chan)
 	}while( ata_status(chan) & ATA_STATUS_BSY );
 }
 
+static inline
+void ata_drvsel(struct ata_chan *chan, uint8_t drv)
+{
+	if ( chan->drvsel != !!drv ) {
+		ata_set_drive_head(chan, !!drv, 0);
+		chan->drvsel = !!drv;
+		ata_busy_wait(chan);
+	}
+}
+
 static int ata_chan_reset(const struct ata_chan *chan)
 {
 	/* reset and disable interrupts */
 	ata_devctl(chan, ATA_DEVCTL_SRST|ATA_DEVCTL_nIEN);
 	udelay(10);
+
 	/* de-assert reset, leave interrupts disabled */
 	ata_devctl(chan, ATA_DEVCTL_nIEN);
 	ata_busy_wait(chan);
@@ -187,6 +202,9 @@ static void swizzle_string(char *str, size_t len)
 {
 	uint16_t *ptr;
 	unsigned int i;
+	/* register at the last possible moment because they need
+	 * to be ready for instant operation at register-time.
+	*/
 	for(i = 0, ptr = (uint16_t *)str; i < len / 2; i++, ptr++) {
 		*ptr = be16toh(*ptr);
 	}
@@ -194,23 +212,75 @@ static void swizzle_string(char *str, size_t len)
 	for(i = len; i > 1; --i) {
 		if ( str[i - 1] == ' ' )
 			str[i - 1] = '\0';
+		else
+			break;
 	}
 }
 
 static void ident_swizzle(struct ata_identity *ident)
 {
-
 	swizzle_string(ident->model, sizeof(ident->model));
 	swizzle_string(ident->serial, sizeof(ident->serial));
 	swizzle_string(ident->fw_rev, sizeof(ident->fw_rev));
 }
 
-static int ata_chan_init(const struct ata_dev *dev, struct ata_chan *chan)
+static void ata_isr(int irq)
 {
+	printk("ATA IRQ %d\n", irq);
+}
+
+static int ata_rw_blk(struct blkdev *kbdev, int write,
+			block_t blk, char *buf, size_t len)
+{
+	struct ata_blkdev *bdev = (struct ata_blkdev *)kbdev;
+	printk(" ==== ll_rw_blk: %s\n", bdev->blk.name);
+	return -1;
+}
+
+#define ATA_MAX_BLKNAME 64
+static struct ata_blkdev *ata_new_blkdev(struct ata_dev *dev,
+					struct ata_chan *chan,
+					unsigned int controller_num,
+					unsigned int drvsel)
+{
+	struct ata_blkdev *bdev;
+
+	bdev = kmalloc(sizeof(*bdev));
+	if ( NULL == bdev )
+		goto out;
+
+	bdev->blk.name = kmalloc(ATA_MAX_BLKNAME);
+	if ( NULL == bdev->blk.name )
+		goto out_free;
+
+	snprintf((char *)bdev->blk.name, ATA_MAX_BLKNAME,
+		"ata%u%c%u",
+		controller_num,
+		(chan == &dev->ata_x) ? 'X' : 'Y', drvsel);
+	bdev->blk.sectsize = 512;
+	bdev->blk.ll_rw_blk = ata_rw_blk,
+	bdev->dev = dev;
+	bdev->chan = chan;
+	bdev->drvsel = drvsel;
+
+	/* success */
+	goto out;
+
+out_free:
+	kfree(bdev);
+out:
+	return bdev;
+}
+
+static int ata_chan_init(struct ata_dev *dev, struct ata_chan *chan,
+			 struct ata_blkdev *bd[static 2])
+{
+	static unsigned nr_controllers;
 	struct ata_identity *ident;
 	unsigned int d;
 	int ret = -1;
 
+	/* this is a bit too big to fit comfortably on the stack */
 	ident = kmalloc(sizeof(*ident));
 	if ( NULL == ident ) {
 		/* ENOMEM */
@@ -222,10 +292,21 @@ static int ata_chan_init(const struct ata_dev *dev, struct ata_chan *chan)
 		goto out_free;
 
 	for(d = 0; d < 2; d++) {
+		struct ata_blkdev *bdev;
+
+		/* select drive, and initialise drvsel for later,
+		 * where we'll be caching this register
+		 */
 		ata_set_drive_head(chan, d, 0);
+		chan->drvsel = d;
+		ata_busy_wait(chan);
+
 		ata_command(chan, ATA_CMD_IDENTIFY);
 		ata_busy_wait(chan);
 
+		/* we get zero if nothing is attached, and we
+		 * can't test for RDY since ATAPI devices don't set it
+		*/
 		if ( !ata_status(chan) )
 			continue;
 
@@ -251,21 +332,39 @@ static int ata_chan_init(const struct ata_dev *dev, struct ata_chan *chan)
 		ata_pio_read_blk(chan, (uint8_t *)ident);
 		ident_swizzle(ident);
 
+		/* FIXME: this doesn't work, we need to grab all
+		 * relevant capabilities bits at this time
+		*/
 		if(ident->features1 & (1 << 10)) {
 			chan->num_sect = ident->max_lba;
 		}else{
 			chan->num_sect = ident->max_lba28;
 		}
 
-		printk("drive%d: %s - %s (%u MiB) rev=%s\n", d,
+		bdev = ata_new_blkdev(dev, chan, nr_controllers, d);
+		if ( NULL == bdev )
+			continue;
+
+		printk("%s: %s - %s (%lu MiB) rev=%s\n",
+				bdev->blk.name,
 				ident->model,
 				ident->serial,
 				chan->num_sect / 2048,
 				ident->fw_rev);
+
+		bd[!!d] = bdev;
 	}
-	printk("\n");
+
+	if ( chan->irq ) {
+		set_irq_handler(chan->irq, ata_isr);
+		irq_on(chan->irq);
+	}
+
+	/* enable interrupts */
+	ata_devctl(chan, 0);
 
 	/* success */
+	nr_controllers++;
 	ret = 0;
 
 out_free:
@@ -276,15 +375,27 @@ out:
 
 static int ata_dev_init(struct ata_dev *dev)
 {
+	unsigned int i;
 	int ret;
 
-	ret = ata_chan_init(dev, &dev->ata_x);
+	/* first initialise each channel individually,
+	 * detecting drives and creating block devices.
+	 */
+	ret = ata_chan_init(dev, &dev->ata_x, dev->bd);
 	if ( ret )
 		return ret;
 
-	ret = ata_chan_init(dev, &dev->ata_y);
+	ret = ata_chan_init(dev, &dev->ata_y, dev->bd + 2);
 	if ( ret )
 		return ret;
+
+	/* register at the last possible moment because they need
+	 * to be ready for instant operation at register-time.
+	*/
+	for(i = 0; i < sizeof(dev->bd)/sizeof(dev->bd[0]); i++) {
+		if ( dev->bd[i] )
+			blkdev_add(&dev->bd[i]->blk);
+	}
 
 	return 0;
 }
@@ -341,8 +452,6 @@ static int pci_ata_attach(struct pci_dev *pcidev)
 	ret = ata_dev_init(dev);
 	if ( ret )
 		goto out_free;
-
-	/* TODO: identify and register attached devices */
 
 	/* success */
 	ret = 0;
