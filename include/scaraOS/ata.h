@@ -20,5 +20,20 @@
 #define ATA_CMD_IDENTIFY	0xEC
 #define ATA_CMD_IDENTIFY_PACKET	0xA1
 
+struct ata_identity {
+	uint16_t _pad1[10]; /* 0-10 */
+	char serial[20]; /* 10-19 */
+	uint16_t _pad2[3]; /* 19-23 */
+	char fw_rev[8]; /* 23-26 */
+	char model[40]; /* 27-46 */
+	uint16_t _pad3[13]; /* 47-59 */
+	uint32_t max_lba28; /* 60-61 */
+	uint16_t _pad4[21]; /* 47-82 */
+	uint16_t features1; /* 83 */
+	uint16_t _pad5[16]; /* 84 - 99 */
+	uint64_t max_lba; /* 100-103 */
+	uint16_t _pad6[152]; /* 104-255 */
+} __attribute__((packed));
+
 #endif /* __ARCH_IA32_ATA__ */
 

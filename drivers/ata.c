@@ -35,6 +35,12 @@ struct ata_chan {
 	unsigned int ctl_bar;
 	unsigned int dma_bar;
 	unsigned int irq;
+
+#define DISK_TYPE_NONE		0
+#define DISK_TYPE_ATA		1
+#define DISK_TYPE_ATAPI		2
+	unsigned int disk_type;
+	unsigned int num_sect;
 };
 
 struct ata_dev {
@@ -62,9 +68,9 @@ uint8_t ata_alt_status(const struct ata_chan *chan)
 }
 
 static inline
-uint8_t ata_data(const struct ata_chan *chan)
+uint16_t ata_data(const struct ata_chan *chan)
 {
-	return inb(chan->cmd_bar);
+	return inw(chan->cmd_bar);
 }
 
 static inline
@@ -102,23 +108,23 @@ void ata_set_sector(const struct ata_chan *chan, uint8_t f)
 }
 
 static inline
-uint8_t ata_get_cyl_lo(const struct ata_chan *chan)
+uint8_t ata_get_lcyl(const struct ata_chan *chan)
 {
 	return inb(chan->cmd_bar + 4);
 }
 static inline
-void ata_set_cyl_lo(const struct ata_chan *chan, uint8_t f)
+void ata_set_lcyl(const struct ata_chan *chan, uint8_t f)
 {
 	outb(chan->cmd_bar + 4, f);
 }
 
 static inline
-uint8_t ata_get_cyl_hi(const struct ata_chan *chan)
+uint8_t ata_get_hcyl(const struct ata_chan *chan)
 {
 	return inb(chan->cmd_bar + 5);
 }
 static inline
-void ata_set_cyl_hi(const struct ata_chan *chan, uint8_t f)
+void ata_set_hcyl(const struct ata_chan *chan, uint8_t f)
 {
 	outb(chan->cmd_bar + 5, f);
 }
@@ -148,6 +154,13 @@ void ata_command(const struct ata_chan *chan, uint8_t f)
 	outb(chan->cmd_bar + 7, f);
 }
 
+static inline void ata_busy_wait(const struct ata_chan *chan)
+{
+	do{
+		udelay(10);
+	}while( ata_status(chan) & ATA_STATUS_BSY );
+}
+
 static int ata_chan_reset(const struct ata_chan *chan)
 {
 	/* reset and disable interrupts */
@@ -155,38 +168,110 @@ static int ata_chan_reset(const struct ata_chan *chan)
 	udelay(10);
 	/* de-assert reset, leave interrupts disabled */
 	ata_devctl(chan, ATA_DEVCTL_nIEN);
-
-	do{
-		udelay(10);
-	}while( ata_alt_status(chan) & ATA_STATUS_BSY );
+	ata_busy_wait(chan);
 
 	return 0;
 }
 
-static int ata_chan_init(const struct ata_dev *dev, const struct ata_chan *chan)
+static void ata_pio_read_blk(const struct ata_chan *chan,
+					uint8_t blk[static 512])
 {
+	uint16_t *ptr = (uint16_t *)blk;
+	unsigned int i;
+	for(i = 0; i < 256; i++) {
+		ptr[i] = ata_data(chan);
+	}
+}
+
+static void swizzle_string(char *str, size_t len)
+{
+	uint16_t *ptr;
+	unsigned int i;
+	for(i = 0, ptr = (uint16_t *)str; i < len / 2; i++, ptr++) {
+		*ptr = be16toh(*ptr);
+	}
+
+	for(i = len; i > 1; --i) {
+		if ( str[i - 1] == ' ' )
+			str[i - 1] = '\0';
+	}
+}
+
+static void ident_swizzle(struct ata_identity *ident)
+{
+
+	swizzle_string(ident->model, sizeof(ident->model));
+	swizzle_string(ident->serial, sizeof(ident->serial));
+	swizzle_string(ident->fw_rev, sizeof(ident->fw_rev));
+}
+
+static int ata_chan_init(const struct ata_dev *dev, struct ata_chan *chan)
+{
+	struct ata_identity *ident;
 	unsigned int d;
-	int ret;
+	int ret = -1;
+
+	ident = kmalloc(sizeof(*ident));
+	if ( NULL == ident ) {
+		/* ENOMEM */
+		goto out;
+	}
 
 	ret = ata_chan_reset(chan);
 	if ( ret )
-		return ret;
+		goto out_free;
 
 	for(d = 0; d < 2; d++) {
 		ata_set_drive_head(chan, d, 0);
 		ata_command(chan, ATA_CMD_IDENTIFY);
-
-		do{
-			udelay(10);
-		}while( ata_status(chan) & ATA_STATUS_BSY );
+		ata_busy_wait(chan);
 
 		if ( !ata_status(chan) )
 			continue;
 
-		printk("drive %d attached\n", d);
+		/* Identify fails on packet devices with abort error */
+		if ( ata_status(chan) & ATA_STATUS_ERR ) {
+			uint8_t hi, lo;
+
+			/* but then identifies itself in cylinder regs */
+			hi = ata_get_hcyl(chan);
+			lo = ata_get_lcyl(chan);
+			if ( hi != 0xeb || lo != 0x14 ) {
+				continue;
+			}
+
+			/* so let's do a packet identify command instead */
+			chan->disk_type = DISK_TYPE_ATAPI;
+			ata_command(chan, ATA_CMD_IDENTIFY_PACKET);
+			ata_busy_wait(chan);
+		}else{
+			chan->disk_type = DISK_TYPE_ATA;
+		}
+
+		ata_pio_read_blk(chan, (uint8_t *)ident);
+		ident_swizzle(ident);
+
+		if(ident->features1 & (1 << 10)) {
+			chan->num_sect = ident->max_lba;
+		}else{
+			chan->num_sect = ident->max_lba28;
+		}
+
+		printk("drive%d: %s - %s (%u MiB) rev=%s\n", d,
+				ident->model,
+				ident->serial,
+				chan->num_sect / 2048,
+				ident->fw_rev);
 	}
 	printk("\n");
-	return 0;
+
+	/* success */
+	ret = 0;
+
+out_free:
+	kfree(ident);
+out:
+	return ret;
 }
 
 static int ata_dev_init(struct ata_dev *dev)
