@@ -205,7 +205,8 @@ static int ext2_get_super(struct super *sb)
 
 	/* Check the super block */
 	if ( s->s_magic != EXT2_SUPER_MAGIC ) {
-		printk("EXT2: Bad voodoo magic on superblock!\n");
+		printk("EXT2: Bad voodoo magic on superblock! 0x%.8x\n",
+			s->s_magic);
 		goto err;
 	}
 

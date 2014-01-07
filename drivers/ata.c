@@ -140,10 +140,14 @@ uint8_t ata_get_drive_head(const struct ata_chan *chan)
 	return inb(chan->cmd_bar + 6);
 }
 static inline
-void ata_set_drive_head(const struct ata_chan *chan, uint8_t d, uint8_t h)
+void ata_set_drive_head(struct ata_chan *chan, uint8_t lba,
+			uint8_t d, uint8_t h)
 {
 	/* 0xa0 are the obsolete bits which must be set to one */
 	outb(chan->cmd_bar + 6, 0xa0 | (!!d << 4) | (h & 0xf));
+
+	/* play nicely with drive selection logic of ata_drvsel() */
+	chan->drvsel = !!d;
 }
 
 static inline
@@ -162,15 +166,14 @@ static inline void ata_busy_wait(const struct ata_chan *chan)
 {
 	do{
 		udelay(10);
-	}while( ata_status(chan) & ATA_STATUS_BSY );
+	}while( ata_alt_status(chan) & ATA_STATUS_BSY );
 }
 
 static inline
 void ata_drvsel(struct ata_chan *chan, uint8_t drv)
 {
 	if ( chan->drvsel != !!drv ) {
-		ata_set_drive_head(chan, !!drv, 0);
-		chan->drvsel = !!drv;
+		ata_set_drive_head(chan, 0, !!drv, 0);
 		ata_busy_wait(chan);
 	}
 }
@@ -233,8 +236,39 @@ static int ata_rw_blk(struct blkdev *kbdev, int write,
 			block_t blk, char *buf, size_t len)
 {
 	struct ata_blkdev *bdev = (struct ata_blkdev *)kbdev;
-	printk(" ==== ll_rw_blk: %s\n", bdev->blk.name);
-	return -1;
+	struct ata_chan *chan;
+	//struct ata_dev *dev;
+
+	//dev = bdev->dev;
+	chan = bdev->chan;
+
+	blk++;
+
+	while(len--) {
+		long flags;
+
+		printk(" ==== ll_rw_blk: %s %lu\n",
+			bdev->blk.name, blk);
+		lock_irq(flags);
+		ata_set_drive_head(chan, 1, bdev->drvsel, (blk >> 24) & 0xf);
+		ata_busy_wait(chan);
+		ata_set_sector_count(chan, 1);
+		ata_set_sector(chan, blk & 0xff);
+		ata_set_lcyl(chan, (blk >> 8) & 0xff);
+		ata_set_hcyl(chan, (blk >> 16) & 0xff);
+
+		ata_command(chan, ATA_CMD_READ_SECTORS);
+		ata_busy_wait(chan);
+		ata_pio_read_blk(chan, (uint8_t *)buf);
+		//printk("%.*s\n", 512, buf);
+		//printk("\n");
+		unlock_irq(flags);
+
+		buf += 512;
+		blk++;
+	}
+
+	return 0;
 }
 
 #define ATA_MAX_BLKNAME 64
@@ -297,7 +331,7 @@ static int ata_chan_init(struct ata_dev *dev, struct ata_chan *chan,
 		/* select drive, and initialise drvsel for later,
 		 * where we'll be caching this register
 		 */
-		ata_set_drive_head(chan, d, 0);
+		ata_set_drive_head(chan, 0, d, 0);
 		chan->drvsel = d;
 		ata_busy_wait(chan);
 
@@ -455,6 +489,7 @@ static int pci_ata_attach(struct pci_dev *pcidev)
 
 	/* success */
 	ret = 0;
+	goto out;
 
 out_free:
 	kfree(dev);

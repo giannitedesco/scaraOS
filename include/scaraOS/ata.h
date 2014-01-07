@@ -17,8 +17,9 @@
 #define ATA_DEVCTL_RSVD		(1 << 3)
 
 /* ATA Commands */
-#define ATA_CMD_IDENTIFY	0xEC
-#define ATA_CMD_IDENTIFY_PACKET	0xA1
+#define ATA_CMD_READ_SECTORS	0x20
+#define ATA_CMD_IDENTIFY	0xec
+#define ATA_CMD_IDENTIFY_PACKET	0xa1
 
 struct ata_identity {
 	uint16_t _pad1[10]; /* 0-10 */
