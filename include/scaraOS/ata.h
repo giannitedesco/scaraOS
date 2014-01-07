@@ -12,9 +12,9 @@
 #define ATA_STATUS_BSY		(1 << 7)
 
 /* device control bits */
-#define ATA_DEVCTL_nIEN		(1 << 0) /* !interrupts enabled */
-#define ATA_DEVCTL_SRST		(1 << 1) /* software reset */
-#define ATA_DEVCTL_RSVD		(1 << 2)
+#define ATA_DEVCTL_nIEN		(1 << 1) /* !interrupts enabled */
+#define ATA_DEVCTL_SRST		(1 << 2) /* software reset */
+#define ATA_DEVCTL_RSVD		(1 << 3)
 
 /* ATA Commands */
 #define ATA_CMD_IDENTIFY	0xEC

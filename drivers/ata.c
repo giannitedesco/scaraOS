@@ -152,15 +152,13 @@ static int ata_chan_reset(const struct ata_chan *chan)
 {
 	/* reset and disable interrupts */
 	ata_devctl(chan, ATA_DEVCTL_SRST|ATA_DEVCTL_nIEN);
+	udelay(10);
 	/* de-assert reset, leave interrupts disabled */
 	ata_devctl(chan, ATA_DEVCTL_nIEN);
 
-#if 0
 	do{
 		udelay(10);
-		printk("rst: 0x%.2x\n", ata_status(chan));
-	}while( ata_status(chan) & ATA_STATUS_BSY );
-#endif
+	}while( ata_alt_status(chan) & ATA_STATUS_BSY );
 
 	return 0;
 }
@@ -177,12 +175,11 @@ static int ata_chan_init(const struct ata_dev *dev, const struct ata_chan *chan)
 	for(d = 0; d < 2; d++) {
 		ata_set_drive_head(chan, d, 0);
 		ata_command(chan, ATA_CMD_IDENTIFY);
-#if 0
+
 		do{
 			udelay(10);
-			printk("cmd: 0x%.2x\n", ata_status(chan));
 		}while( ata_status(chan) & ATA_STATUS_BSY );
-#endif
+
 		if ( !ata_status(chan) )
 			continue;
 
@@ -220,11 +217,6 @@ static int pci_ata_attach(struct pci_dev *pcidev)
 	progif = pcidev_conf_read8(pcidev, PCI_CONF_PROGIF);
 
 	if ( progif & PROGIF_X_MODE ) {
-		dev->ata_x.cmd_bar = ATA_BAR0;
-		dev->ata_x.ctl_bar = ATA_BAR1;
-		dev->ata_x.dma_bar = ATA_BAR4 + 0;
-		dev->ata_x.irq = 14;
-	}else{
 		dev->ata_x.cmd_bar = pcidev_conf_read32(pcidev,
 							PCI_CONF0_BAR0);
 		dev->ata_x.ctl_bar = pcidev_conf_read32(pcidev,
@@ -232,14 +224,14 @@ static int pci_ata_attach(struct pci_dev *pcidev)
 		dev->ata_x.dma_bar = pcidev_conf_read32(pcidev,
 							PCI_CONF0_BAR4 + 0);
 		dev->ata_x.irq = pcidev_conf_read8(pcidev, PCI_CONF0_IRQ);
+	}else{
+		dev->ata_x.cmd_bar = ATA_BAR0;
+		dev->ata_x.ctl_bar = ATA_BAR1;
+		dev->ata_x.dma_bar = ATA_BAR4 + 0;
+		dev->ata_x.irq = 14;
 	}
 
 	if ( progif & PROGIF_Y_MODE ) {
-		dev->ata_y.cmd_bar = ATA_BAR2;
-		dev->ata_y.ctl_bar = ATA_BAR3;
-		dev->ata_y.dma_bar = ATA_BAR4 + 8;
-		dev->ata_y.irq = 15;
-	}else{
 		dev->ata_y.cmd_bar = pcidev_conf_read32(pcidev,
 							PCI_CONF0_BAR2);
 		dev->ata_y.ctl_bar = pcidev_conf_read32(pcidev,
@@ -247,6 +239,11 @@ static int pci_ata_attach(struct pci_dev *pcidev)
 		dev->ata_y.dma_bar = pcidev_conf_read32(pcidev,
 							PCI_CONF0_BAR4 + 8);
 		dev->ata_y.irq = pcidev_conf_read8(pcidev, PCI_CONF0_IRQ);
+	}else{
+		dev->ata_y.cmd_bar = ATA_BAR2;
+		dev->ata_y.ctl_bar = ATA_BAR3;
+		dev->ata_y.dma_bar = ATA_BAR4 + 8;
+		dev->ata_y.irq = 15;
 	}
 
 	if ( !(progif & PROGIF_BUS_MASTER) ) {
