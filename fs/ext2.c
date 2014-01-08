@@ -28,7 +28,7 @@ static ssize_t ext2_pread(struct inode *i, void *buf, size_t len, off_t off)
 			return copied;
 
 		coff = off & (i->i_sb->s_blocksize - 1);
-		clen = (coff + len > i->i_sb->s_blocksize) ? 
+		clen = (coff + len > i->i_sb->s_blocksize) ?
 				i->i_sb->s_blocksize - coff : len;
 		dprintk("EXT2: got block %lu, copy %lu bytes at %lu\n",
 			i->u.ext2.block[x], clen, coff);
@@ -61,6 +61,7 @@ static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 	int x, y;
 	char *j;
 
+	dprintk("EXT2: lookup %.*s\n", (int)nlen, n);
 	y = EXT2_NDIR_BLOCKS < i->i_blocks ? EXT2_NDIR_BLOCKS : i->i_blocks;
 
 	for(x = 0; x < y; x++) {
@@ -76,6 +77,10 @@ static struct inode *ext2_lookup(struct inode *i, const char *n, size_t nlen)
 		/* Search for the item */
 		for(j = bh->b_buf; j < (bh->b_buf + bh->b_len); ) {
 			dir = (struct ext2_dir_entry_2 *)j;
+			if ( dir->rec_len < 8 ) {
+				printk("EXT2: corrupted dirent: blk %u\n", x);
+				break;
+			}
 			dprintk("EXT2: dentry: %.*s\n",
 				dir->name_len, dir->name);
 			if ( (dir->name_len == nlen) &&
@@ -225,12 +230,12 @@ static int ext2_get_super(struct super *sb)
 	sb->u.ext2.s_inodes_per_block = sb->s_blocksize / s->s_inode_size;
 	sb->u.ext2.s_blocks_per_group = s->s_blocks_per_group;
 	sb->u.ext2.s_inodes_per_group = s->s_inodes_per_group;
-	sb->u.ext2.s_itb_per_group = s->s_inodes_per_group / 
+	sb->u.ext2.s_itb_per_group = s->s_inodes_per_group /
 					sb->u.ext2.s_inodes_per_block;
-	sb->u.ext2.s_desc_per_block = sb->s_blocksize / 
+	sb->u.ext2.s_desc_per_block = sb->s_blocksize /
 					sizeof(struct ext2_group_desc);
-	sb->u.ext2.s_groups_count = (s->s_blocks_count - 
-					s->s_first_data_block + 
+	sb->u.ext2.s_groups_count = (s->s_blocks_count -
+					s->s_first_data_block +
 					(sb->u.ext2.s_blocks_per_group-1)) /
 					sb->u.ext2.s_blocks_per_group;
 

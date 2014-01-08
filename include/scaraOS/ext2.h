@@ -504,7 +504,7 @@ struct ext2_super_block {
 #define EXT2_DEFM_ACL		0x0008
 #define EXT2_DEFM_UID16		0x0010
     /* Not used by ext2, but reserved for use by ext3 */
-#define EXT3_DEFM_JMODE		0x0060 
+#define EXT3_DEFM_JMODE		0x0060
 #define EXT3_DEFM_JMODE_DATA	0x0020
 #define EXT3_DEFM_JMODE_ORDERED	0x0040
 #define EXT3_DEFM_JMODE_WBACK	0x0060
