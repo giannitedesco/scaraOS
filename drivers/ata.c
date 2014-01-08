@@ -144,7 +144,7 @@ void ata_set_drive_head(struct ata_chan *chan, uint8_t lba,
 			uint8_t d, uint8_t h)
 {
 	/* 0xa0 are the obsolete bits which must be set to one */
-	outb(chan->cmd_bar + 6, 0xa0 | (!!d << 4) | (h & 0xf));
+	outb(chan->cmd_bar + 6, 0xa0 | (!!lba << 6) | (!!d << 4) | (h & 0xf));
 
 	/* play nicely with drive selection logic of ata_drvsel() */
 	chan->drvsel = !!d;
@@ -242,12 +242,10 @@ static int ata_rw_blk(struct blkdev *kbdev, int write,
 	//dev = bdev->dev;
 	chan = bdev->chan;
 
-	blk++;
-
-	while(len--) {
+	for(; len; len--, buf += 512, blk++) {
 		long flags;
 
-		printk(" ==== ll_rw_blk: %s %lu\n",
+		dprintk(" ==== ll_rw_blk: %s %lu\n",
 			bdev->blk.name, blk);
 		lock_irq(flags);
 		ata_set_drive_head(chan, 1, bdev->drvsel, (blk >> 24) & 0xf);
@@ -259,13 +257,16 @@ static int ata_rw_blk(struct blkdev *kbdev, int write,
 
 		ata_command(chan, ATA_CMD_READ_SECTORS);
 		ata_busy_wait(chan);
+		if ( !(ata_alt_status(chan) & ATA_STATUS_DRQ) ) {
+			printk("ATA ERROR\n");
+			unlock_irq(flags);
+			return -1;
+		}
 		ata_pio_read_blk(chan, (uint8_t *)buf);
+
 		//printk("%.*s\n", 512, buf);
 		//printk("\n");
 		unlock_irq(flags);
-
-		buf += 512;
-		blk++;
 	}
 
 	return 0;
