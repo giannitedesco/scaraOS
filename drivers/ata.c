@@ -1,8 +1,10 @@
 /*
-* ATA driver
-*
-* TODO:
-*	- Everything!
+ * ATA driver
+ *
+ * TODO:
+ *  o DMA/IRQ
+ *  o ATAPI
+ *  o Multi-sector transfers
 */
 #include <scaraOS/kernel.h>
 #include <scaraOS/pci.h>
@@ -233,16 +235,17 @@ static void ata_isr(int irq, void *priv)
 }
 
 static int ata_rw_blk(struct blkdev *kbdev, int write,
-			block_t blk, char *buf, size_t len)
+			block_t blk, char *buf)
 {
 	struct ata_blkdev *bdev = (struct ata_blkdev *)kbdev;
+	unsigned int count = kbdev->count;
 	struct ata_chan *chan;
 	//struct ata_dev *dev;
 
 	//dev = bdev->dev;
 	chan = bdev->chan;
 
-	for(; len; len--, buf += 512, blk++) {
+	for(; count; count--, buf += kbdev->sectsize, blk++) {
 		long flags;
 
 		dprintk(" ==== ll_rw_blk: %s %lu\n",
@@ -292,6 +295,7 @@ static struct ata_blkdev *ata_new_blkdev(struct ata_dev *dev,
 		"ata%u%c%u",
 		controller_num,
 		(chan == &dev->ata_x) ? 'X' : 'Y', drvsel);
+
 	bdev->blk.sectsize = 512;
 	bdev->blk.ll_rw_blk = ata_rw_blk,
 	bdev->dev = dev;

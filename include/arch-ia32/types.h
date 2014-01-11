@@ -9,9 +9,15 @@ typedef signed short int16_t;
 
 typedef unsigned long uint32_t;
 typedef signed long int32_t;
+#define PRIu32 "lu"
+#define PRId32 "ld"
+#define PRIx32 "lx"
 
 __extension__ typedef unsigned long long uint64_t;
 __extension__ typedef signed long long int64_t;
+#define PRIu64 "llu"
+#define PRId64 ";ld"
+#define PRIx64 "llx"
 
 typedef uint32_t size_t;
 typedef int32_t ssize_t;

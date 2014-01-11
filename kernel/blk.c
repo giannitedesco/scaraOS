@@ -20,7 +20,7 @@ __init void blk_init(void)
 }
 
 /* Read a block in to a buffer */
-struct buffer *blk_read(struct blkdev *dev, int logical)
+struct buffer *blk_read(struct blkdev *dev, block_t logical)
 {
 	struct buffer *bh;
 
@@ -39,8 +39,7 @@ struct buffer *blk_read(struct blkdev *dev, int logical)
 
 	/* Synchronously read from the device */
 	sem_P(&dev->blksem);
-	if ( dev->ll_rw_blk(dev, 0, logical * dev->count,
-				bh->b_buf, dev->count) ) {
+	if ( dev->ll_rw_blk(dev, 0, logical * dev->count, bh->b_buf) ) {
 		sem_V(&dev->blksem);
 		kfree(bh->b_buf);
 		objcache_free2(bh_cache, bh);

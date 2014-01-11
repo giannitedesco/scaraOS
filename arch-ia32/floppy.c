@@ -1,4 +1,4 @@
-/* 
+/*
  * PC/AT/PS2 floppy driver
  *
  * TODO
@@ -62,9 +62,9 @@ static void floppy_send(const struct floppy_ports *p, uint8_t b)
 	uint8_t msr;
 	int tmo;
 
-	for(tmo=0; tmo<128; tmo++) {
+	for(tmo = 0; tmo < 128; tmo++) {
 		msr=inb(p->msr);
-		if ((msr&0xc0) == 0x80) {
+		if ((msr & 0xc0) == 0x80) {
 			outb(p->data,b);
 			return;
 		}
@@ -78,9 +78,9 @@ static uint8_t floppy_recv(const struct floppy_ports *p)
 	uint8_t msr;
 	int tmo;
 
-	for(tmo=0; tmo<128; tmo++) {
-		msr=inb(p->msr);
-		if ((msr&0xd0) == 0xd0) {
+	for(tmo = 0; tmo < 128; tmo++) {
+		msr = inb(p->msr);
+		if ((msr & 0xd0) == 0xd0) {
 			return inb(p->data);
 		}
 		inb(0x80); /* pause */
@@ -129,8 +129,9 @@ static void floppy_recal(const struct floppy_ports *p)
 
 /* Low-level block device routine */
 static int floppy_rw_blk(struct blkdev *bdev, int write,
-				block_t blk, char *buf, size_t len)
+				block_t blk, char *buf)
 {
+	unsigned int count = bdev->count;
 	int head, track, sector;
 	int tries = 3;
 	long flags;
@@ -154,9 +155,9 @@ try_again:
 
 	/* Do the read */
 	lock_irq(flags);
-	dma_read(2, buf, 512);
+	dma_read(2, buf, bdev->sectsize);
 	floppy_send(dprts, CMD_READ);
-	floppy_send(dprts, head<<2);
+	floppy_send(dprts, head << 2);
 	floppy_send(dprts, track);
 	floppy_send(dprts, head);
 	floppy_send(dprts, sector);
@@ -169,9 +170,9 @@ try_again:
 
 	/* Success */
 	if ( (status[0] & 0xc0) == 0 ) {
-		if ( --len ) {
+		if ( --count ) {
 			blk++;
-			buf+=512;
+			buf += bdev->sectsize;
 			goto try_again;
 		}
 		return 0;
@@ -217,9 +218,9 @@ static void floppy_isr(int irq, void *priv)
 	unsigned long flags;
 
 	lock_irq(flags);
-	floppy_send(dprts,CMD_SENSEI);
+	floppy_send(dprts, CMD_SENSEI);
 	for(slen=0; slen<7 && (inb(dprts->msr)&MSR_BUSY); slen++) {
-		status[slen]=floppy_recv(dprts);
+		status[slen] = floppy_recv(dprts);
 	}
 	unlock_irq(flags);
 
