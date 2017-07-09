@@ -15,7 +15,13 @@ DRIVERS_DIR := $(TOPDIR)/drivers
 .PHONY: all clean squeaky boot_floppy userland
 
 ## Target toolchain prefix
-CROSS_COMPILE=
+CROSS_COMPILE :=
+
+## Boot and root image(s)
+BOOT_IMAGE := boot.img
+
+# path relative from user dir
+ROOT_IMAGE := ../hda
 
 ## command locations
 SH := /bin/sh
@@ -41,13 +47,19 @@ TARGET: all
 #	-fno-inline \
 #
 CFLAGS  :=-pipe -ggdb -O2 \
-	-mtune=corei7 \
-	-flto -fwhole-program \
+	-flto -fwhole-program -fno-fat-lto-objects \
+	-z execstack \
+	-static-libgcc \
+	-fno-pie -fno-PIE \
 	-m32 -ffreestanding -fno-stack-protector \
-	-Wall -Wsign-compare -Wcast-align -Waggregate-return \
-	-Wstrict-prototypes -Wmissing-prototypes \
-	-Wmissing-declarations -Wmissing-noreturn \
+	-Wsign-compare \
+	-Wcast-align \
+	-Wstrict-prototypes \
+	-Wmissing-prototypes \
+	-Wmissing-declarations \
+	-Wmissing-noreturn \
 	-Wmissing-format-attribute \
+	-Wno-cast-align \
 	-I$(TOPDIR)/include $(EXTRA_DEFS)
 
 ./include/arch:
@@ -116,16 +128,16 @@ all: kernel.elf.gz
 userland:
 	@echo " [USERLAND]"
 	+$(MAKE) CROSS_COMPILE=$(CROSS_COMPILE) \
-		BOOT_FLOPPY="../boot.img" \
-		-C user boot_floppy
+		ROOT_IMAGE="$(ROOT_IMAGE)" \
+		-C user root_image
 
-boot.img: userland kernel.elf.gz menu.lst
+$(BOOT_IMAGE): userland kernel.elf.gz menu.lst
 	@echo " [BOOTFLOPPY] $@"
-	@e2fsck -y ./boot.img || true
-	@e2cp kernel.elf.gz ./boot.img:kernel
-	@e2cp menu.lst ./boot.img:
+	@e2fsck -y $(BOOT_IMAGE) || true
+	@e2cp kernel.elf.gz $(BOOT_IMAGE):kernel
+	@e2cp menu.lst $(BOOT_IMAGE):
 
-boot_floppy: boot.img
+boot_floppy: $(BOOT_IMAGE)
 
 clean:
 	$(RM) -f $(IMAGE_OBJ) $(ALL_DEPS) \

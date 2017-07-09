@@ -5,7 +5,7 @@ AR     := $(CROSS_COMPILE)ar
 STRIP  := $(CROSS_COMPILE)strip
 TOPDIR :=  .
 
-.PHONY: all clean boot_floppy
+.PHONY: all clean root_image
 TARGET: all
 
 LDFLAGS := -melf_i386 -nostdlib -e_start --strip-all
@@ -87,10 +87,12 @@ endif
 
 all: Makefile $(ALL_TARGETS)
 
-boot_floppy: all
-	@e2cp $(SBIN_TARGETS) $(BOOT_FLOPPY):/sbin/
-	@e2cp $(BIN_TARGETS) $(BOOT_FLOPPY):/bin/
-	@e2cp ../README.md $(BOOT_FLOPPY):/README
+root_image: all
+	@e2mkdir $(ROOT_IMAGE):/sbin
+	@e2mkdir $(ROOT_IMAGE):/bin
+	@e2cp $(SBIN_TARGETS) $(ROOT_IMAGE):/sbin/
+	@e2cp $(BIN_TARGETS) $(ROOT_IMAGE):/bin/
+	@e2cp ../README.md $(ROOT_IMAGE):/README
 
 clean:
 	@rm -f $(ALL_OBJ) $(ALL_DEP) $(ALL_TARGETS)

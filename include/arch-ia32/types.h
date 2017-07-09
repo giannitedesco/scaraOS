@@ -25,7 +25,7 @@ typedef int32_t ssize_t;
 #define BITS_PER_LONG 32
 
 /* Not strictly types, but attributes */
-#define asmlinkage __attribute__((regparm(0)))
+#define asmlinkage __attribute__((used,regparm(0)))
 #define __cacheline_aligned __attribute__((aligned(32)))
 
 typedef uint32_t vaddr_t;
