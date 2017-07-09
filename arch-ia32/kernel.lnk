@@ -88,7 +88,11 @@ SECTIONS {
 
 	/* Keep the size down.. */
 	/DISCARD/ : {
+		*(.note.GNU-stack)
+		*(.gnu_debuglink)
+		*(.gnu.lto_*)
 		*(.comment)
 		*(.note)
+		*(.note.*)
 	}
 }

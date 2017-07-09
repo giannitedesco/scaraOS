@@ -46,9 +46,11 @@ TARGET: all
 # Compiler flags
 #	-fno-inline \
 #
-CFLAGS  :=-pipe -ggdb -O2 \
+CFLAGS  := -ggdb -O2 -nostdlib \
 	-flto -fwhole-program -fno-fat-lto-objects \
+	-finline-functions -ftree-partial-pre -fgcse-after-reload -fipa-cp-clone -fipa-pta \
 	-z execstack \
+	-static \
 	-static-libgcc \
 	-fno-pie -fno-PIE \
 	-m32 -ffreestanding -fno-stack-protector \
@@ -111,8 +113,10 @@ kernel.elf: Makefile $(IMAGE_OBJ) $(ARCH_DIR)/kernel.lnk
 	@echo " [LINK] $@"
 	@$(GCC) $(CFLAGS) -Wl,-melf_i386 -Wl,-nostdlib \
 		-nostartfiles \
+		-Wl,-z,execstack \
+		-Wl,--build-id=none \
 		-Wl,-T,$(ARCH_DIR)/kernel.lnk -o $@ \
-		$(IMAGE_OBJ)
+		$(IMAGE_OBJ) -nostdlib -lgcc
 
 kernel.elf.stripped: kernel.elf
 	@echo " [STRIP] $@"
