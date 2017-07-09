@@ -8,12 +8,21 @@ TOPDIR :=  .
 .PHONY: all clean root_image
 TARGET: all
 
-LDFLAGS := -melf_i386 -nostdlib -e_start --strip-all
-CFLAGS  := -pipe -ggdb -O2 -Wall -ffreestanding -fno-stack-protector \
-	-Wsign-compare -Wcast-align -Waggregate-return \
-	-Wstrict-prototypes -Wmissing-prototypes \
-	-Wmissing-declarations -Wmissing-noreturn \
-	-Wmissing-format-attribute -m32 \
+CFLAGS  := -ggdb -O2 -nostdlib \
+	-finline-functions -ftree-partial-pre -fgcse-after-reload -fipa-cp-clone -fipa-pta \
+	-z execstack \
+	-static \
+	-static-libgcc \
+	-fno-pie -fno-PIE \
+	-m32 -ffreestanding -fno-stack-protector \
+	-Wsign-compare \
+	-Wcast-align \
+	-Wstrict-prototypes \
+	-Wmissing-prototypes \
+	-Wmissing-declarations \
+	-Wmissing-noreturn \
+	-Wmissing-format-attribute \
+	-Wno-cast-align \
 	-I$(TOPDIR)/../include $(EXTRA_DEFS)
 
 %.o: %.c Makefile
@@ -43,7 +52,12 @@ $(C_RUNTIME): $(CRT_OBJ)
 
 %: %.o $(C_RUNTIME)
 	@echo " [LINK] $@"
-	@$(LD) $(LDFLAGS) -o $@ $^
+	@$(GCC) $(CFLAGS) -Wl,-melf_i386 -Wl,-nostdlib \
+		-nostartfiles \
+		-Wl,-z,execstack \
+		-Wl,--build-id=none \
+		-o $@ \
+		$^ -nostdlib -lgcc
 
 INIT_C_SOURCES := init.c
 INIT_OBJ := $(patsubst %.c, %.o, $(INIT_C_SOURCES))

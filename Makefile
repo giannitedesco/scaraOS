@@ -21,7 +21,7 @@ CROSS_COMPILE :=
 BOOT_IMAGE := boot.img
 
 # path relative from user dir
-ROOT_IMAGE := ../hda
+ROOT_IMAGE := ../boot.img
 
 ## command locations
 SH := /bin/sh

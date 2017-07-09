@@ -21,8 +21,8 @@ int init_task(void *priv)
 	do_initcalls();
 
 	/* Mount the root filesystem etc.. */
-	//if ( vfs_mount_root("ext2", "floppy0") ) {
-	if ( vfs_mount_root("ext2", "ata0X0") ) {
+	if ( vfs_mount_root("ext2", "floppy0") ) {
+	//if ( vfs_mount_root("ext2", "ata0X0") ) {
 		panic("Unable to mount root filesystem\n");
 	}
 
