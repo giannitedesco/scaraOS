@@ -5,8 +5,8 @@
 #include <scaraOS/elf.h>
 #include <scaraOS/exec.h>
 
-#define USER_STACK_BASE 	0x80000000
-#define USER_STACK_PAGES	1024UL
+#define USER_STACK_BASE		0x80000000
+#define USER_STACK_PAGES	128UL
 #define USER_STACK_SIZE		(USER_STACK_PAGES << PAGE_SHIFT)
 
 static int do_exec(char *path)
