@@ -13,7 +13,7 @@ struct vma *lookup_vma(struct mem_ctx *ctx, vaddr_t va)
 {
 	struct rb_node *n;
 	struct vma *vma;
-	
+
 	for(n = ctx->vmas.rb_node; n; ) {
 		vma = rb_entry(n, struct vma, vma_rbt);
 		if ( va < vma->vma_begin )
@@ -47,8 +47,10 @@ int mm_pagefault(struct task *tsk, vaddr_t va, unsigned prot)
 	if ( vma->vma_ino ) {
 		dprintk("...from pagecache\n");
 		page = vma->vma_ino->i_iop->readpage(vma->vma_ino, off);
-		if ( NULL == page )
+		if ( NULL == page ) {
+			dprintk("readpage failed\n");
 			return -1;
+		}
 	}else{
 		void *ptr;
 
@@ -73,7 +75,7 @@ static void vma_insert(struct mem_ctx *ctx, struct vma *vma)
 	struct rb_node *parent;
 
 	memset(&vma->vma_rbt, 0, sizeof(vma->vma_rbt));
-	
+
 	for(p = &ctx->vmas.rb_node, parent = NULL; *p; ) {
 		struct vma *area;
 

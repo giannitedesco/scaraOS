@@ -102,6 +102,7 @@ endif
 all: Makefile $(ALL_TARGETS)
 
 root_image: all
+	@echo " [USERSPACE TO ROOT IMAGE]"
 	@e2mkdir $(ROOT_IMAGE):/sbin
 	@e2mkdir $(ROOT_IMAGE):/bin
 	@e2cp $(SBIN_TARGETS) $(ROOT_IMAGE):/sbin/

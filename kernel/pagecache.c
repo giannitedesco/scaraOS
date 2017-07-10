@@ -35,7 +35,7 @@ struct page *pagecache_file_readpage(struct inode *in, off_t off)
 	ptr = alloc_page();
 	if ( NULL == ptr )
 		goto out_unlock;
-	
+
 	ret = in->i_iop->pread(in, ptr, PAGE_SIZE, off);
 	if ( ret <= 0 ) {
 		free_page(ptr);
