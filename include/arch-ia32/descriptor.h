@@ -36,7 +36,7 @@ struct gdtr {
 struct ia32_desc2 {
 	uint16_t	limit_low;
 	uint16_t	base_low;
-	uint8_t	base_med;
+	uint8_t		base_med;
 	uint16_t	type:4;
 	uint16_t	desc_type:1; /* 0=system, 1=code/data */
 	uint16_t	dpl:2;
@@ -46,17 +46,17 @@ struct ia32_desc2 {
 	uint16_t	res:1;
 	uint16_t	db:1; /* 0=16bit, 1=32bit */
 	uint16_t	granularity:1; /* 1=full */
-	uint8_t	base_high;
+	uint8_t		base_high;
 } __attribute__((packed));
 
 struct ia32_desc {
 	uint16_t	limit_low;
 	uint16_t	base_low;
-	uint8_t	base_med;
-	uint8_t	access;
-	uint32_t	limit_high:4;
-	uint32_t	granularity:4;
-	uint8_t	base_high;
+	uint8_t		base_med;
+	uint8_t		access;
+	uint8_t		limit_high:4;
+	uint8_t		granularity:4;
+	uint8_t		base_high;
 } __attribute__ ((packed));
 
 struct ia32_gate {
@@ -87,7 +87,7 @@ typedef union dt_entry {
 #define gate_desc(offset, selector, control) \
 	{ \
 		.offset_low = (offset & 0xffff), \
-		.selector = selector, (control | D_PRESENT), \
+		.selector = (control | D_PRESENT), \
 		.access = (offset >> 16) \
 		.offset_high = ((offset >> 16) & 0xffff),\
 	}
