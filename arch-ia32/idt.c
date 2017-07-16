@@ -12,6 +12,7 @@
 #include <arch/idt.h>
 #include <arch/gdt.h>
 #include <arch/regs.h>
+#include <arch/mm.h>
 
 #define load_idt(idtr) \
 	asm volatile("lidt (%0)": :"r" (idtr));
@@ -79,6 +80,10 @@ static void stack_dump(struct intr_ctx *ctx)
 void ctx_dump(struct intr_ctx *ctx)
 {
 	struct task *tsk = __this_task;
+	unsigned long pdbr;
+
+	get_pdbr(pdbr);
+
 	printk("Task pid=%lu name=%s: CS=0x%lx tsk=%p\n",
 			tsk->pid, tsk->name, ctx->cs, tsk);
 	printk("  EIP=0x%.8lx EFLAGS=0x%.8lx\n", ctx->eip, ctx->eflags);
@@ -86,6 +91,8 @@ void ctx_dump(struct intr_ctx *ctx)
 	printk("  ECX=0x%.8lx    EDX=0x%.8lx\n", ctx->ecx, ctx->edx);
 	printk("  ESP=0x%.8lx    EBP=0x%.8lx\n", ctx->esp, ctx->ebp);
 	printk("  ESI=0x%.8lx    EDI=0x%.8lx\n", ctx->edi, ctx->esi);
+	printk("  CR3=0x%.8lx    \n", pdbr);
+
 	if ( ctx->esp >= PAGE_OFFSET && 0 == (ctx->cs & __CPL3) )
 		stack_dump(ctx);
 }
@@ -111,6 +118,7 @@ static void page_fault(struct intr_ctx *ctx)
 			__this_task->name,
 			(ctx->err_code & PAGEFAULT_WRITE) ? "read" : "writ",
 			pf_address(), ctx->eip);
+		//hex_dumpk(pf_address(), 16, 16);
 		_sys_exit(~0);
 	}else{
 		struct pagefault_fixup *fix;

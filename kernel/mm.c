@@ -171,7 +171,7 @@ struct mem_ctx *mem_ctx_clone(struct mem_ctx *ctx)
 	if ( NULL == new )
 		return NULL;
 
-	if ( setup_new_ctx(&new->arch) ) {
+	if ( clone_ctx(&ctx->arch, &new->arch) ) {
 		objcache_free2(memctx, new);
 		return NULL; /* ENOMEM */
 	}

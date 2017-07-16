@@ -108,6 +108,7 @@ struct mem_ctx *get_kthread_ctx(void);
 /* Arch-specific stubs */
 void setup_kthread_ctx(struct arch_ctx *ctx);
 int setup_new_ctx(struct arch_ctx *ctx);
+int clone_ctx(const struct arch_ctx *old, struct arch_ctx *new);
 void destroy_ctx(struct arch_ctx *ctx);
 void use_ctx(struct arch_ctx *ctx);
 int map_page_to_ctx(struct arch_ctx *tsk, struct page *page,

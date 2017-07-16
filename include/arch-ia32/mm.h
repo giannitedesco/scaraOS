@@ -2,8 +2,8 @@
 #define __ARCH_IA32_MM__
 
 /* Characteristics of the IA32 architecture */
-#define NR_PDE 		1024
-#define NR_PTE 		1024
+#define NR_PDE		1024
+#define NR_PTE		1024
 #define PDE_SHIFT	(10 + PAGE_SHIFT)
 
 /* C Specific */

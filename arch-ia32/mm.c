@@ -246,7 +246,7 @@ static void reserve_from_e820(void *addr, size_t len)
 					map->length_low);
 
 		contig_end += map->length_low;
-		
+
 		addr += map->size + sizeof(map->size);
 	}
 }
@@ -339,6 +339,34 @@ int setup_new_ctx(struct arch_ctx *ctx)
 
 	ctx->pgd = __pa(pgd);
 	return 0;
+}
+
+int clone_ctx(const struct arch_ctx *old, struct arch_ctx *new)
+{
+#if 1
+	pgd_t old_pgd, pgd;
+	unsigned int i;
+	int ret = -1;
+
+	pgd = alloc_page();
+	if ( NULL == pgd )
+		goto out;
+
+	old_pgd = (void *)__va(old->pgd);
+	for (i = 0; i < NR_PDE; i++)
+		pgd[i] = old_pgd[i];
+
+	new->pgd = __pa(pgd);
+	ret = 0;
+	goto out;
+
+out_free:
+	free_page(pgd);
+out:
+	return ret;
+#else
+	return setup_new_ctx(new);
+#endif
 }
 
 void destroy_ctx(struct arch_ctx *ctx)

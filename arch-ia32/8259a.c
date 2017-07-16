@@ -32,7 +32,7 @@ __init void pic_init(void)
 		}else{
 			outb(pics[i].port_imr, pics[i].cascade.slave_pins);
 		}
-		
+
 		outb(pics[i].port_imr, ICW4);
 		outb(pics[i].port_imr, pics[i].imr);
 	}
@@ -76,7 +76,7 @@ static void pic_eoi(struct pic *pic)
 }
 
 /* =========================
- *  PC/AT Specific commands 
+ *  PC/AT Specific commands
  * =========================
 */
 void irq_on(uint16_t irq)

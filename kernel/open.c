@@ -23,7 +23,7 @@ int _sys_open(const char *fn, unsigned int mode)
 		kfree(kfn);
 		return -1;
 	}
-  
+
 	fd = fdt_entry_add(me->fd_table, file_new(inode, mode));
 	kfree(kfn);
 
@@ -33,7 +33,7 @@ int _sys_open(const char *fn, unsigned int mode)
 struct file *kernel_open(const char *fn, unsigned int mode)
 {
 	struct inode *inode;
-	
+
 	inode = namei(fn);
 	if ( NULL == inode ) {
 		printk("open: %s: ENOENT or ENOTDIR\n", fn);
