@@ -294,7 +294,7 @@ void *objcache_alloc(objcache_t o)
 void *objcache_alloc0(objcache_t o)
 {
 	void *ret;
-	
+
 	ret = do_alloc(o);
 	if ( likely(ret != NULL) )
 		memset(ret, 0, o->o_sz);

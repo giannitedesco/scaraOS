@@ -2,7 +2,7 @@
   Red Black Trees
   (C) 1999  Andrea Arcangeli <andrea@suse.de>
   (C) 2002  David Woodhouse <dwmw2@infradead.org>
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
@@ -28,7 +28,7 @@ static void __rb_rotate(struct rb_node *node, struct rb_root *root,
 	struct rb_node *other = node->rb_child[RB_RIGHT ^ side];
 	struct rb_node *parent = rb_parent(node);
 
-	if ((node->rb_child[RB_RIGHT ^ side] = 
+	if ((node->rb_child[RB_RIGHT ^ side] =
 			other->rb_child[RB_LEFT ^ side]))
 		rb_set_parent(other->rb_child[RB_LEFT ^ side], node);
 	other->rb_child[RB_LEFT ^ side] = node;
@@ -305,7 +305,7 @@ struct rb_node *rb_next(const struct rb_node *node)
 	/* If we have a right-hand child, go down and then left as far
 	   as we can. */
 	if (node->rb_child[RB_RIGHT]) {
-		node = node->rb_child[RB_RIGHT]; 
+		node = node->rb_child[RB_RIGHT];
 		while (node->rb_child[RB_LEFT])
 			node=node->rb_child[RB_LEFT];
 		return (struct rb_node *)node;
@@ -333,7 +333,7 @@ struct rb_node *rb_prev(const struct rb_node *node)
 	/* If we have a left-hand child, go down and then right as far
 	   as we can. */
 	if (node->rb_child[RB_LEFT]) {
-		node = node->rb_child[RB_LEFT]; 
+		node = node->rb_child[RB_LEFT];
 		while (node->rb_child[RB_RIGHT])
 			node=node->rb_child[RB_RIGHT];
 		return (struct rb_node *)node;

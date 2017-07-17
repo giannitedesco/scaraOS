@@ -102,7 +102,7 @@ void set_timer_chan_oneshot(uint16_t h, uint8_t chan)
 uint32_t get_timer_chan(uint8_t chan, int reset)
 {
 	uint32_t x;
-	
+
 	outb_p(TMR_PORT, (chan * 0x40) | (reset) ? 0x0 : PIT_LATCH);
 	x = inb_p(0x40 + chan);
 	x += (inb_p(0x40 + chan) << 8);

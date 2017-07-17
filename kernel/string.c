@@ -13,7 +13,7 @@ void itoa(char *buf, int base, int d)
 	char *p1, *p2;
 	unsigned long ud = d;
 	int divisor = 10;
-  
+
 	/* If %d is specified and D is minus, put `-' in the head.  */
 	if (base == 'd' && d < 0)
 	{
@@ -32,7 +32,7 @@ void itoa(char *buf, int base, int d)
 
 	/* Terminate BUF.  */
 	*p = 0;
-  
+
 	/* Reverse BUF.  */
 	p1 = buf;
 	p2 = p - 1;
@@ -50,10 +50,10 @@ char *strdup(const char *s)
 {
 	size_t len;
 	char *ret;
-	
+
 	if ( NULL == s )
 		return NULL;
-	
+
 	len = strlen(s);
 	ret = kmalloc(len + 1);
 	if ( NULL == ret )
@@ -70,7 +70,7 @@ size_t strlen(const char *s)
 
 	for(ret = 0; *s; s++, ret++)
 		/* nothing */;
-	
+
 	return ret;
 }
 

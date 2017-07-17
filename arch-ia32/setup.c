@@ -125,7 +125,7 @@ _noreturn _asmlinkage void setup(multiboot_info_t *mbi)
 
 	/* Identify CPU features, also needs to be early because
 	 * mm init may need to know which paging features are
-	 * available 
+	 * available
 	 */
 	cpuid_init();
 

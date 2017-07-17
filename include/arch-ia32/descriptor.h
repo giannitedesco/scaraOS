@@ -80,10 +80,10 @@ typedef union dt_entry {
 		.base_med	= ((base >> 16) & 0xff), \
 		.access		= ((control | D_PRESENT) >> 8), \
 		.limit_high	= (limit >> 16),\
-		.granularity 	= ((control & 0xff) >> 4), \
+		.granularity	= ((control & 0xff) >> 4), \
 		.base_high	= (base >> 24) \
 	}
-	
+
 #define gate_desc(offset, selector, control) \
 	{ \
 		.offset_low = (offset & 0xffff), \

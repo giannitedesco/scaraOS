@@ -2,7 +2,7 @@
  * The scaraOS inode cache.
  *
  * The purpose of this code is to lookup an inode object on a mounted
- * filesystem given its inode number. The inode contains all file 
+ * filesystem given its inode number. The inode contains all file
  * related meta-data and is needed for nearly all VFS operations. The
  * cache exists to speed up this lookup.
 */
@@ -94,7 +94,7 @@ static void __inode_free(struct inode *i)
 {
 	if ( NULL == i )
 		return;
-	
+
 	sem_P(&i->i_sb->s_sem);
 	rb_erase(&i->i_cache, &i->i_sb->s_inode_cache);
 	list_del(&i->i_list);

@@ -62,13 +62,13 @@ void vga_put(uint8_t c)
 		}else{
 			xpos--;
 		}
-		
+
 		/* Blank current position */
 		*(vidmem + (xpos + ypos * COLS) * 2) = ' ';
 		*(vidmem + (xpos + ypos * COLS) * 2 + 1) = attrib;
-		
+
 		break;
-		
+
 	case '\n':
 	case '\r':
 newline:
@@ -76,13 +76,13 @@ newline:
 		ypos++;
 		if (ypos >= ROWS) {
 			int i;
-		
+
 			/* Move all the lines up one */
 			for (i = COLS; i < (ROWS * COLS); i++ ) {
 				*(vidmem + ((i - COLS)) * 2) =
 					*(vidmem + i * 2);
 			}
-		
+
 			/* Blank the last line */
 			for (i = 0; i < COLS; i++) {
 				*(vidmem + ((ROWS * COLS - COLS + i) * 2)) =' ';

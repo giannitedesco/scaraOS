@@ -11,7 +11,7 @@ int _sys_read(unsigned int handle, char *buf, size_t size)
 
 	if ( !uaddr_ok((vaddr_t)buf, size) )
 		return -1; /* EINVALID */
-	
+
 	me = __this_task;
 	fd = fdt_entry_retr(me->fd_table, handle);
 	if ( NULL == fd )

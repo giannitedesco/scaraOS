@@ -87,13 +87,12 @@ typedef struct multiboot_info
 	unsigned long mods_count;
 	p_module mods_addr;
 
-	/* Info about the kernel binary */	
-	union
-	{
+	/* Info about the kernel binary */
+	union {
 		aout_symbol_table_t aout_sym;
 		elf_section_header_table_t elf_sec;
 	} u;
-	
+
 	/* Memory maps */
 	unsigned long mmap_length;
 	p_memory_map mmap;

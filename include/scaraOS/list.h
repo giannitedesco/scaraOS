@@ -40,7 +40,7 @@ struct list_head {
 } while (0)
 
 /*
- * Insert a new entry between two known consecutive entries. 
+ * Insert a new entry between two known consecutive entries.
  *
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
@@ -103,7 +103,7 @@ static inline void list_del_internal(struct list_head * prev, struct list_head *
 static inline void list_del(struct list_head *entry)
 {
 	list_del_internal(entry->prev, entry->next);
-	INIT_LIST_HEAD(entry); 
+	INIT_LIST_HEAD(entry);
 }
 
 /**
@@ -190,7 +190,7 @@ static inline void list_splice(struct list_head *list, struct list_head *head)
 #define list_for_each_prev(pos, head) \
 	for (pos = (head)->prev; pos != (head); \
         	pos = pos->prev)
-        	
+
 /**
  * list_for_each_safe	-	iterate over a list safe against removal of list entry
  * @pos:	the &struct list_head to use as a loop counter.
@@ -248,62 +248,62 @@ static inline void list_splice(struct list_head *list, struct list_head *head)
 	     &pos->member != (head); 					\
 	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
 
-/* 
- * Double linked lists with a single pointer list head. 
- * Mostly useful for hash tables where the two pointer list head is 
+/*
+ * Double linked lists with a single pointer list head.
+ * Mostly useful for hash tables where the two pointer list head is
  * too wasteful.
  * You lose the ability to access the tail in O(1).
- */ 
+ */
 
-struct hlist_head { 
-	struct hlist_node *first; 
-}; 
+struct hlist_head {
+	struct hlist_node *first;
+};
 
-struct hlist_node { 
-	struct hlist_node *next, **pprev; 
-}; 
+struct hlist_node {
+	struct hlist_node *next, **pprev;
+};
 
-#define HLIST_HEAD_INIT { .first = NULL } 
+#define HLIST_HEAD_INIT { .first = NULL }
 #define HLIST_HEAD(name) struct hlist_head name = {  .first = NULL }
-#define INIT_HLIST_HEAD(ptr) ((ptr)->first = NULL) 
+#define INIT_HLIST_HEAD(ptr) ((ptr)->first = NULL)
 #define INIT_HLIST_NODE(ptr) ((ptr)->next = NULL, (ptr)->pprev = NULL)
 
-static __inline__ int hlist_unhashed(const struct hlist_node *h) 
-{ 
+static __inline__ int hlist_unhashed(const struct hlist_node *h)
+{
 	return !h->pprev;
-} 
+}
 
-static __inline__ int hlist_empty(const struct hlist_head *h) 
-{ 
+static __inline__ int hlist_empty(const struct hlist_head *h)
+{
 	return !h->first;
-} 
+}
 
 static __inline__ void hlist_del(struct hlist_node *n)
 {
 	struct hlist_node *next = n->next;
 	struct hlist_node **pprev = n->pprev;
-	*pprev = next;  
-	if (next) 
+	*pprev = next;
+	if (next)
 		next->pprev = pprev;
 	INIT_HLIST_NODE(n);
 }
 
-static __inline__ void hlist_add_head(struct hlist_node *n, struct hlist_head *h) 
-{ 
+static __inline__ void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
+{
 	struct hlist_node *first = h->first;
-	n->next = first; 
-	if (first) 
+	n->next = first;
+	if (first)
 		first->pprev = &n->next;
-	h->first = n; 
-	n->pprev = &h->first; 
-} 
+	h->first = n;
+	n->pprev = &h->first;
+}
 
 /* next must be != NULL */
 static __inline__ void hlist_add_before(struct hlist_node *n, struct hlist_node *next)
 {
 	n->pprev = next->pprev;
-	n->next = next; 
-	next->pprev = &n->next; 
+	n->next = next;
+	next->pprev = &n->next;
 	*(n->pprev) = n;
 }
 
@@ -319,7 +319,7 @@ static __inline__ void hlist_add_after(struct hlist_node *n,
 
 #define hlist_for_each(pos, head) \
 	for (pos = (head)->first; pos; \
-	     pos = pos->next) 
+	     pos = pos->next)
 
 #define hlist_for_each_safe(pos, n, head) \
 	for (pos = (head)->first; n = pos ? pos->next : 0, pos; \
@@ -333,7 +333,7 @@ static __inline__ void hlist_add_after(struct hlist_node *n,
  */
 #define hlist_for_each_entry(pos, head, member)			 \
 	for (pos = hlist_entry((head)->first, typeof(*pos), member);	\
-	     &pos->member != NULL; 					\
+	     &pos->member != NULL;					\
 	     pos = hlist_entry(pos->member.next, typeof(*pos), member))
 
 /**
@@ -344,7 +344,7 @@ static __inline__ void hlist_add_after(struct hlist_node *n,
  */
 #define hlist_for_each_entry_continue(tpos, pos, member)		 \
 	for (pos = (pos)->next;						 \
-	     pos && 							 \
+	     pos &&							 \
 		({ tpos = hlist_entry(pos, typeof(*tpos), member); 1;}); \
 	     pos = pos->next)
 
@@ -367,9 +367,9 @@ static __inline__ void hlist_add_after(struct hlist_node *n,
  * @head:	the head for your list.
  * @member:	the name of the hlist_node within the struct.
  */
-#define hlist_for_each_entry_safe(tpos, pos, n, head, member) 		 \
+#define hlist_for_each_entry_safe(tpos, pos, n, head, member)		 \
 	for (pos = (head)->first;					 \
-	     pos && ({ n = pos->next; 1; }) && 				 \
+	     pos && ({ n = pos->next; 1; }) &&				 \
 		({ tpos = hlist_entry(pos, typeof(*tpos), member); 1;}); \
 	     pos = n)
 
